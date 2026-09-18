@@ -1,0 +1,7 @@
+admin/assets/img/photos/
+node_modules/
+Backend/node_modules/
+.vscode/
+.claude/
+.env
+Backend/.env

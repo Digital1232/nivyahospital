@@ -1,0 +1,6 @@
+admin/assets/img/photos/
+Backend/
+node_modules/
+.git/
+.vscode/
+.claude/

@@ -1,0 +1,27 @@
+$('.testimonial-slider-two').slick({
+  slidesToShow: 3,
+  slidesToScroll: 1,
+  infinite: true,
+  arrows: false,
+  dots: false,
+
+  autoplay: true,
+  autoplaySpeed: 0, // IMPORTANT: no delay
+
+  speed: 6000, // controls smooth scroll speed
+  cssEase: 'linear', // IMPORTANT: no easing jump
+
+  pauseOnHover: true,
+  pauseOnFocus: false,
+
+  variableWidth: false,
+
+  responsive: [
+    {
+      breakpoint: 768,
+      settings: {
+        slidesToShow: 1
+      }
+    }
+  ]
+});
