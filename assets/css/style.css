@@ -53263,8 +53263,9 @@ ul li {
   object-position: 30% 15%;
 }
 
-.doctor-item-two .doctor-image img[src*="dr-naveen-paul"] {
-  object-position: 25% 15%;
+.doctor-item-two .doctor-image img[src*="dr-naveen-paul"],
+.doctor-list-card .card-img img[src*="dr-naveen-paul"] {
+  object-position: center top !important;
 }
 
 .doctor-item-two .doctor-content {

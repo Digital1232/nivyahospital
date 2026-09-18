@@ -14,7 +14,7 @@
     // Doctors
     {
       patterns: ["doctor", "doctors", "physician", "specialist", "dr", "who are the doctors", "available doctors"],
-      answer: "👨‍⚕️ Our Doctors:<br><br><strong>1. Dr. P. Manimozhian</strong><br>MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Consultant Pulmonologist, Bronchoscopist, Allergy & Sleep Physician<br><br><strong>2. Dr. M. Nivya</strong><br>MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Consultant Diabetologist & General Physician<br><br><strong>3. Dr. M.A. Mathan</strong><br>MBBS, MEM (Emergency & Critical Care Medicine)<br>Emergency Physician & Intensivist"
+      answer: "👨‍⚕️ Our Doctors:<br><br><strong>1. Dr. P. Manimozhian</strong><br>MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Consultant Pulmonologist, Bronchoscopist, Allergy & Sleep Physician<br><br><strong>2. Dr. M. Nivya</strong><br>MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Consultant Diabetologist & General Physician<br><br><strong>3. Dr. M.A. Mathan</strong><br>MBBS, MEM (Emergency & Critical Care Medicine)<br>Emergency Physician & Intensivist<br><br><strong>4. Dr. Naveen Paul Singh</strong><br>BDS<br>Dental Surgeon & Consultant Dentist"
     },
 
     // Manimozhian
@@ -33,6 +33,12 @@
     {
       patterns: ["mathan", "emergency", "critical care", "icu", "intensivist", "trauma", "accident"],
       answer: "🚨 <strong>Dr. M.A. Mathan</strong><br>Specialisation: Emergency & Critical Care Medicine<br>Qualification: MBBS, MEM (Emergency & Critical Care Medicine)<br>Experience: 10+ Years<br><br>Handles: Emergency Cases, ICU Management, Trauma, Acute Medical Emergencies<br><br><a href='doctor-mathan-profile.html'>View Full Profile →</a>"
+    },
+
+    // Naveen Paul / Dentist
+    {
+      patterns: ["naveen", "paul", "dentist", "dentistry", "dental", "teeth", "tooth", "root canal", "braces", "cavity"],
+      answer: "🦷 <strong>Dr. Naveen Paul Singh</strong><br>Specialisation: Dentistry & Dental Surgery<br>Qualification: BDS<br>Experience: 10+ Years<br><br>Treats: Root Canal, Tooth Extraction, Dental Implants, Cosmetic Dentistry, Gum Care<br><br><a href='doctor-naveen-paul-profile.html'>View Full Profile →</a>"
     },
 
     // Consultation Fees
