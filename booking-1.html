@@ -65,7 +65,8 @@
 			box-shadow: 0 10px 20px rgba(11, 86, 160, 0.35);
 		}
 
-		.day-slot-item.active span {
+		.day-slot-item.active span,
+		.day-slot-item.active small {
 			color: #fff !important;
 		}
 
@@ -102,6 +103,67 @@
 				height: 140px;
 			}
 		}
+
+		/* Day strip: one swipeable row on phones/tablets instead of wrapping/clipping */
+		@media (max-width: 991.98px) {
+			.booking-schedule .day-slot ul {
+				flex-wrap: nowrap;
+				overflow-x: auto;
+				overflow-y: hidden;
+				scroll-snap-type: x proximity;
+				-webkit-overflow-scrolling: touch;
+				scrollbar-width: none;
+				padding: 4px 4px 30px;
+				margin-bottom: -22px;
+			}
+
+			.booking-schedule .day-slot ul::-webkit-scrollbar {
+				display: none;
+			}
+
+			.booking-schedule .day-slot ul li.day-slot-item {
+				flex: 0 0 96px;
+				width: 96px;
+				min-width: 96px;
+				scroll-snap-align: start;
+			}
+		}
+
+		/* Phones: the theme forces a 730px-wide, sideways-scrolling widget built for the
+		   old all-days grid. Only one day's slots show now, so let it fit the screen. */
+		@media (max-width: 575.98px) {
+			.booking-schedule.schedule-widget {
+				overflow-x: visible;
+			}
+
+			.booking-schedule.schedule-widget>div {
+				width: auto;
+			}
+
+			.schedule-cont {
+				padding: 0 1rem 1.25rem;
+			}
+
+			.booking-schedule .time-slot ul li.time-slot-group {
+				flex: 1 0 100%;
+				width: 100%;
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 10px;
+			}
+
+			.booking-schedule .time-slot ul li.time-slot-group .timing {
+				width: 100%;
+				min-width: 0;
+				padding: 0.75rem 0.25rem;
+			}
+
+			.submit-section .submit-btn {
+				display: block;
+				width: 100%;
+				text-align: center;
+			}
+		}
 	</style>
 
 </head>
@@ -110,15 +172,6 @@
 
 	<!-- Main Wrapper -->
 	<div class="main-wrapper">
-
-		<div class="header-theme header-theme-two">
-			<button type="button" id="dark-mode-toggle" class="theme-toggle moon">
-				<i class="isax isax-moon5"></i>
-			</button>
-			<button type="button" id="light-mode-toggle" class="theme-toggle sun">
-				<i class="isax isax-sun-15"></i>
-			</button>
-		</div>
 
 		<!-- Header -->
 		<header class="header header-default">
@@ -343,11 +396,6 @@
 										<!-- Day Slot -->
 										<div class="day-slot">
 											<ul>
-												<li class="left-arrow">
-													<a href="javascript:void(0)">
-														<i class="fa fa-chevron-left"></i>
-													</a>
-												</li>
 												<li class="day-slot-item">
 													<span>Mon</span>
 													<span class="slot-date">11 Nov <small
@@ -382,11 +430,6 @@
 													<span>Sun</span>
 													<span class="slot-date">17 Nov <small
 															class="slot-year">2023</small></span>
-												</li>
-												<li class="right-arrow">
-													<a href="javascript:void(0)">
-														<i class="fa fa-chevron-right"></i>
-													</a>
 												</li>
 											</ul>
 										</div>
@@ -750,6 +793,7 @@
 		(function () {
 			const dayItems = document.querySelectorAll('.day-slot-item');
 			const timeGroups = document.querySelectorAll('.time-slot-group');
+			const strip = document.querySelector('.day-slot ul');
 			const summaryDate = document.getElementById('booking-date-summary');
 			const summaryDay = document.getElementById('booking-day-summary');
 			const today = new Date();
@@ -775,7 +819,13 @@
 					dateEl.firstChild.textContent = date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }) + ' ';
 					yearEl.textContent = date.getFullYear();
 				}
-				item.addEventListener('click', () => selectDay(index));
+				item.addEventListener('click', () => {
+					selectDay(index);
+					if (strip && strip.scrollWidth > strip.clientWidth) {
+						const left = item.getBoundingClientRect().left - strip.getBoundingClientRect().left + strip.scrollLeft;
+						strip.scrollTo({ left: left - (strip.clientWidth - item.offsetWidth) / 2, behavior: 'smooth' });
+					}
+				});
 			});
 
 			selectDay(0);
