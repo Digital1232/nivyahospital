@@ -272,8 +272,8 @@
 						</div>
 						<div class="row">
 							<div class="col-12 col-sm-4 col-md-6">
-								<h4 class="mb-1">11 November 2023</h4>
-								<p class="text-muted">Monday</p>
+								<h4 class="mb-1" id="booking-date-summary">11 November 2023</h4>
+								<p class="text-muted" id="booking-day-summary">Monday</p>
 							</div>
 							<div class="col-12 col-sm-8 col-md-6 text-sm-end">
 								<div class="bookingrange btn btn-white btn-sm mb-3">
@@ -299,37 +299,37 @@
 														<i class="fa fa-chevron-left"></i>
 													</a>
 												</li>
-												<li>
+												<li class="day-slot-item">
 													<span>Mon</span>
 													<span class="slot-date">11 Nov <small
 															class="slot-year">2023</small></span>
 												</li>
-												<li>
+												<li class="day-slot-item">
 													<span>Tue</span>
 													<span class="slot-date">12 Nov <small
 															class="slot-year">2023</small></span>
 												</li>
-												<li>
+												<li class="day-slot-item">
 													<span>Wed</span>
 													<span class="slot-date">13 Nov <small
 															class="slot-year">2023</small></span>
 												</li>
-												<li>
+												<li class="day-slot-item">
 													<span>Thu</span>
 													<span class="slot-date">14 Nov <small
 															class="slot-year">2023</small></span>
 												</li>
-												<li>
+												<li class="day-slot-item">
 													<span>Fri</span>
 													<span class="slot-date">15 Nov <small
 															class="slot-year">2023</small></span>
 												</li>
-												<li>
+												<li class="day-slot-item">
 													<span>Sat</span>
 													<span class="slot-date">16 Nov <small
 															class="slot-year">2023</small></span>
 												</li>
-												<li>
+												<li class="day-slot-item">
 													<span>Sun</span>
 													<span class="slot-date">17 Nov <small
 															class="slot-year">2023</small></span>
@@ -404,7 +404,7 @@
 													<a class="timing" href="#">
 														<span>9:00</span> <span>AM</span>
 													</a>
-													<a class="timing selected" href="#">
+													<a class="timing" href="#">
 														<span>10:00</span> <span>AM</span>
 													</a>
 													<a class="timing" href="#">
@@ -696,6 +696,40 @@
 
 	<!-- Custom JS -->
 	<script src="assets/js/script.js" type="434ef7e09eb32505ad26367d-text/javascript"></script>
+
+	<script>
+		(function () {
+			const dayItems = document.querySelectorAll('.day-slot-item');
+			const summaryDate = document.getElementById('booking-date-summary');
+			const summaryDay = document.getElementById('booking-day-summary');
+			const today = new Date();
+
+			dayItems.forEach((item, index) => {
+				const date = new Date(today);
+				date.setDate(today.getDate() + index);
+				const dayName = item.querySelector('span:first-child');
+				const dateEl = item.querySelector('.slot-date');
+				const yearEl = item.querySelector('.slot-year');
+				if (dayName) dayName.textContent = date.toLocaleDateString('en-US', { weekday: 'short' });
+				if (dateEl && yearEl) {
+					dateEl.firstChild.textContent = date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }) + ' ';
+					yearEl.textContent = date.getFullYear();
+				}
+				if (index === 0) {
+					if (summaryDate) summaryDate.textContent = date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+					if (summaryDay) summaryDay.textContent = date.toLocaleDateString('en-US', { weekday: 'long' });
+				}
+			});
+
+			document.querySelectorAll('.time-slot .timing').forEach((slot) => {
+				slot.addEventListener('click', (event) => {
+					event.preventDefault();
+					document.querySelectorAll('.time-slot .timing.selected').forEach((el) => el.classList.remove('selected'));
+					slot.classList.add('selected');
+				});
+			});
+		})();
+	</script>
 
 	<script>
 		(function () {
