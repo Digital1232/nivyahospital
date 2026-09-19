@@ -100,8 +100,8 @@
 
     // Psychiatry
     {
-      patterns: ["psychiatry", "mental", "anxiety", "anxious", "depression", "depressed", "stress", "sleep disorder", "memory", "fishoparnea"],
-      answer: "🧘 <strong>Psychiatry:</strong><br><br>• Anxiety<br>• Depression<br>• Stress Disorders<br>• Sleep Disorders<br>• Fishoparnea<br>• Memory Problems<br><br><a href='psychiatry.html'>Learn More →</a>"
+      patterns: ["psychiatry", "mental", "anxiety", "anxious", "depression", "depressed", "stress", "sleep disorder", "memory", "schizophrenia"],
+      answer: "🧘 <strong>Psychiatry:</strong><br><br>• Anxiety<br>• Depression<br>• Stress Disorders<br>• Sleep Disorders<br>• Schizophrenia<br>• Memory Problems<br><br><a href='psychiatry.html'>Learn More →</a>"
     },
 
     // Location
