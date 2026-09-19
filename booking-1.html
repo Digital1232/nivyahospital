@@ -55,6 +55,21 @@
 	<!-- Main CSS -->
 	<link rel="stylesheet" href="assets/css/style.css">
 
+	<style>
+		.day-slot-item {
+			cursor: pointer;
+		}
+
+		.day-slot-item.active {
+			background-image: var(--primary-gradient);
+			box-shadow: 0 10px 20px rgba(11, 86, 160, 0.35);
+		}
+
+		.day-slot-item.active span {
+			color: #fff !important;
+		}
+	</style>
+
 </head>
 
 <body>
@@ -356,7 +371,7 @@
 										<!-- Time Slot -->
 										<div class="time-slot">
 											<ul class="clearfix">
-												<li>
+												<li class="time-slot-group">
 													<a class="timing" href="#">
 														<span>9:00</span> <span>AM</span>
 													</a>
@@ -367,7 +382,7 @@
 														<span>11:00</span> <span>AM</span>
 													</a>
 												</li>
-												<li>
+												<li class="time-slot-group d-none">
 													<a class="timing" href="#">
 														<span>9:00</span> <span>AM</span>
 													</a>
@@ -378,7 +393,7 @@
 														<span>11:00</span> <span>AM</span>
 													</a>
 												</li>
-												<li>
+												<li class="time-slot-group d-none">
 													<a class="timing" href="#">
 														<span>9:00</span> <span>AM</span>
 													</a>
@@ -389,7 +404,7 @@
 														<span>11:00</span> <span>AM</span>
 													</a>
 												</li>
-												<li>
+												<li class="time-slot-group d-none">
 													<a class="timing" href="#">
 														<span>9:00</span> <span>AM</span>
 													</a>
@@ -400,7 +415,7 @@
 														<span>11:00</span> <span>AM</span>
 													</a>
 												</li>
-												<li>
+												<li class="time-slot-group d-none">
 													<a class="timing" href="#">
 														<span>9:00</span> <span>AM</span>
 													</a>
@@ -411,7 +426,7 @@
 														<span>11:00</span> <span>AM</span>
 													</a>
 												</li>
-												<li>
+												<li class="time-slot-group d-none">
 													<a class="timing" href="#">
 														<span>9:00</span> <span>AM</span>
 													</a>
@@ -422,7 +437,7 @@
 														<span>11:00</span> <span>AM</span>
 													</a>
 												</li>
-												<li>
+												<li class="time-slot-group d-none">
 													<a class="timing" href="#">
 														<span>9:00</span> <span>AM</span>
 													</a>
@@ -700,13 +715,24 @@
 	<script>
 		(function () {
 			const dayItems = document.querySelectorAll('.day-slot-item');
+			const timeGroups = document.querySelectorAll('.time-slot-group');
 			const summaryDate = document.getElementById('booking-date-summary');
 			const summaryDay = document.getElementById('booking-day-summary');
 			const today = new Date();
+			const dates = [];
+
+			const selectDay = (index) => {
+				dayItems.forEach((item, i) => item.classList.toggle('active', i === index));
+				timeGroups.forEach((group, i) => group.classList.toggle('d-none', i !== index));
+				const date = dates[index];
+				if (summaryDate) summaryDate.textContent = date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+				if (summaryDay) summaryDay.textContent = date.toLocaleDateString('en-US', { weekday: 'long' });
+			};
 
 			dayItems.forEach((item, index) => {
 				const date = new Date(today);
 				date.setDate(today.getDate() + index);
+				dates.push(date);
 				const dayName = item.querySelector('span:first-child');
 				const dateEl = item.querySelector('.slot-date');
 				const yearEl = item.querySelector('.slot-year');
@@ -715,11 +741,10 @@
 					dateEl.firstChild.textContent = date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }) + ' ';
 					yearEl.textContent = date.getFullYear();
 				}
-				if (index === 0) {
-					if (summaryDate) summaryDate.textContent = date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
-					if (summaryDay) summaryDay.textContent = date.toLocaleDateString('en-US', { weekday: 'long' });
-				}
+				item.addEventListener('click', () => selectDay(index));
 			});
+
+			selectDay(0);
 
 			document.querySelectorAll('.time-slot .timing').forEach((slot) => {
 				slot.addEventListener('click', (event) => {
