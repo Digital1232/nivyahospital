@@ -88,7 +88,7 @@
 					</div>
 					<div class="main-menu-wrapper">
 						<div class="menu-header">
-							<a href="index-2.html" class="menu-logo">
+							<a href="index.html" class="menu-logo">
 								<img src="assets/img/logo-02.svg" class="img-fluid" alt="Logo">
 							</a>
 							<a id="menu_close" class="menu-close" href="javascript:void(0);">
@@ -255,25 +255,23 @@
 						<div class="card">
 							<div class="card-body">
 								<div class="booking-doc-info">
-									<a href="doctor-profile.html" class="booking-doc-img">
-										<img id="booking-doctor-avatar" src="assets/img/doctors/doctor-thumb-02.jpg"
+									<div class="booking-doc-img">
+										<img id="booking-doctor-avatar" src="assets/img/doctors/dr-nivya-square.jpg"
 											alt="Doctor Image">
-									</a>
+									</div>
 									<div class="booking-info">
-										<h4><a href="doctor-profile.html" id="booking-doctor-name">Dr. Darren Elder</a>
-										</h4>
+										<h4 id="booking-doctor-name">Nivya Hospital</h4>
 										<div class="rating">
 											<i class="fas fa-star filled"></i>
 											<i class="fas fa-star filled"></i>
 											<i class="fas fa-star filled"></i>
 											<i class="fas fa-star filled"></i>
-											<i class="fas fa-star"></i>
-											<span class="d-inline-block average-rating">35</span>
+											<i class="fas fa-star filled"></i>
 										</div>
 										<p id="booking-doctor-specialty" class="text-indigo mb-1 fw-medium">
-											Pulmonologist</p>
+											Select a doctor to book an appointment</p>
 										<p class="text-muted mb-0"><i class="fas fa-map-marker-alt"></i> <span
-												id="booking-doctor-location">Newyork, USA</span></p>
+												id="booking-doctor-location">Vannarpettai, Tirunelveli</span></p>
 									</div>
 								</div>
 							</div>
@@ -455,7 +453,7 @@
 
 						<!-- Submit Section -->
 						<div class="submit-section proceed-btn text-end mb-0">
-							<a href="checkout.html" class="btn btn-primary submit-btn">Proceed to Pay</a>
+							<a href="tel:+919566443300" class="btn btn-primary submit-btn">Call to Confirm Booking</a>
 						</div>
 						<!-- /Submit Section -->
 
@@ -724,10 +722,10 @@
 					return fallback;
 				}
 			};
-			const doctorName = decode(params.get('name'), 'Dr. Darren Elder');
-			const specialty = decode(params.get('specialty'), 'Pulmonologist');
-			const location = decode(params.get('location'), 'Newyork, USA');
-			const image = decode(params.get('img'), 'assets/img/doctors/doctor-thumb-02.jpg');
+			const doctorName = decode(params.get('name'), 'Nivya Hospital');
+			const specialty = decode(params.get('specialty'), 'Select a doctor to book an appointment');
+			const location = decode(params.get('location'), 'Vannarpettai, Tirunelveli');
+			const image = decode(params.get('img'), 'assets/img/doctors/dr-nivya-square.jpg');
 			const nameEl = document.getElementById('booking-doctor-name');
 			const specialtyEl = document.getElementById('booking-doctor-specialty');
 			const locationEl = document.getElementById('booking-doctor-location');
