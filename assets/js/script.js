@@ -132,7 +132,7 @@ Version      : 1.3
 
 	$('body').append('<div class="sidebar-overlay"></div>');
 	$(document).on('click', '#mobile_btn', function () {
-		$('main-wrapper').toggleClass('slide-nav');
+		$('.main-wrapper').toggleClass('slide-nav');
 		$('.sidebar-overlay').toggleClass('opened');
 		$('html').toggleClass('menu-opened');
 		return false;
@@ -141,13 +141,13 @@ Version      : 1.3
 	$(document).on('click', '.sidebar-overlay', function () {
 		$('html').removeClass('menu-opened');
 		$(this).removeClass('opened');
-		$('main-wrapper').removeClass('slide-nav');
+		$('.main-wrapper').removeClass('slide-nav');
 	});
 
 	$(document).on('click', '#menu_close', function () {
 		$('html').removeClass('menu-opened');
 		$('.sidebar-overlay').removeClass('opened');
-		$('main-wrapper').removeClass('slide-nav');
+		$('.main-wrapper').removeClass('slide-nav');
 	});
 
 	// Tooltip
