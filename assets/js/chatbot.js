@@ -7,32 +7,34 @@
   const KB = [
     // Greetings
     {
+      low: true,
       patterns: ["hello", "hi", "vanakkam", "hey", "good morning", "good evening", "good afternoon", "start", "help"],
       answer: "👋 Hello! Welcome to <strong>Nivya Respiratory & Multispeciality Hospital</strong>.<br><br>How can I help you today? You can ask me about:<br>• 🏥 Our Doctors<br>• 🩺 Specialities<br>• 💰 Consultation Fees<br>• 📅 Appointments<br>• 📍 Location & Timings<br>• 📞 Contact"
     },
 
     // Doctors
     {
+      weight: -4,
       patterns: ["doctor", "doctors", "physician", "specialist", "dr", "who are the doctors", "available doctors"],
       answer: "👨‍⚕️ Our Doctors:<br><br><strong>1. Dr. P. Manimozhian</strong><br>MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Consultant Pulmonologist, Bronchoscopist, Allergy & Sleep Physician<br><br><strong>2. Dr. M. Nivya</strong><br>MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Consultant Diabetologist & General Physician<br><br><strong>3. Dr. M.A. Mathan</strong><br>MBBS, MEM (Emergency & Critical Care Medicine)<br>Emergency Physician & Intensivist<br><br><strong>4. Dr. Naveen Paul Singh</strong><br>BDS<br>Dental Surgeon & Consultant Dentist"
     },
 
     // Manimozhian
     {
-      patterns: ["manimozhian", "pulmonologist", "lung", "chest", "pulmonology", "bronchoscopy", "allergy", "sleep", "asthma", "copd"],
+      patterns: ["manimozhian", "pulmonologist", "lung", "chest", "pulmonology", "bronchoscopy", "allergy", "sleep", "asthma", "copd", "cough", "breath", "breathing", "breathlessness", "wheezing"],
       answer: "🫁 <strong>Dr. P. Manimozhian</strong><br>Specialisation: Pulmonology, Bronchoscopy, Allergy & Sleep Medicine<br>Qualification: MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Experience: 21+ Years<br><br>Treats: Asthma, COPD, Lung Infections, Sleep Apnea, Allergies<br><br><a href='doctor-manimozhiyan-profile.html'>View Full Profile →</a>"
     },
 
     // Nivya
     {
-      patterns: ["nivya", "diabetes", "diabetologist", "general physician", "sugar", "general medicine", "cardiology"],
+      patterns: ["nivya", "diabetes", "diabetologist", "general physician", "sugar", "general medicine", "cardiology", "fever", "blood pressure", "hypertension"],
       answer: "👩‍⚕️ <strong>Dr. M. Nivya</strong><br>Specialisation: Diabetology & General Medicine<br>Qualification: MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Experience: 15+ Years<br><br>Treats: Diabetes, General Health, Cardiology Consultations<br><br><a href='doctor-nivya-profile.html'>View Full Profile →</a>"
     },
 
     // Mathan
     {
-      patterns: ["mathan", "emergency", "critical care", "icu", "intensivist", "trauma", "accident"],
-      answer: "🚨 <strong>Dr. M.A. Mathan</strong><br>Specialisation: Emergency & Critical Care Medicine<br>Qualification: MBBS, MEM (Emergency & Critical Care Medicine)<br>Experience: 10+ Years<br><br>Handles: Emergency Cases, ICU Management, Trauma, Acute Medical Emergencies<br><br><a href='doctor-mathan-profile.html'>View Full Profile →</a>"
+      patterns: ["mathan", "emergency", "emergencies", "ambulance", "critical care", "icu", "intensivist", "trauma", "accident"],
+      answer: "🚨 <strong>Dr. M.A. Mathan</strong><br>Specialisation: Emergency & Critical Care Medicine<br>Qualification: MBBS, MEM (Emergency & Critical Care Medicine)<br>Experience: 10+ Years<br><br>Handles: Emergency Cases, ICU Management, Trauma, Acute Medical Emergencies<br><br>🚑 <strong>24x7 Emergency &amp; Ambulance:</strong> <a href='tel:+919566443300'>📞 +91 95664 43300</a><br><br><a href='doctor-mathan-profile.html'>View Full Profile →</a>"
     },
 
     // Naveen Paul / Dentist
@@ -49,14 +51,21 @@
 
     // Appointment / Booking
     {
-      patterns: ["appointment", "book", "booking", "schedule", "visit", "when", "slot", "timing"],
-      answer: "📅 <strong>Book an Appointment:</strong><br><br>You can book directly through our website:<br><a href='booking-1.html'>👉 Book Now</a><br><br>Or call us:<br>📞 <a href='tel:+914622332222'>+91 462 233 2222</a><br><br>⏰ OPD Timings:<br>Mon–Sat: 9:00 AM – 7:00 PM<br>Sunday: Emergency Only"
+      patterns: ["appointment", "book", "booking", "schedule", "visit", "when", "slot"],
+      answer: "📅 <strong>Book an Appointment:</strong><br><br>Choose your doctor on our website:<br><a href='search.html'>👉 Choose Doctor & Book</a><br><br>Bookings are confirmed by phone:<br>📞 <a href='tel:+919566443300'>+91 95664 43300</a><br><br>⏰ OPD Timings:<br>Mon–Sat: 9:00 AM – 7:00 PM<br>Sunday: Emergency Only"
     },
 
     // Specialities
     {
+      weight: -4,
       patterns: ["speciality", "specialities", "department", "departments", "services", "treatment", "what do you treat"],
-      answer: "🏥 <strong>Our Specialities:</strong><br><br>🫁 Pulmonology<br>🚨 Emergency & Critical Care<br>💊 General Medicine<br>❤️ Cardiology<br>🦴 Orthopaedics<br>🦷 Dentistry<br>🔪 General Surgery<br>🧠 Neurology<br>🫃 Gastroenterology<br>🔬 Radiology<br>🎗️ Oncology<br>🧘 Psychiatry<br>🦷 Dentistry<br><br><a href='index.html#specialities'>View All Specialities →</a>"
+      answer: "🏥 <strong>Our Specialities:</strong><br><br>🫁 Pulmonology<br>🚨 Emergency & Critical Care<br>💊 General Medicine<br>❤️ Cardiology<br>🦴 Orthopaedics<br>🦷 Dentistry<br>🔪 General Surgery<br>🧠 Neurology<br>🫃 Gastroenterology<br>🔬 Radiology<br>🎗️ Oncology<br>🧘 Psychiatry<br><br><a href='index.html#specialities'>View All Specialities →</a>"
+    },
+
+    // Orthopaedics
+    {
+      patterns: ["orthopaedics", "orthopaedic", "orthopedics", "orthopedic", "ortho", "bone", "fracture", "joint", "arthritis", "spine", "knee", "back pain", "sports injury"],
+      answer: "🦴 <strong>Orthopaedics:</strong><br><br>• Fractures & Injuries<br>• Arthritis<br>• Joint Pain<br>• Sports Injuries<br>• Spine Disorders<br><br><a href='orthopaedics.html'>Learn More →</a>"
     },
 
     // General Surgery
@@ -91,26 +100,26 @@
 
     // Psychiatry
     {
-      patterns: ["psychiatry", "mental", "anxiety", "depression", "stress", "sleep disorder", "memory", "fishoparnea"],
+      patterns: ["psychiatry", "mental", "anxiety", "anxious", "depression", "depressed", "stress", "sleep disorder", "memory", "fishoparnea"],
       answer: "🧘 <strong>Psychiatry:</strong><br><br>• Anxiety<br>• Depression<br>• Stress Disorders<br>• Sleep Disorders<br>• Fishoparnea<br>• Memory Problems<br><br><a href='psychiatry.html'>Learn More →</a>"
     },
 
     // Location
     {
       patterns: ["location", "address", "where", "directions", "map", "tirunelveli", "how to reach", "vannarpettai"],
-      answer: "📍 <strong>Our Location:</strong><br><br>Nivya Respiratory & Multispeciality Hospitals<br>Vannarpettai, Tirunelveli – 627 003<br>Tamil Nadu, India<br><br><a href='https://maps.google.com/?q=Nivya+Respiratory+and+Multispeciality+Hospitals' target='_blank'>📌 Open in Google Maps</a>"
+      answer: "📍 <strong>Our Location:</strong><br><br>Nivya Respiratory & Multispeciality Hospitals<br>110-F/5 Barani Nagar, Vannarpettai,<br>Tirunelveli, Tamil Nadu 627003<br><br><a href='https://www.google.com/maps/place/Nivya+Respiratory+and+Multispeciality+Hospitals/@8.730369,77.722786,15z/data=!4m6!3m5!1s0x3b0411f348002ee9:0x5061835044f6fa5d!8m2!3d8.7303693!4d77.7227857!16s%2Fg%2F1264bfpsk' target='_blank' rel='noopener'>📌 Open in Google Maps</a>"
     },
 
     // Contact
     {
       patterns: ["contact", "phone", "call", "number", "email", "reach", "whatsapp"],
-      answer: "📞 <strong>Contact Us:</strong><br><br>Phone: <a href='tel:+914622332222'>+91 462 233 2222</a><br>Email: <a href='mailto:info@nivyahospitals.com'>info@nivyahospitals.com</a><br><br>Or visit us at:<br>📍 Vannarpettai, Tirunelveli<br><br><a href='contact-us.html'>Contact Page →</a>"
+      answer: "📞 <strong>Contact Us:</strong><br><br>Phone: <a href='tel:+919566443300'>+91 95664 43300</a><br>Email: <a href='mailto:info@nivyahospitals.com'>info@nivyahospitals.com</a><br><br>Or visit us at:<br>📍 Vannarpettai, Tirunelveli<br><br><a href='contact-us.html'>Contact Page →</a>"
     },
 
     // Timings
     {
       patterns: ["timing", "timings", "hours", "open", "time", "opd", "working hours", "sunday", "weekend"],
-      answer: "⏰ <strong>Hospital Timings:</strong><br><br>🗓️ Monday – Saturday: <strong>9:00 AM – 7:00 PM</strong><br>🚨 Sunday: <strong>Emergency Services Only</strong><br><br>For appointments: <a href='booking-1.html'>Book Here →</a>"
+      answer: "⏰ <strong>Hospital Timings:</strong><br><br>🗓️ Monday – Saturday: <strong>9:00 AM – 7:00 PM</strong><br>🚨 Sunday: <strong>Emergency Services Only</strong><br><br>For appointments: <a href='search.html'>Book Here →</a>"
     },
 
     // About
@@ -133,22 +142,45 @@
 
     // Thank you / bye
     {
+      low: true,
       patterns: ["thank", "thanks", "thank you", "bye", "goodbye", "ok thanks", "great", "ok"],
-      answer: "😊 You're welcome! Feel free to ask anything else.<br><br>For appointments: <a href='booking-1.html'>📅 Book Now</a><br>For emergencies: <a href='tel:+914622332222'>📞 Call Us</a>"
+      answer: "😊 You're welcome! Feel free to ask anything else.<br><br>For appointments: <a href='search.html'>📅 Book Now</a><br>For emergencies: <a href='tel:+919566443300'>📞 Call Us</a>"
     }
   ];
 
-  /* ── Match user input to KB ── */
+  /* ── Match user input to KB ──
+     Whole-word matching (so "dr" doesn't fire inside "address", "hi" inside "which",
+     "fee" inside "feel"), with an optional plural/-ed/-ing ending. The most specific
+     (longest) keyword wins; `weight` lowers generic entries, `low` entries
+     (greetings / thanks) only answer when nothing else matched. */
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  KB.forEach((entry) => {
+    entry.matchers = entry.patterns.map((p) => ({
+      len: p.length,
+      re: new RegExp("\\b" + escapeRe(p) + "(?:s|es|ed|ing)?\\b", "i")
+    }));
+  });
+
+  const FALLBACK = "🤔 I'm not sure about that. Please try asking about:<br><br>• Doctors • Fees • Appointments<br>• Specialities • Location • Timings<br><br>Or call us directly: <a href='tel:+919566443300'>📞 +91 95664 43300</a>";
+
   function getReply(input) {
     const text = input.toLowerCase().trim();
-    for (const entry of KB) {
-      for (const pattern of entry.patterns) {
-        if (text.includes(pattern)) {
-          return entry.answer;
+    for (const lowPass of [false, true]) {
+      let best = null;
+      let bestScore = -Infinity;
+      for (const entry of KB) {
+        if (Boolean(entry.low) !== lowPass) continue;
+        for (const m of entry.matchers) {
+          const score = m.len + (entry.weight || 0);
+          if (score > bestScore && m.re.test(text)) {
+            best = entry;
+            bestScore = score;
+          }
         }
       }
+      if (best) return best.answer;
     }
-    return "🤔 I'm not sure about that. Please try asking about:<br><br>• Doctors • Fees • Appointments<br>• Specialities • Location • Timings<br><br>Or call us directly: <a href='tel:+914622332222'>📞 +91 462 233 2222</a>";
+    return FALLBACK;
   }
 
   /* ── Build UI ── */
@@ -197,7 +229,10 @@
       bottom: 100px;
       right: 28px;
       width: 360px;
+      max-width: calc(100vw - 24px);
       max-height: 520px;
+      max-height: min(520px, calc(100vh - 120px));
+      max-height: min(520px, calc(100dvh - 120px));
       border-radius: 16px;
       background: #fff;
       box-shadow: 0 8px 40px rgba(0,0,0,0.18);
@@ -208,12 +243,14 @@
       font-family: 'Segoe UI', sans-serif;
       transform: scale(0.85) translateY(20px);
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
       transition: all 0.25s cubic-bezier(.4,0,.2,1);
     }
     #nivya-chat-window.open {
       transform: scale(1) translateY(0);
       opacity: 1;
+      visibility: visible;
       pointer-events: all;
     }
 
@@ -339,7 +376,11 @@
     #nivya-chat-send:hover { transform: scale(1.08); }
 
     @media (max-width: 420px) {
-      #nivya-chat-window { width: calc(100vw - 24px); right: 12px; bottom: 88px; }
+      #nivya-chat-window {
+        width: calc(100vw - 24px); right: 12px; bottom: 88px;
+        max-height: calc(100vh - 108px);
+        max-height: calc(100dvh - 108px);
+      }
       #nivya-chat-btn { right: 16px; bottom: 20px; }
     }
   `;
@@ -348,35 +389,35 @@
   /* ── HTML ── */
   const wrap = document.createElement("div");
   wrap.innerHTML = `
-    <button id="nivya-chat-btn" title="Chat with us">
-      💬
-      <span id="nivya-chat-badge">1</span>
+    <button id="nivya-chat-btn" type="button" title="Chat with us" aria-label="Open chat" aria-expanded="false" aria-controls="nivya-chat-window">
+      <span id="nivya-chat-icon" aria-hidden="true">💬</span>
+      <span id="nivya-chat-badge" aria-hidden="true">1</span>
     </button>
 
-    <div id="nivya-chat-window">
+    <div id="nivya-chat-window" role="dialog" aria-label="Nivya Hospital Assistant">
       <div id="nivya-chat-header">
         <div class="avatar">🏥</div>
         <div class="info">
           <strong>Nivya Hospital Assistant</strong>
           <span>🟢 Online – Here to help</span>
         </div>
-        <button id="nivya-chat-close" title="Close">✕</button>
+        <button id="nivya-chat-close" type="button" title="Close" aria-label="Close chat">✕</button>
       </div>
 
-      <div id="nivya-chat-messages"></div>
+      <div id="nivya-chat-messages" aria-live="polite"></div>
 
       <div id="nivya-chat-quick">
-        <button class="ncm-quick-btn">📅 Book Appointment</button>
-        <button class="ncm-quick-btn">💰 Fees</button>
-        <button class="ncm-quick-btn">👨‍⚕️ Doctors</button>
-        <button class="ncm-quick-btn">🏥 Specialities</button>
-        <button class="ncm-quick-btn">📍 Location</button>
-        <button class="ncm-quick-btn">📞 Contact</button>
+        <button type="button" class="ncm-quick-btn">📅 Book Appointment</button>
+        <button type="button" class="ncm-quick-btn">💰 Fees</button>
+        <button type="button" class="ncm-quick-btn">👨‍⚕️ Doctors</button>
+        <button type="button" class="ncm-quick-btn">🏥 Specialities</button>
+        <button type="button" class="ncm-quick-btn">📍 Location</button>
+        <button type="button" class="ncm-quick-btn">📞 Contact</button>
       </div>
 
       <div id="nivya-chat-input-row">
-        <input id="nivya-chat-input" type="text" placeholder="Type your question…" autocomplete="off" />
-        <button id="nivya-chat-send">➤</button>
+        <input id="nivya-chat-input" type="text" placeholder="Type your question…" autocomplete="off" maxlength="200" aria-label="Type your question" />
+        <button id="nivya-chat-send" type="button" aria-label="Send message">➤</button>
       </div>
     </div>
   `;
@@ -390,20 +431,26 @@
   const input    = document.getElementById("nivya-chat-input");
   const sendBtn  = document.getElementById("nivya-chat-send");
   const badge    = document.getElementById("nivya-chat-badge");
+  const icon     = document.getElementById("nivya-chat-icon");
   const quickBar = document.getElementById("nivya-chat-quick");
 
   let isOpen = false;
+  let seen = false;
 
   function toggleChat() {
     isOpen = !isOpen;
     win.classList.toggle("open", isOpen);
-    btn.textContent = isOpen ? "✕" : "💬";
+    icon.textContent = isOpen ? "✕" : "💬";
+    btn.setAttribute("aria-expanded", String(isOpen));
+    btn.setAttribute("aria-label", isOpen ? "Close chat" : "Open chat");
     if (isOpen) {
+      seen = true;
       badge.style.display = "none";
       if (msgs.children.length === 0) addBotMsg(KB[0].answer, 400);
-      setTimeout(() => input.focus(), 300);
-    } else {
-      btn.innerHTML = '💬<span id="nivya-chat-badge" style="display:none">1</span>';
+      // Don't auto-focus on touch screens: it pops the keyboard over the chat.
+      if (!window.matchMedia("(pointer: coarse)").matches) {
+        setTimeout(() => input.focus(), 300);
+      }
     }
   }
 
@@ -463,9 +510,16 @@
     }
   });
 
-  // Show badge after 3s as a prompt
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isOpen) {
+      toggleChat();
+      btn.focus();
+    }
+  });
+
+  // Show badge after 3s as a prompt (only if the visitor hasn't opened the chat yet)
   setTimeout(() => {
-    if (!isOpen) {
+    if (!isOpen && !seen) {
       badge.style.display = "flex";
     }
   }, 3000);
