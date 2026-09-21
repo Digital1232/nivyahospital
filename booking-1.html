@@ -77,12 +77,41 @@
 			}
 		}
 
-		/* Time slots (theme's .visits pills) */
+		/* Time slots (theme's .visits pills), with breathing room between them */
+		.booking-wizard-slots .token-slot {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.booking-wizard-slots .visits {
+			margin: 0 !important;
+		}
+
 		.booking-wizard-slots .visits span.visit-rsn {
-			min-width: 84px;
-			height: 30px;
-			border-radius: 4px;
+			min-width: 90px;
+			height: 34px;
+			border-radius: 6px;
 			cursor: pointer;
+		}
+
+		/* Doctor photo: bigger, and a face-centred crop (set from the catalog) */
+		.booking-widget .booking-header .avatar.avatar-xxxl {
+			width: 132px;
+			height: 132px;
+		}
+
+		.booking-widget .booking-header .avatar.avatar-xxxl img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		@media (max-width: 575.98px) {
+			.booking-widget .booking-header .avatar.avatar-xxxl {
+				width: 108px;
+				height: 108px;
+			}
 		}
 
 		.booking-wizard-slots .visits input:disabled~.visit-rsn {
@@ -1122,6 +1151,10 @@
 				} catch (e) { /* handled below */ }
 				info = catalog && Object.prototype.hasOwnProperty.call(catalog.doctors, doctor) ? catalog.doctors[doctor] : null;
 				if (!info) return applyMode(false, false);
+				if (info.avatar) { // face-centred crop instead of the full desk photo from the URL
+					const photo = $('booking-doctor-avatar');
+					if (photo) photo.src = info.avatar;
+				}
 				let enabled = false;
 				if (!demo) {
 					const ctl = new AbortController();
