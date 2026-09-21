@@ -46,8 +46,8 @@
 	<!-- Feathericon CSS -->
 	<link rel="stylesheet" href="assets/css/feather.css">
 
-	<!-- Daterangepikcer CSS -->
-	<link rel="stylesheet" href="assets/plugins/daterangepicker/daterangepicker.css">
+	<!-- Calendar (date picker) CSS -->
+	<link rel="stylesheet" href="assets/css/bootstrap-datetimepicker.min.css">
 
 	<!-- Fancybox CSS -->
 	<link rel="stylesheet" href="assets/plugins/fancybox/jquery.fancybox.min.css">
@@ -56,112 +56,233 @@
 	<link rel="stylesheet" href="assets/css/style.css">
 
 	<style>
-		.day-slot-item {
-			cursor: pointer;
+		/* ---- Online booking + payment wizard ---- */
+		[hidden] {
+			display: none !important;
 		}
 
-		.day-slot-item.active {
-			background-image: var(--primary-gradient);
-			box-shadow: 0 10px 20px rgba(11, 86, 160, 0.35);
+		/* Hidden until the page knows whether online payment is available */
+		.is-loading {
+			visibility: hidden;
 		}
 
-		.day-slot-item.active span,
-		.day-slot-item.active small {
-			color: #fff !important;
-		}
-
-		.booking-doc-info {
-			flex-wrap: wrap;
-		}
-
-		.booking-doc-info .booking-doc-img {
-			width: 260px;
-			margin-right: 24px;
-		}
-
-		.booking-doc-info .booking-doc-img img {
-			width: 260px;
-			height: 260px;
-			object-fit: cover;
-			border-radius: 12px;
+		/* Header is logo-only and there is no breadcrumb bar, so give the wizard room */
+		.content.doctor-content {
+			padding-top: 130px;
 		}
 
 		@media (max-width: 767.98px) {
-
-			.booking-doc-info .booking-doc-img,
-			.booking-doc-info .booking-doc-img img {
-				width: 160px;
-				height: 160px;
+			.content.doctor-content {
+				padding-top: 100px;
 			}
 		}
 
+		/* Time slots (theme's .visits pills) */
+		.booking-wizard-slots .visits span.visit-rsn {
+			min-width: 84px;
+			height: 30px;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+
+		.booking-wizard-slots .visits input:disabled~.visit-rsn {
+			opacity: 0.4;
+			text-decoration: line-through;
+			cursor: not-allowed;
+		}
+
+		.booking-wizard-slots .visits input:focus-visible~.visit-rsn {
+			outline: 2px solid var(--primary, #0b56a0);
+			outline-offset: 2px;
+		}
+
+		.consult-input {
+			position: absolute;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.consult-option {
+			display: block;
+			position: relative;
+			width: 100%;
+			border: 1px solid var(--gray-200, #e5e7eb);
+			border-radius: 10px;
+			padding: 16px 48px 16px 16px;
+			margin-bottom: 16px;
+			cursor: pointer;
+		}
+
+		.consult-input:checked+.consult-option {
+			border-color: var(--primary, #0b56a0);
+			background: var(--light-200, #f1f6fc);
+		}
+
+		.consult-input:checked+.consult-option::after {
+			content: "00c";
+			font-family: "Font Awesome 6 Free";
+			font-weight: 900;
+			position: absolute;
+			right: 16px;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 22px;
+			height: 22px;
+			border-radius: 4px;
+			background: var(--primary, #0b56a0);
+			color: #fff;
+			font-size: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.consult-input:focus-visible+.consult-option {
+			outline: 2px solid var(--primary, #0b56a0);
+			outline-offset: 2px;
+		}
+
+		.field-error {
+			display: none;
+			color: #dc3545;
+			font-size: 13px;
+			margin-top: 4px;
+		}
+
+		.field-wrap.has-error .field-error {
+			display: block;
+		}
+
+		.field-wrap.has-error .form-control,
+		.field-wrap.has-error .form-select {
+			border-color: #dc3545;
+		}
+
+		.summary-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 16px;
+			padding: 8px 0;
+			font-size: 14px;
+		}
+
+		.summary-row span:first-child {
+			color: #6b7280;
+		}
+
+		.summary-row span:last-child {
+			text-align: right;
+			font-weight: 500;
+		}
+
+		.summary-total {
+			border-top: 1px dashed #d1d5db;
+			margin-top: 8px;
+			padding-top: 12px;
+			font-size: 18px;
+			font-weight: 600;
+		}
+
+		.pay-total {
+			background: var(--primary, #0b56a0);
+			color: #fff;
+			border-radius: 6px;
+			padding: 14px 16px;
+			font-size: 18px;
+			font-weight: 600;
+		}
+
+		.pay-method {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 6px 12px;
+			border: 1px solid #e5e7eb;
+			border-radius: 999px;
+			font-size: 13px;
+			margin: 0 6px 6px 0;
+		}
+
+		.booking-success-icon {
+			width: 72px;
+			height: 72px;
+			border-radius: 50%;
+			background: #dcfce7;
+			color: #16a34a;
+			font-size: 32px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.booking-id {
+			display: inline-block;
+			padding: 8px 18px;
+			border: 1px dashed var(--primary, #0b56a0);
+			border-radius: 8px;
+			font-size: 20px;
+			font-weight: 600;
+			letter-spacing: 1px;
+			color: var(--primary, #0b56a0);
+		}
+
+		/* scrollIntoView on step change must land below the sticky header */
+		.booking-wizard {
+			scroll-margin-top: 110px;
+		}
+
+		/* Phones: keep the step tracker to one compact row (theme stacks it vertically) */
 		@media (max-width: 575.98px) {
-
-			.booking-doc-info .booking-doc-img,
-			.booking-doc-info .booking-doc-img img {
-				width: 140px;
-				height: 140px;
-			}
-		}
-
-		/* Day strip: one swipeable row on phones/tablets instead of wrapping/clipping */
-		@media (max-width: 991.98px) {
-			.booking-schedule .day-slot ul {
-				flex-wrap: nowrap;
-				overflow-x: auto;
-				overflow-y: hidden;
-				scroll-snap-type: x proximity;
-				-webkit-overflow-scrolling: touch;
-				scrollbar-width: none;
-				padding: 4px 4px 30px;
-				margin-bottom: -22px;
+			.booking-wizard .form-wizard-steps {
+				display: flex !important;
+				justify-content: space-between;
+				gap: 4px;
+				padding: 0;
+				list-style: none;
 			}
 
-			.booking-schedule .day-slot ul::-webkit-scrollbar {
+			.booking-wizard .form-wizard-steps li {
+				flex: 1;
+				margin: 0 0 8px;
+				min-width: 0;
+			}
+
+			.booking-wizard .form-wizard-steps li:not(.progress-active) .profile-step h6 {
 				display: none;
 			}
 
-			.booking-schedule .day-slot ul li.day-slot-item {
-				flex: 0 0 96px;
-				width: 96px;
-				min-width: 96px;
-				scroll-snap-align: start;
+			.booking-wizard .form-wizard-steps li .profile-step h6 {
+				font-size: 12px;
+				text-align: center;
 			}
 		}
 
-		/* Phones: the theme forces a 730px-wide, sideways-scrolling widget built for the
-		   old all-days grid. Only one day's slots show now, so let it fit the screen. */
+		/* Phones: footer buttons stack full width, primary first, clear of the chat bubble */
 		@media (max-width: 575.98px) {
-			.booking-schedule.schedule-widget {
-				overflow-x: visible;
+			.multistep-form .card-footer>div {
+				flex-direction: column-reverse;
+				align-items: stretch !important;
+				padding-right: 56px;
 			}
 
-			.booking-schedule.schedule-widget>div {
-				width: auto;
-			}
-
-			.schedule-cont {
-				padding: 0 1rem 1.25rem;
-			}
-
-			.booking-schedule .time-slot ul li.time-slot-group {
-				flex: 1 0 100%;
+			.multistep-form .card-footer .btn {
 				width: 100%;
-				display: grid;
-				grid-template-columns: repeat(3, 1fr);
-				gap: 10px;
+				justify-content: center;
 			}
 
-			.booking-schedule .time-slot ul li.time-slot-group .timing {
-				width: 100%;
-				min-width: 0;
-				padding: 0.75rem 0.25rem;
+			.multistep-form .card-footer>div>.d-flex {
+				flex-direction: column-reverse;
 			}
+		}
 
-			.submit-section .submit-btn {
-				display: block;
-				width: 100%;
-				text-align: center;
+		@media print {
+
+			header,
+			footer,
+			.breadcrumb-bar,
+			.booking-wizard,
+			.no-print {
+				display: none !important;
 			}
 		}
 	</style>
@@ -173,382 +294,339 @@
 	<!-- Main Wrapper -->
 	<div class="main-wrapper">
 
-		<!-- Header -->
+		<!-- Header (logo only, checkout-style) -->
 		<header class="header header-default">
 			<div class="container">
 				<nav class="navbar navbar-expand-lg header-nav">
 					<div class="navbar-header">
-						<a id="mobile_btn" href="javascript:void(0);">
-							<i class="fa-solid fa-bars"></i>
-						</a>
 						<a href="index.html" class="navbar-brand logo">
-							<img src="assets/img/logo copy.png" class="img-fluid normal-logo" alt="Logo">
+							<img src="assets/img/logo copy.png" class="img-fluid normal-logo" alt="Nivya Hospitals">
 						</a>
 					</div>
-					<div class="main-menu-wrapper">
-						<div class="menu-header">
-							<a href="index.html" class="menu-logo">
-								<img src="assets/img/logo copy.png" class="img-fluid" alt="Logo">
-							</a>
-							<a id="menu_close" class="menu-close" href="javascript:void(0);">
-								<i class="fas fa-times"></i>
-							</a>
-						</div>
-						<ul class="main-nav">
-							<li class="has-submenu ">
-								<a href="index.html">Home</a>
-							</li>
-							<li><a href="about-us.html">About Us</a></li>
-							<li class="has-submenu active">
-								<a href="javascript:void(0);">Doctors </a>
-								<ul class="submenu">
-									<a href="search.html">Doctors List</a>
-							</li>
-							<li><a href="doctor-manimozhiyan-profile.html">Dr. P. Manimozhian</a></li>
-							<li><a href="doctor-nivya-profile.html">Dr. M. Nivya</a></li>
-							<li><a href="doctor-mathan-profile.html">Dr. M.A. Mathan</a></li>
-								<li><a href="doctor-naveen-paul-profile.html">Dr. Naveen Paul Singh</a></li>
-						</ul>
-						</li>
-
-						<li class="has-submenu megamenu">
-							<a href="#" class="main-menu">Specialities </a>
-							<ul class="submenu mega-submenu">
-								<li>
-									<div class="megamenu-wrapper megamenu-wrapper-one">
-										<div class="row">
-											<div class="col-lg-3 sub-menu-left">
-												<ul class="sub-menu-list">
-													<li><a href="pulmonology.html">Pulmonology</a></li>
-													<li><a href="emergency-critical-care-medicine.html">Emergency &
-															Critical Care Medicine</a></li>
-													<li><a href="general-medicine.html">General Medicine</a></li>
-													<li><a href="cardiology.html">Cardiology</a></li>
-												</ul>
-											</div>
-											<div class="col-lg-3 sub-menu-left">
-												<ul class="sub-menu-list">
-													<li><a href="orthopaedics.html">Orthopaedics</a></li>
-													<li><a href="dentistry.html">Dentistry</a></li>
-													<li><a href="general-surgery.html">General Surgery</a></li>
-													<li><a href="neurology.html">Neurology</a></li>
-												</ul>
-											</div>
-											<div class="col-lg-3 sub-menu-left">
-												<ul class="sub-menu-list">
-													<li><a href="gastro-enterology.html">Gastro Enterology</a></li>
-													<li><a href="radiology.html">Radiology</a></li>
-													<li><a href="oncology.html">Oncology</a></li>
-													<li><a href="psychiatry.html">Psychiatry</a></li>
-												</ul>
-											</div>
-										</div>
-									</div>
-								</li>
-							</ul>
-						</li>
-
-						<li>
-							<a href="blog-grid.html">Blog</a>
-						</li>
-						<li>
-							<a href="contact-us.html">Contact Us</a>
-						</li>
-						</ul>
-						</li>
-
-						<div class="header-items">
-							<!-- Item 1 -->
-							<div class="about-popup-item border-0 pb-0">
-								<h3 class="title">Contact Information</h3>
-								<div class="support-item mb-3">
-									<div class="avatar avatar-lg bg-primary rounded-circle">
-										<i class="isax isax-messages-3"></i>
-									</div>
-									<div>
-										<p class="title">General Inquiries</p>
-										<h5 class="link"><a href="mailto:nivyahospitalstvl@gmail.com">nivyahospitalstvl@gmail.com</a>
-										</h5>
-									</div>
-								</div>
-								<div class="support-item">
-									<div class="avatar avatar-lg bg-primary rounded-circle">
-										<i class="isax isax-call-calling"></i>
-									</div>
-									<div>
-										<p class="title">Emergency Cases</p>
-										<h5 class="link"><a href="tel:+919566443300">+91 95664 43300</a></h5>
-									</div>
-								</div>
-							</div>
-							<!-- Item 2 -->
-							<div class="about-popup-item border-0 pb-0">
-								<h3 class="title">Follow Us</h3>
-								<ul class="d-flex align-items-center gap-2 social-iyem">
-									<li>
-										<a href="https://www.facebook.com/nivyahospitals/" target="_blank" class="social-icon"><i
-												class="fa-brands fa-facebook"></i></a>
-									</li>
-									<li>
-										<a href="https://www.youtube.com/@NivyaHospitals" target="_blank" class="social-icon"><i
-												class="fa-brands fa-youtube"></i></a>
-									</li>
-									<li>
-										<a href="https://www.instagram.com/nivyahospitalsoffl/" target="_blank" class="social-icon"><i
-												class="fa-brands fa-instagram"></i></a>
-									</li>
-									<li>
-										<a href="https://www.linkedin.com/company/nivyahospitals/" target="_blank" class="social-icon"><i
-												class="fa-brands fa-linkedin"></i></a>
-									</li>
-								</ul>
-							</div>
-						</div>
-					</div>
-					<ul class="nav header-navbar-rht">
-						<li>
-							<a href="search.html" class="btn btn-md btn-primary-gradient">
-								<span>Book Appointment</span>
-							</a>
-						</li>
-					</ul>
 				</nav>
 			</div>
 		</header>
 		<!-- Header End -->
-		<!-- Breadcrumb -->
-		<div class="breadcrumb-bar">
-			<div class="container">
-				<div class="row align-items-center inner-banner">
-					<div class="col-md-12 col-12 text-center">
-						<nav aria-label="breadcrumb" class="page-breadcrumb">
-							<ol class="breadcrumb">
-								<li class="breadcrumb-item"><a href="index.html"><i class="isax isax-home-15"></i></a>
-								</li>
-								<li class="breadcrumb-item active">Booking</li>
-							</ol>
-							<h2 class="breadcrumb-title">Booking</h2>
-						</nav>
-					</div>
-				</div>
-			</div>
-			<div class="breadcrumb-bg">
-				<img src="assets/img/bg/breadcrumb-bg-01.png" alt="img" class="breadcrumb-bg-01">
-				<img src="assets/img/bg/breadcrumb-bg-02.png" alt="img" class="breadcrumb-bg-02">
-				<img src="assets/img/bg/breadcrumb-icon.png" alt="img" class="breadcrumb-bg-03">
-				<img src="assets/img/bg/breadcrumb-icon.png" alt="img" class="breadcrumb-bg-04">
-			</div>
-		</div>
-		<!-- /Breadcrumb -->
 
 		<!-- Page Content -->
-		<div class="content doctor-content">
-			<div class="container">
+			<div class="content doctor-content">
+				<div class="container">
+					<div class="row">
+						<div class="col-lg-10 mx-auto">
 
-				<div class="row">
-					<div class="col-12">
-
-						<div class="card">
-							<div class="card-body">
-								<div class="booking-doc-info">
-									<div class="booking-doc-img">
-										<img id="booking-doctor-avatar" src="assets/img/doctors/dr-nivya-square.jpg"
-											alt="Doctor Image">
-									</div>
-									<div class="booking-info">
-										<h4 id="booking-doctor-name">Nivya Hospital</h4>
-										<div class="rating">
-											<i class="fas fa-star filled"></i>
-											<i class="fas fa-star filled"></i>
-											<i class="fas fa-star filled"></i>
-											<i class="fas fa-star filled"></i>
-											<i class="fas fa-star filled"></i>
+							<!-- Wizard steps -->
+							<div class="booking-wizard" id="wizard-steps">
+								<ul class="form-wizard-steps d-sm-flex align-items-center justify-content-center" id="progressbar2">
+									<li class="progress-active" data-step="1">
+										<div class="profile-step"><span class="multi-steps">1</span>
+											<div class="step-section"><h6>Specialty</h6></div>
 										</div>
-										<p id="booking-doctor-specialty" class="text-indigo mb-1 fw-medium">
-											Select a doctor to book an appointment</p>
-										<p class="text-muted mb-0"><i class="fas fa-map-marker-alt"></i> <span
-												id="booking-doctor-location">Vannarpettai, Tirunelveli</span></p>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-12 col-sm-4 col-md-6">
-								<h4 class="mb-1" id="booking-date-summary">11 November 2023</h4>
-								<p class="text-muted" id="booking-day-summary">Monday</p>
-							</div>
-							<div class="col-12 col-sm-8 col-md-6 text-sm-end">
-								<div class="bookingrange btn btn-white btn-sm mb-3">
-									<i class="far fa-calendar-alt me-2"></i>
-									<span></span>
-									<i class="fas fa-chevron-down ms-2"></i>
-								</div>
-							</div>
-						</div>
-						<!-- Schedule Widget -->
-						<div class="card booking-schedule schedule-widget">
-
-							<!-- Schedule Header -->
-							<div class="schedule-header">
-								<div class="row">
-									<div class="col-md-12">
-
-										<!-- Day Slot -->
-										<div class="day-slot">
-											<ul>
-												<li class="day-slot-item">
-													<span>Mon</span>
-													<span class="slot-date">11 Nov <small
-															class="slot-year">2023</small></span>
-												</li>
-												<li class="day-slot-item">
-													<span>Tue</span>
-													<span class="slot-date">12 Nov <small
-															class="slot-year">2023</small></span>
-												</li>
-												<li class="day-slot-item">
-													<span>Wed</span>
-													<span class="slot-date">13 Nov <small
-															class="slot-year">2023</small></span>
-												</li>
-												<li class="day-slot-item">
-													<span>Thu</span>
-													<span class="slot-date">14 Nov <small
-															class="slot-year">2023</small></span>
-												</li>
-												<li class="day-slot-item">
-													<span>Fri</span>
-													<span class="slot-date">15 Nov <small
-															class="slot-year">2023</small></span>
-												</li>
-												<li class="day-slot-item">
-													<span>Sat</span>
-													<span class="slot-date">16 Nov <small
-															class="slot-year">2023</small></span>
-												</li>
-												<li class="day-slot-item">
-													<span>Sun</span>
-													<span class="slot-date">17 Nov <small
-															class="slot-year">2023</small></span>
-												</li>
-											</ul>
+									</li>
+									<li data-step="2">
+										<div class="profile-step"><span class="multi-steps">2</span>
+											<div class="step-section"><h6>Date &amp; Time</h6></div>
 										</div>
-										<!-- /Day Slot -->
-
-									</div>
-								</div>
-							</div>
-							<!-- /Schedule Header -->
-
-							<!-- Schedule Content -->
-							<div class="schedule-cont">
-								<div class="row">
-									<div class="col-md-12">
-
-										<!-- Time Slot -->
-										<div class="time-slot">
-											<ul class="clearfix">
-												<li class="time-slot-group">
-													<a class="timing" href="#">
-														<span>9:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>10:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>11:00</span> <span>AM</span>
-													</a>
-												</li>
-												<li class="time-slot-group d-none">
-													<a class="timing" href="#">
-														<span>9:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>10:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>11:00</span> <span>AM</span>
-													</a>
-												</li>
-												<li class="time-slot-group d-none">
-													<a class="timing" href="#">
-														<span>9:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>10:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>11:00</span> <span>AM</span>
-													</a>
-												</li>
-												<li class="time-slot-group d-none">
-													<a class="timing" href="#">
-														<span>9:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>10:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>11:00</span> <span>AM</span>
-													</a>
-												</li>
-												<li class="time-slot-group d-none">
-													<a class="timing" href="#">
-														<span>9:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>10:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>11:00</span> <span>AM</span>
-													</a>
-												</li>
-												<li class="time-slot-group d-none">
-													<a class="timing" href="#">
-														<span>9:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>10:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>11:00</span> <span>AM</span>
-													</a>
-												</li>
-												<li class="time-slot-group d-none">
-													<a class="timing" href="#">
-														<span>9:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>10:00</span> <span>AM</span>
-													</a>
-													<a class="timing" href="#">
-														<span>11:00</span> <span>AM</span>
-													</a>
-												</li>
-											</ul>
+									</li>
+									<li data-step="3">
+										<div class="profile-step"><span class="multi-steps">3</span>
+											<div class="step-section"><h6>Basic Information</h6></div>
 										</div>
-										<!-- /Time Slot -->
+									</li>
+									<li data-step="4">
+										<div class="profile-step"><span class="multi-steps">4</span>
+											<div class="step-section"><h6>Payment</h6></div>
+										</div>
+									</li>
+									<li data-step="5">
+										<div class="profile-step"><span class="multi-steps">5</span>
+											<div class="step-section"><h6>Confirmation</h6></div>
+										</div>
+									</li>
+								</ul>
+							</div>
+							<!-- /Wizard steps -->
 
+							<div id="preview-notice" class="alert alert-warning" role="status" hidden>
+								<strong>Preview:</strong> online payment isn't switched on yet, so nothing is charged and the hospital does not receive this booking. To book now, please call <a href="tel:+919566443300" class="alert-link">+91 95664 43300</a>.
+							</div>
+
+							<div class="booking-widget multistep-form mb-5">
+								<div class="card booking-card mb-0">
+
+									<!-- Doctor header (shared by every step) -->
+									<div class="card-header">
+										<div class="booking-header pb-0">
+											<div class="card mb-0">
+												<div class="card-body">
+													<div class="d-flex align-items-center flex-wrap row-gap-2">
+														<span class="avatar avatar-xxxl avatar-rounded me-3 flex-shrink-0"><img
+																id="booking-doctor-avatar" src="assets/img/doctors/dr-nivya-square.jpg"
+																alt="Doctor Image"></span>
+														<div>
+															<h4 class="mb-1" id="booking-doctor-name">Nivya Hospital</h4>
+															<div class="rating mb-1">
+																<i class="fas fa-star filled"></i>
+																<i class="fas fa-star filled"></i>
+																<i class="fas fa-star filled"></i>
+																<i class="fas fa-star filled"></i>
+																<i class="fas fa-star filled"></i>
+															</div>
+															<p id="booking-doctor-specialty" class="text-indigo mb-2 fw-medium">
+																Select a doctor to book an appointment</p>
+															<p class="mb-0"><i class="isax isax-location me-2"></i><span
+																	id="booking-doctor-location">Vannarpettai, Tirunelveli</span></p>
+														</div>
+													</div>
+													<div id="booking-info" class="mt-4" hidden>
+														<h6 class="mb-2">Booking Info</h6>
+														<div class="row gx-2 gy-3">
+															<div class="col-lg-4 col-sm-6">
+																<h6 class="fs-14 fw-medium mb-1">Services</h6>
+																<p class="mb-0" id="info-consult">-</p>
+															</div>
+															<div class="col-lg-4 col-sm-6">
+																<h6 class="fs-14 fw-medium mb-1">Date &amp; Time</h6>
+																<p class="mb-0" id="info-when">-</p>
+															</div>
+															<div class="col-lg-4 col-sm-6">
+																<h6 class="fs-14 fw-medium mb-1">Appointment type</h6>
+																<p class="mb-0">Clinic visit</p>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
 									</div>
+									<!-- /Doctor header -->
+
+									<!-- Step 1: Specialty + services -->
+									<section id="pane-1" aria-label="Choose speciality and services">
+										<div class="card-body booking-body">
+											<div class="card mb-0">
+												<div class="card-body">
+													<div id="no-doctor" class="alert alert-warning mb-0" hidden>
+														<span id="no-doctor-text">Please choose a doctor first.</span>
+														<a href="search.html" class="alert-link ms-1">Choose a Doctor</a>
+													</div>
+													<div id="s1-fields">
+														<div class="mb-4">
+															<label class="form-label" for="s1-specialty">Select Speciality</label>
+															<select class="form-select" id="s1-specialty"></select>
+															<div id="s1-note" class="form-text mt-2" hidden>
+																You are booking with <strong id="s1-doctor"></strong>. To book a different speciality, please choose a doctor from the <a href="search.html">Doctors list</a>.
+															</div>
+														</div>
+														<hr class="mb-4">
+														<h6 class="mb-3">Services</h6>
+														<div class="row" id="service-options"></div>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="card-footer">
+											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
+												<a href="search.html" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill"><i class="isax isax-arrow-left-2 me-1"></i>Back</a>
+												<button type="button" id="to-slot" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill">Select Date &amp; Time <i class="isax isax-arrow-right-3 ms-1"></i></button>
+											</div>
+										</div>
+									</section>
+
+									<!-- Step 2: Date & Time -->
+									<section id="pane-2" hidden aria-label="Choose date and time">
+										<div class="card-body booking-body">
+											<div class="card mb-0">
+												<div class="card-body pb-1">
+													<div class="row">
+														<div class="col-lg-5">
+															<div class="card">
+																<div class="card-body p-2 pt-3">
+																	<div id="datetimepickershow"></div>
+																</div>
+															</div>
+														</div>
+														<div class="col-lg-7">
+															<div class="card booking-wizard-slots">
+																<div class="card-body" id="slot-groups"></div>
+															</div>
+														</div>
+													</div>
+													<p class="text-muted small mb-2"><i class="isax isax-clock me-1"></i>OPD: Monday to Saturday, 9:00 AM - 7:00 PM. Sunday: emergency only.</p>
+													<p id="slot-hint" class="fw-medium mb-2" aria-live="polite"></p>
+												</div>
+											</div>
+										</div>
+										<div class="card-footer">
+											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
+												<button type="button" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill" data-go="1"><i class="isax isax-arrow-left-2 me-1"></i>Back</button>
+												<button type="button" id="to-info" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill" disabled>Add Basic Information <i class="isax isax-arrow-right-3 ms-1"></i></button>
+											</div>
+										</div>
+									</section>
+
+<!-- Step 3: Basic information -->
+									<section id="pane-3" hidden aria-label="Basic information">
+										<div class="card-body booking-body">
+											<div class="card mb-0">
+												<div class="card-body">
+													<form id="patient-form" novalidate>
+														<div class="row g-3">
+															<div class="col-md-4 field-wrap">
+																<label class="form-label" for="pt-first">First Name <span class="text-danger">*</span></label>
+																<input type="text" class="form-control" id="pt-first" autocomplete="given-name" maxlength="40">
+																<div class="field-error">Please enter the first name.</div>
+															</div>
+															<div class="col-md-4 field-wrap">
+																<label class="form-label" for="pt-last">Last Name <span class="text-danger">*</span></label>
+																<input type="text" class="form-control" id="pt-last" autocomplete="family-name" maxlength="40">
+																<div class="field-error">Please enter the last name.</div>
+															</div>
+															<div class="col-md-4 field-wrap">
+																<label class="form-label" for="pt-phone">Phone Number <span class="text-danger">*</span></label>
+																<input type="tel" class="form-control" id="pt-phone" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10-digit mobile">
+																<div class="field-error">Enter a valid 10-digit Indian mobile number.</div>
+															</div>
+															<div class="col-md-4 field-wrap">
+																<label class="form-label" for="pt-email">Email Address <span class="text-muted">(optional)</span></label>
+																<input type="email" class="form-control" id="pt-email" autocomplete="email" maxlength="120">
+																<div class="field-error">Enter a valid email address.</div>
+															</div>
+															<div class="col-6 col-md-4 field-wrap">
+																<label class="form-label" for="pt-age">Age <span class="text-danger">*</span></label>
+																<input type="number" class="form-control" id="pt-age" min="0" max="120" inputmode="numeric">
+																<div class="field-error">Enter age (0-120).</div>
+															</div>
+															<div class="col-6 col-md-4 field-wrap">
+																<label class="form-label" for="pt-gender">Gender <span class="text-danger">*</span></label>
+																<select class="form-select" id="pt-gender">
+																	<option value="">Select</option>
+																	<option>Female</option>
+																	<option>Male</option>
+																	<option>Other</option>
+																</select>
+																<div class="field-error">Please select.</div>
+															</div>
+															<div class="col-12">
+																<label class="form-label" for="pt-reason">Symptoms / Reason for Visit <span class="text-muted">(optional)</span></label>
+																<textarea class="form-control" id="pt-reason" rows="3" maxlength="300" placeholder="e.g. cough and breathlessness for 2 weeks"></textarea>
+															</div>
+														</div>
+													</form>
+												</div>
+											</div>
+										</div>
+										<div class="card-footer">
+											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
+												<button type="button" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill" data-go="2"><i class="isax isax-arrow-left-2 me-1"></i>Back</button>
+												<button type="submit" form="patient-form" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill">Select Payment <i class="isax isax-arrow-right-3 ms-1"></i></button>
+											</div>
+										</div>
+									</section>
+
+									<!-- Step 4: Payment -->
+									<section id="pane-4" hidden aria-label="Payment">
+										<div class="card-body booking-body">
+											<div class="row">
+												<div class="col-lg-6 d-flex">
+													<div class="card flex-fill mb-3 mb-lg-0">
+														<div class="card-body">
+															<h6 class="mb-3">Payment Gateway</h6>
+															<div class="border rounded p-3 mb-3">
+																<p class="mb-1 fw-medium" id="pay-patient-name"></p>
+																<p class="mb-2 text-muted small" id="pay-patient-meta"></p>
+																<button type="button" class="btn btn-link p-0" data-go="3">Edit details</button>
+															</div>
+															<p class="fw-medium mb-2">Pay securely using</p>
+															<div class="mb-3">
+																<span class="pay-method"><i class="fas fa-mobile-screen-button"></i> UPI</span>
+																<span class="pay-method"><i class="far fa-credit-card"></i> Credit / Debit Card</span>
+																<span class="pay-method"><i class="fas fa-building-columns"></i> Net Banking</span>
+																<span class="pay-method"><i class="fas fa-wallet"></i> Wallets</span>
+															</div>
+															<p class="text-muted small mb-3"><i class="fas fa-shield-halved me-1"></i><span id="gateway-note"></span></p>
+															<div class="form-check">
+																<input class="form-check-input" type="checkbox" id="pay-terms">
+																<label class="form-check-label" for="pay-terms">I agree to the <a href="terms-condition.html" target="_blank" rel="noopener">Terms &amp; Conditions</a> and <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+															</div>
+															<div id="pay-msg" class="alert mt-3 mb-0" role="alert" hidden></div>
+														</div>
+													</div>
+												</div>
+												<div class="col-lg-6 d-flex">
+													<div class="card flex-fill mb-0">
+														<div class="card-body">
+															<h6 class="mb-3">Booking Info</h6>
+															<div class="mb-3">
+																<h6 class="fs-14 fw-medium mb-1">Date &amp; Time</h6>
+																<p class="mb-0" id="sum-when"></p>
+															</div>
+															<div class="mb-3">
+																<h6 class="fs-14 fw-medium mb-1">Appointment type</h6>
+																<p class="mb-0">Clinic visit</p>
+															</div>
+															<hr>
+															<h6 class="mb-3">Payment Info</h6>
+															<div id="sum-lines" class="mb-3"></div>
+															<div class="pay-total d-flex justify-content-between align-items-center">
+																<span>Total</span>
+																<span id="sum-total"></span>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="card-footer">
+											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
+												<button type="button" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill" data-go="3"><i class="isax isax-arrow-left-2 me-1"></i>Back</button>
+												<button type="button" id="pay-btn" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill"><i class="fas fa-lock me-2"></i><span>Pay</span></button>
+											</div>
+										</div>
+									</section>
+
+									<!-- Step 5: Confirmation -->
+									<section id="pane-5" hidden aria-label="Confirmation">
+										<div class="card-body booking-body">
+											<div class="card mb-0">
+												<div class="card-body text-center py-5">
+													<span class="booking-success-icon mb-3"><i class="fas fa-check"></i></span>
+													<h4 class="mb-2" id="done-title" tabindex="-1">Your booking has been confirmed</h4>
+													<p class="text-muted mb-3" id="done-sub"></p>
+													<div class="mb-4"><span class="booking-id" id="done-id"></span></div>
+													<div id="done-demo" class="alert alert-warning text-start mx-auto" style="max-width:560px" hidden>
+														<strong>This was a demo.</strong> No payment was taken and the hospital has not received this booking. To book for real, please call <a href="tel:+919566443300">+91 95664 43300</a>.
+													</div>
+													<div class="mx-auto text-start" style="max-width:420px">
+														<div class="summary-row"><span>Patient</span><span id="done-patient"></span></div>
+														<div class="summary-row"><span>Doctor</span><span id="done-doctor"></span></div>
+														<div class="summary-row"><span>Services</span><span id="done-consult"></span></div>
+														<div class="summary-row"><span>Date &amp; Time</span><span id="done-when"></span></div>
+														<div class="summary-row"><span>Location</span><span id="done-location"></span></div>
+														<div class="summary-row summary-total"><span>Amount paid</span><span id="done-amount"></span></div>
+													</div>
+													<p class="text-muted small mt-3">Please show this booking number at the reception.</p>
+												</div>
+											</div>
+										</div>
+										<div class="card-footer no-print">
+											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
+												<a href="tel:+919566443300" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill"><i class="isax isax-call me-1"></i>Call Us</a>
+												<div class="d-flex flex-wrap gap-2">
+													<button type="button" class="btn btn-md btn-outline-primary d-inline-flex align-items-center rounded-pill" onclick="window.print()"><i class="fas fa-print me-2"></i>Print</button>
+													<a href="#" id="add-calendar" target="_blank" rel="noopener" class="btn btn-md btn-outline-primary d-inline-flex align-items-center rounded-pill"><i class="isax isax-calendar-add me-1"></i>Add To Calendar</a>
+													<a href="search.html" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill">Start New Booking</a>
+												</div>
+											</div>
+										</div>
+									</section>
+
 								</div>
 							</div>
-							<!-- /Schedule Content -->
-
 						</div>
-						<!-- /Schedule Widget -->
-
-						<!-- Submit Section -->
-						<div class="submit-section proceed-btn text-end mb-0">
-							<a href="tel:+919566443300" class="btn btn-primary submit-btn">Call to Confirm Booking</a>
-						</div>
-						<!-- /Submit Section -->
-
 					</div>
 				</div>
 			</div>
-
-		</div>
-		<!-- /Page Content -->
+			<!-- /Page Content -->
 
 		<!-- Footer Section -->
 		<footer class="footer-two">
@@ -771,74 +849,17 @@
 	<!-- end offcanvas -->
 
 	<!-- jQuery -->
-	<script data-cfasync="false" src="../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-	<script src="assets/js/jquery-3.7.1.min.js" type="434ef7e09eb32505ad26367d-text/javascript"></script>
+	<script src="assets/js/jquery-3.7.1.min.js"></script>
 
 	<!-- Bootstrap Core JS -->
-	<script src="assets/js/bootstrap.bundle.min.js" type="434ef7e09eb32505ad26367d-text/javascript"></script>
+	<script src="assets/js/bootstrap.bundle.min.js"></script>
 
-	<!-- Daterangepikcer JS -->
-	<script src="assets/js/moment.min.js" type="434ef7e09eb32505ad26367d-text/javascript"></script>
-	<script src="assets/plugins/daterangepicker/daterangepicker.js"
-		type="434ef7e09eb32505ad26367d-text/javascript"></script>
-
-	<!-- Fancybox JS -->
-	<script src="assets/plugins/fancybox/jquery.fancybox.min.js"
-		type="434ef7e09eb32505ad26367d-text/javascript"></script>
+	<!-- Calendar (moment + datetimepicker) -->
+	<script src="assets/js/moment.min.js"></script>
+	<script src="assets/js/bootstrap-datetimepicker.min.js"></script>
 
 	<!-- Custom JS -->
-	<script src="assets/js/script.js" type="434ef7e09eb32505ad26367d-text/javascript"></script>
-
-	<script>
-		(function () {
-			const dayItems = document.querySelectorAll('.day-slot-item');
-			const timeGroups = document.querySelectorAll('.time-slot-group');
-			const strip = document.querySelector('.day-slot ul');
-			const summaryDate = document.getElementById('booking-date-summary');
-			const summaryDay = document.getElementById('booking-day-summary');
-			const today = new Date();
-			const dates = [];
-
-			const selectDay = (index) => {
-				dayItems.forEach((item, i) => item.classList.toggle('active', i === index));
-				timeGroups.forEach((group, i) => group.classList.toggle('d-none', i !== index));
-				const date = dates[index];
-				if (summaryDate) summaryDate.textContent = date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
-				if (summaryDay) summaryDay.textContent = date.toLocaleDateString('en-US', { weekday: 'long' });
-			};
-
-			dayItems.forEach((item, index) => {
-				const date = new Date(today);
-				date.setDate(today.getDate() + index);
-				dates.push(date);
-				const dayName = item.querySelector('span:first-child');
-				const dateEl = item.querySelector('.slot-date');
-				const yearEl = item.querySelector('.slot-year');
-				if (dayName) dayName.textContent = date.toLocaleDateString('en-US', { weekday: 'short' });
-				if (dateEl && yearEl) {
-					dateEl.firstChild.textContent = date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }) + ' ';
-					yearEl.textContent = date.getFullYear();
-				}
-				item.addEventListener('click', () => {
-					selectDay(index);
-					if (strip && strip.scrollWidth > strip.clientWidth) {
-						const left = item.getBoundingClientRect().left - strip.getBoundingClientRect().left + strip.scrollLeft;
-						strip.scrollTo({ left: left - (strip.clientWidth - item.offsetWidth) / 2, behavior: 'smooth' });
-					}
-				});
-			});
-
-			selectDay(0);
-
-			document.querySelectorAll('.time-slot .timing').forEach((slot) => {
-				slot.addEventListener('click', (event) => {
-					event.preventDefault();
-					document.querySelectorAll('.time-slot .timing.selected').forEach((el) => el.classList.remove('selected'));
-					slot.classList.add('selected');
-				});
-			});
-		})();
-	</script>
+	<script src="assets/js/script.js"></script>
 
 	<script>
 		(function () {
@@ -871,8 +892,492 @@
 		})();
 	</script>
 
-	<script src="../../cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js"
-		data-cf-settings="434ef7e09eb32505ad26367d-|49" defer></script>
+	<script>
+		// Online booking + payment wizard:
+		// specialty & services -> date & time -> basic information -> payment -> confirmation.
+		(function () {
+			/* ------------------------------------------------------------------
+			   Fees and services live in assets/js/booking-catalog.json (shared with the
+			   payment API). Payment runs against the serverless endpoints in /api, which
+			   hold the Razorpay secret. On load the page asks /api/status: when the keys
+			   are set in Vercel (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET) payments are real;
+			   until then the wizard runs as a clearly-labelled preview with a simulated
+			   payment. ?demo=1 forces the preview.
+			------------------------------------------------------------------ */
+			const API = {
+				status: '/api/status',
+				createOrder: '/api/create-order',
+				verify: '/api/verify-payment'
+			};
+			const CATALOG_URL = 'assets/js/booking-catalog.json';
+			const HOSPITAL_PHONE = '+91 95664 43300';
+			const BOOKING_DAYS = 14;
+			// OPD: Monday-Saturday 9 AM-7 PM, Sunday emergency only. Hourly slots.
+			const SESSIONS = [
+				{ name: 'Morning', slots: ['9:00 AM', '10:00 AM', '11:00 AM'] },
+				{ name: 'Afternoon', slots: ['12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM'] },
+				{ name: 'Evening', slots: ['4:00 PM', '5:00 PM', '6:00 PM'] }
+			];
+
+			const params = new URLSearchParams(window.location.search);
+			const demo = params.get('demo') === '1';
+			const doctor = (params.get('name') || '').trim();
+			const location = (params.get('location') || '').trim() || 'Vannarpettai, Tirunelveli';
+
+			const $ = (id) => document.getElementById(id);
+			const money = (n) => '₹' + n.toLocaleString('en-IN');
+			const state = { consult: 'new', addons: new Set(), iso: null, time: null, patient: null };
+			let catalog = null;
+			let info = null; // this doctor's catalog entry
+			let live = false; // real Razorpay payment (vs simulated preview)
+
+			const stepsBar = $('wizard-steps');
+			const widget = document.querySelector('.booking-widget');
+			const notice = $('preview-notice');
+			const panes = [1, 2, 3, 4, 5].reduce((o, n) => (o[n] = $('pane-' + n), o), {});
+			const toInfo = $('to-info');
+			const hint = $('slot-hint');
+
+			/* ---------- Fees / services ---------- */
+			const consultName = () => {
+				if (info.fees.new === info.fees.old) return 'Consultation';
+				return state.consult === 'old' ? 'Follow-up consultation' : 'New patient consultation';
+			};
+			const chosenAddons = () => (info.addons || []).filter((a) => state.addons.has(a.id));
+			const lines = () => [{ name: consultName(), price: info.fees[state.consult] }]
+				.concat(chosenAddons().map((a) => ({ name: a.name, price: a.price })));
+			const total = () => lines().reduce((sum, l) => sum + l.price, 0);
+			const servicesText = () => lines().map((l) => l.name).join(', ');
+
+			/* ---------- Step 1: speciality + services ---------- */
+			const buildSpeciality = () => {
+				const sel = $('s1-specialty');
+				const list = catalog.specialities.slice();
+				if (!list.includes(info.speciality)) list.unshift(info.speciality);
+				list.forEach((n) => sel.add(new Option(n, n)));
+				sel.value = info.speciality;
+				sel.addEventListener('change', () => {
+					if (sel.value === info.speciality) return;
+					$('s1-doctor').textContent = doctor + ' (' + info.speciality + ')';
+					$('s1-note').hidden = false;
+					sel.value = info.speciality; // the booking stays with this doctor
+				});
+			};
+
+			const buildServices = () => {
+				const wrap = $('service-options');
+				const f = info.fees;
+				const cards = (f.new === f.old
+					? [{ kind: 'radio', id: 'new', name: 'Consultation', sub: 'Clinic visit', price: f.new }]
+					: [
+						{ kind: 'radio', id: 'new', name: 'New patient consultation', sub: 'First visit to Nivya Hospitals', price: f.new },
+						{ kind: 'radio', id: 'old', name: 'Follow-up consultation', sub: 'Old patient', price: f.old }
+					]).concat((info.addons || []).map((a) => ({ kind: 'checkbox', id: a.id, name: a.name, sub: '', price: a.price })));
+				cards.forEach((c, i) => {
+					const col = document.createElement('div');
+					col.className = 'col-lg-4 col-md-6';
+					const uid = 'svc-' + c.kind + '-' + c.id;
+					col.innerHTML =
+						'<input type="' + c.kind + '" class="consult-input" name="' + (c.kind === 'radio' ? 'consult' : 'addon') + '" id="' + uid + '" value="' + c.id + '"' + (c.kind === 'radio' && i === 0 ? ' checked' : '') + '>' +
+						'<label class="consult-option" for="' + uid + '">' +
+						'<span class="service-title d-block mb-1"></span>' +
+						(c.sub ? '<span class="fs-14 d-block text-muted sub"></span>' : '') +
+						'<span class="fs-14 d-block fw-medium fee"></span></label>';
+					col.querySelector('.service-title').textContent = c.name;
+					if (c.sub) col.querySelector('.sub').textContent = c.sub;
+					col.querySelector('.fee').textContent = money(c.price);
+					wrap.appendChild(col);
+				});
+				wrap.addEventListener('change', (e) => {
+					const t = e.target;
+					if (t.name === 'consult') state.consult = t.value;
+					else if (t.checked) state.addons.add(t.value);
+					else state.addons.delete(t.value);
+				});
+			};
+
+			/* ---------- Step 2: calendar + Morning/Afternoon/Evening slots ---------- */
+			const dateLong = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', {
+				weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+			});
+			const dateShort = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', {
+				day: 'numeric', month: 'short', year: 'numeric'
+			});
+			const when = () => state.time + ', ' + dateShort(state.iso);
+			const slotMinutes = (t) => {
+				const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(t);
+				return ((+m[1] % 12) + (m[3] === 'PM' ? 12 : 0)) * 60 + +m[2];
+			};
+			const nowMinutes = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); };
+			const slotOpen = (iso, t, todayIso) => iso !== todayIso || slotMinutes(t) > nowMinutes();
+
+			const updateNext = () => {
+				toInfo.disabled = !(state.iso && state.time);
+				if (state.time) hint.textContent = dateLong(state.iso) + ' at ' + state.time;
+				else if (!state.iso) hint.textContent = 'Select a date.';
+				else hint.textContent = 'Select a time for ' + dateLong(state.iso) + '.';
+			};
+
+			const renderSlots = () => {
+				const wrap = $('slot-groups');
+				wrap.innerHTML = '';
+				const todayIso = moment().format('YYYY-MM-DD');
+				let any = false;
+				SESSIONS.forEach((sess) => {
+					const title = document.createElement('div');
+					title.className = 'book-title';
+					title.innerHTML = '<h6 class="fs-14 mb-2"></h6>';
+					title.firstChild.textContent = sess.name;
+					const grp = document.createElement('div');
+					grp.className = 'token-slot mt-2 mb-3';
+					sess.slots.forEach((t) => {
+						const open = slotOpen(state.iso, t, todayIso);
+						any = any || open;
+						const box = document.createElement('div');
+						box.className = 'form-check-inline visits me-0';
+						box.innerHTML = '<label class="visit-btns"><input type="radio" class="form-check-input" name="slot"><span class="visit-rsn"></span></label>';
+						const input = box.querySelector('input');
+						input.value = t;
+						input.disabled = !open;
+						box.querySelector('.visit-rsn').textContent = t;
+						input.addEventListener('change', () => { state.time = t; updateNext(); });
+						grp.appendChild(box);
+					});
+					wrap.appendChild(title);
+					wrap.appendChild(grp);
+				});
+				state.time = null;
+				updateNext();
+				if (!any) hint.textContent = 'No slots left on ' + dateLong(state.iso) + '. Please pick another day.';
+			};
+
+			const firstAvailableDay = () => {
+				const todayIso = moment().format('YYYY-MM-DD');
+				for (let i = 0; i <= BOOKING_DAYS; i++) {
+					const d = moment().add(i, 'days');
+					if (d.day() === 0) continue; // Sunday: emergency only
+					const iso = d.format('YYYY-MM-DD');
+					if (SESSIONS.some((s) => s.slots.some((t) => slotOpen(iso, t, todayIso)))) return d;
+				}
+				return moment();
+			};
+
+			const initCalendar = () => {
+				const $dp = window.jQuery ? window.jQuery('#datetimepickershow') : null;
+				if (!$dp || !$dp.length || !$dp.datetimepicker) {
+					$('slot-groups').textContent = 'The calendar could not be loaded. Please call ' + HOSPITAL_PHONE + ' to book.';
+					return;
+				}
+				if (!$dp.data('DateTimePicker')) {
+					$dp.datetimepicker({
+						inline: true, sideBySide: true, format: 'DD-MM-YYYY', useCurrent: false,
+						icons: { up: 'fas fa-angle-up', down: 'fas fa-angle-down', next: 'fas fa-angle-right', previous: 'fas fa-angle-left' }
+					});
+				}
+				const dp = $dp.data('DateTimePicker');
+				dp.minDate(moment().startOf('day'));
+				dp.maxDate(moment().add(BOOKING_DAYS, 'days').endOf('day'));
+				dp.daysOfWeekDisabled([0]);
+				$dp.on('dp.change', (e) => {
+					if (!e.date) return;
+					state.iso = e.date.format('YYYY-MM-DD');
+					renderSlots();
+				});
+				const first = firstAvailableDay();
+				state.iso = first.format('YYYY-MM-DD');
+				renderSlots();
+				dp.date(first);
+			};
+
+			/* ---------- Mode ---------- */
+			const applyMode = (ok, isLive) => {
+				live = isLive;
+				if (!ok) {
+					$('s1-fields').hidden = true;
+					$('no-doctor').hidden = false;
+					$('to-slot').disabled = true;
+					$('no-doctor-text').textContent = doctor
+						? 'We could not load this doctor\'s booking details. Please try again, or call ' + HOSPITAL_PHONE + '.'
+						: 'Please choose a doctor first to start your booking.';
+				} else {
+					buildSpeciality();
+					buildServices();
+					initCalendar();
+					notice.hidden = live;
+					$('gateway-note').textContent = live
+						? 'Payment opens in Razorpay\'s secure window. We never see or store your card or UPI details.'
+						: 'Preview only: no payment window will open and nothing is charged.';
+				}
+				stepsBar.classList.remove('is-loading');
+				widget.classList.remove('is-loading');
+			};
+
+			// Keep the wizard hidden until we know which mode applies, so it never flashes the wrong one.
+			stepsBar.classList.add('is-loading');
+			widget.classList.add('is-loading');
+			(async () => {
+				try {
+					const r = await fetch(CATALOG_URL, { cache: 'no-cache' });
+					if (r.ok) catalog = await r.json();
+				} catch (e) { /* handled below */ }
+				info = catalog && Object.prototype.hasOwnProperty.call(catalog.doctors, doctor) ? catalog.doctors[doctor] : null;
+				if (!info) return applyMode(false, false);
+				let enabled = false;
+				if (!demo) {
+					const ctl = new AbortController();
+					const timer = setTimeout(() => ctl.abort(), 2500);
+					try {
+						const r = await fetch(API.status, { cache: 'no-store', signal: ctl.signal });
+						enabled = r.ok && !!(await r.json()).enabled;
+					} catch (e) { enabled = false; }
+					clearTimeout(timer);
+				}
+				applyMode(true, enabled);
+			})();
+
+			/* ---------- Navigation ---------- */
+			const go = (step) => {
+				Object.keys(panes).forEach((n) => { panes[n].hidden = +n !== step; });
+				stepsBar.querySelectorAll('li').forEach((li) => {
+					const n = +li.dataset.step;
+					li.classList.toggle('progress-active', n === step);
+					li.classList.toggle('progress-activated', n < step);
+				});
+				$('booking-info').hidden = step < 3;
+				if (step >= 3) {
+					$('info-consult').textContent = servicesText();
+					$('info-when').textContent = when();
+				}
+				stepsBar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				if (step === 5) $('done-title').focus({ preventScroll: true });
+			};
+			document.querySelectorAll('[data-go]').forEach((b) =>
+				b.addEventListener('click', () => go(+b.dataset.go)));
+			$('to-slot').addEventListener('click', () => go(2));
+			toInfo.addEventListener('click', () => { if (state.iso && state.time) go(3); });
+
+			/* ---------- Step 3: validation ---------- */
+			const rules = {
+				'pt-first': (v) => v.length >= 1,
+				'pt-last': (v) => v.length >= 1,
+				'pt-phone': (v) => /^[6-9]\d{9}$/.test(v),
+				'pt-email': (v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+				'pt-age': (v) => /^\d{1,3}$/.test(v) && +v <= 120,
+				'pt-gender': (v) => !!v
+			};
+			const check = (id) => {
+				const el = $(id);
+				const ok = rules[id](el.value.trim());
+				el.closest('.field-wrap').classList.toggle('has-error', !ok);
+				return ok;
+			};
+			Object.keys(rules).forEach((id) => {
+				$(id).addEventListener('blur', () => check(id));
+				$(id).addEventListener('input', () => {
+					if ($(id).closest('.field-wrap').classList.contains('has-error')) check(id);
+				});
+			});
+			$('pt-phone').addEventListener('input', (e) => {
+				e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+			});
+
+			$('patient-form').addEventListener('submit', (e) => {
+				e.preventDefault();
+				const results = Object.keys(rules).map(check);
+				if (results.includes(false)) {
+					const firstBad = document.querySelector('.field-wrap.has-error .form-control, .field-wrap.has-error .form-select');
+					if (firstBad) firstBad.focus();
+					return;
+				}
+				state.patient = {
+					name: $('pt-first').value.trim() + ' ' + $('pt-last').value.trim(),
+					phone: $('pt-phone').value.trim(),
+					email: $('pt-email').value.trim(),
+					age: +$('pt-age').value,
+					gender: $('pt-gender').value,
+					type: state.consult,
+					reason: $('pt-reason').value.trim()
+				};
+				$('pay-patient-name').textContent = state.patient.name;
+				$('pay-patient-meta').textContent = state.patient.age + ' yrs, ' + state.patient.gender +
+					' · +91 ' + state.patient.phone + (state.patient.email ? ' · ' + state.patient.email : '');
+				$('sum-when').textContent = when();
+				const box = $('sum-lines');
+				box.innerHTML = '';
+				lines().forEach((l) => {
+					const row = document.createElement('div');
+					row.className = 'd-flex justify-content-between mb-2';
+					row.innerHTML = '<span></span><span></span>';
+					row.children[0].textContent = l.name;
+					row.children[1].textContent = money(l.price);
+					box.appendChild(row);
+				});
+				$('sum-total').textContent = money(total());
+				$('pay-btn').querySelector('span').textContent = 'Pay ' + money(total());
+				go(4);
+			});
+
+			/* ---------- Step 4: payment ---------- */
+			const payBtn = $('pay-btn');
+			const payMsg = $('pay-msg');
+			let paidPending = false;
+			const showMsg = (text, kind) => {
+				payMsg.className = 'alert mt-3 mb-0 alert-' + (kind || 'danger');
+				payMsg.textContent = text;
+				payMsg.hidden = false;
+			};
+			const setBusy = (busy) => {
+				payBtn.disabled = busy;
+				payBtn.querySelector('span').textContent = busy ? 'Processing...' : 'Pay ' + money(total());
+			};
+			// No amount is sent: the server works the total out from the catalog.
+			const buildBooking = () => ({
+				doctor: doctor,
+				specialty: info.speciality,
+				date: state.iso,
+				time: state.time,
+				services: Array.from(state.addons),
+				patient: state.patient
+			});
+
+			const loadRazorpay = () => new Promise((resolve, reject) => {
+				if (window.Razorpay) return resolve();
+				const sc = document.createElement('script');
+				sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
+				sc.onload = resolve;
+				sc.onerror = () => reject(new Error('Could not load the payment window. Check your connection and try again.'));
+				document.head.appendChild(sc);
+			});
+
+			const postJson = async (url, body) => {
+				const res = await fetch(url, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(body)
+				});
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) {
+					const err = new Error(data.error || 'HTTP ' + res.status);
+					err.status = res.status;
+					throw err;
+				}
+				return data;
+			};
+
+			const payLive = async (booking) => {
+				let order;
+				try {
+					order = await postJson(API.createOrder, booking);
+				} catch (err) {
+					// 400 carries a message the patient can act on (e.g. slot already passed).
+					throw new Error(err.status === 400
+						? err.message
+						: 'Could not start the payment. Please try again, or call us on ' + HOSPITAL_PHONE + '.');
+				}
+				await loadRazorpay();
+				await new Promise((resolve) => {
+					const rzp = new window.Razorpay({
+						key: order.keyId,
+						order_id: order.orderId,
+						amount: order.amount,
+						currency: order.currency || 'INR',
+						name: 'Nivya Hospitals',
+						description: 'Consultation with ' + doctor,
+						prefill: { name: booking.patient.name, contact: booking.patient.phone, email: booking.patient.email },
+						theme: { color: '#0b56a0' },
+						handler: async (resp) => {
+							paidPending = true; // money has moved: never let the user pay twice
+							try {
+								const out = await postJson(API.verify, {
+									razorpay_order_id: resp.razorpay_order_id,
+									razorpay_payment_id: resp.razorpay_payment_id,
+									razorpay_signature: resp.razorpay_signature
+								});
+								finish(out.bookingId || resp.razorpay_payment_id, false);
+								paidPending = false;
+							} catch (err) {
+								showMsg('Your payment went through, but we could not confirm the booking automatically. ' +
+									'Please call ' + HOSPITAL_PHONE + ' and quote payment ID ' + resp.razorpay_payment_id + '.', 'warning');
+							}
+							resolve();
+						},
+						modal: {
+							ondismiss: () => {
+								showMsg('Payment was not completed. You can try again when ready.', 'warning');
+								resolve();
+							}
+						}
+					});
+					rzp.on('payment.failed', (r) => {
+						showMsg((r.error && r.error.description) || 'Payment failed. Please try again.');
+					});
+					rzp.open();
+				});
+			};
+
+			const payDemo = () => new Promise((resolve) => {
+				setTimeout(() => {
+					finish('DEMO-' + Math.random().toString(36).slice(2, 8).toUpperCase(), true);
+					resolve();
+				}, 1200);
+			});
+
+			payBtn.addEventListener('click', async () => {
+				payMsg.hidden = true;
+				if (!$('pay-terms').checked) {
+					showMsg('Please accept the Terms & Conditions and Privacy Policy to continue.', 'warning');
+					return;
+				}
+				setBusy(true);
+				try {
+					await (live ? payLive(buildBooking()) : payDemo());
+				} catch (err) {
+					showMsg(err.message || 'Something went wrong. Please try again.');
+				}
+				if (paidPending) {
+					payBtn.querySelector('span').textContent = 'Payment received';
+				} else {
+					setBusy(false);
+				}
+			});
+
+			/* ---------- Step 5: confirmation ---------- */
+			const calendarUrl = () => {
+				const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(state.time);
+				if (!m) return '#';
+				let h = +m[1] % 12;
+				if (m[3] === 'PM') h += 12;
+				const day = state.iso.replace(/-/g, '');
+				const stamp = (hh) => day + 'T' + String(hh).padStart(2, '0') + m[2] + '00';
+				return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+					'&text=' + encodeURIComponent('Appointment with ' + doctor + ' - Nivya Hospitals') +
+					'&dates=' + stamp(h) + '/' + stamp(h + 1) +
+					'&ctz=Asia%2FKolkata' +
+					'&location=' + encodeURIComponent('Nivya Hospitals, ' + location) +
+					'&details=' + encodeURIComponent('Consultation with ' + doctor + '. Phone: ' + HOSPITAL_PHONE);
+			};
+
+			function finish(bookingId, isDemo) {
+				$('done-id').textContent = bookingId;
+				$('done-title').textContent = isDemo
+					? 'Demo booking complete'
+					: 'Your booking has been confirmed with ' + doctor;
+				$('done-sub').textContent = isDemo
+					? 'Nothing was charged.'
+					: 'Payment received. Please keep this booking number for your visit.';
+				$('done-patient').textContent = state.patient.name;
+				$('done-doctor').textContent = doctor;
+				$('done-consult').textContent = servicesText();
+				$('done-when').textContent = when();
+				$('done-location').textContent = location;
+				$('done-amount').textContent = isDemo ? money(0) + ' (demo)' : money(total());
+				$('done-demo').hidden = !isDemo;
+				$('add-calendar').href = calendarUrl();
+				$('add-calendar').hidden = isDemo;
+				go(5);
+			}
+		})();
+	</script>
 
 	<!-- Nivya Hospital Chatbot -->
 	<script src="assets/js/chatbot.js"></script>

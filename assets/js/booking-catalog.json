@@ -1,0 +1,40 @@
+{
+	"_readme": "Single source of truth for the online booking page (booking-1.html) AND the payment API (api/*.js). Prices are in rupees. To add a paid service for a doctor, append {\"id\": \"short-id\", \"name\": \"Service name\", \"price\": 300} to that doctor's \"addons\" list; it then appears as a selectable card and is added to the total.",
+	"specialities": [
+		"Pulmonology",
+		"Emergency & Critical Care Medicine",
+		"General Medicine",
+		"Diabetology",
+		"Cardiology",
+		"Orthopaedics",
+		"Dentistry",
+		"General Surgery",
+		"Neurology",
+		"Gastro Enterology",
+		"Radiology",
+		"Oncology",
+		"Psychiatry"
+	],
+	"doctors": {
+		"Dr. P. Manimozhian": {
+			"speciality": "Pulmonology",
+			"fees": { "new": 800, "old": 500 },
+			"addons": []
+		},
+		"Dr. M. Nivya": {
+			"speciality": "Diabetology",
+			"fees": { "new": 800, "old": 500 },
+			"addons": []
+		},
+		"Dr. M.A. Mathan": {
+			"speciality": "Emergency & Critical Care Medicine",
+			"fees": { "new": 800, "old": 500 },
+			"addons": []
+		},
+		"Dr. Naveen Paul Singh": {
+			"speciality": "Dentistry",
+			"fees": { "new": 400, "old": 400 },
+			"addons": []
+		}
+	}
+}
