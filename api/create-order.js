@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
 				patient: b.name,
 				phone: b.phone,
 				email: b.email,
-				age_gender: b.age + ' / ' + b.gender,
+				age_gender: (b.age == null ? 'Not provided' : b.age) + ' / ' + (b.gender || 'Not provided'),
 				reason: b.reason
 			}
 		});

@@ -47,13 +47,14 @@ const validateBooking = (b) => {
 	const name = clean(p.name, 80);
 	const phone = clean(p.phone, 10);
 	const email = clean(p.email, 120);
-	const age = Number(p.age);
+	// Age and gender are optional (collected at reception if skipped online).
+	const age = p.age === '' || p.age == null ? null : Number(p.age);
 	const gender = clean(p.gender, 10);
 	if (name.length < 3) return { error: 'Please enter the patient name.' };
 	if (!/^[6-9]\d{9}$/.test(phone)) return { error: 'Enter a valid 10-digit mobile number.' };
 	if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Enter a valid email address.' };
-	if (!Number.isInteger(age) || age < 0 || age > 120) return { error: 'Enter a valid age.' };
-	if (!['Female', 'Male', 'Other'].includes(gender)) return { error: 'Please select a gender.' };
+	if (age !== null && (!Number.isInteger(age) || age < 0 || age > 120)) return { error: 'Enter a valid age.' };
+	if (gender && !['Female', 'Male', 'Other'].includes(gender)) return { error: 'Please select a gender.' };
 
 	// Optional paid add-ons: each id must exist for this doctor.
 	const ids = Array.isArray(b.services) ? [...new Set(b.services.map((x) => clean(x, 40)))] : [];

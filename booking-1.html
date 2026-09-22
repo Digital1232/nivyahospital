@@ -348,26 +348,16 @@
 								<ul class="form-wizard-steps d-sm-flex align-items-center justify-content-center" id="progressbar2">
 									<li class="progress-active" data-step="1">
 										<div class="profile-step"><span class="multi-steps">1</span>
-											<div class="step-section"><h6>Specialty</h6></div>
+											<div class="step-section"><h6>Book Slot</h6></div>
 										</div>
 									</li>
 									<li data-step="2">
 										<div class="profile-step"><span class="multi-steps">2</span>
-											<div class="step-section"><h6>Date &amp; Time</h6></div>
+											<div class="step-section"><h6>Details &amp; Payment</h6></div>
 										</div>
 									</li>
 									<li data-step="3">
 										<div class="profile-step"><span class="multi-steps">3</span>
-											<div class="step-section"><h6>Basic Information</h6></div>
-										</div>
-									</li>
-									<li data-step="4">
-										<div class="profile-step"><span class="multi-steps">4</span>
-											<div class="step-section"><h6>Payment</h6></div>
-										</div>
-									</li>
-									<li data-step="5">
-										<div class="profile-step"><span class="multi-steps">5</span>
 											<div class="step-section"><h6>Confirmation</h6></div>
 										</div>
 									</li>
@@ -429,8 +419,8 @@
 									</div>
 									<!-- /Doctor header -->
 
-									<!-- Step 1: Specialty + services -->
-									<section id="pane-1" aria-label="Choose speciality and services">
+									<!-- Step 1: Services + Date & Time -->
+									<section id="pane-1" aria-label="Choose service, date and time">
 										<div class="card-body booking-body">
 											<div class="card mb-0">
 												<div class="card-body">
@@ -439,16 +429,29 @@
 														<a href="search.html" class="alert-link ms-1">Choose a Doctor</a>
 													</div>
 													<div id="s1-fields">
-														<div class="mb-4">
-															<label class="form-label" for="s1-specialty">Select Speciality</label>
-															<select class="form-select" id="s1-specialty"></select>
-															<div id="s1-note" class="form-text mt-2" hidden>
-																You are booking with <strong id="s1-doctor"></strong>. To book a different speciality, please choose a doctor from the <a href="search.html">Doctors list</a>.
-															</div>
-														</div>
-														<hr class="mb-4">
 														<h6 class="mb-3">Services</h6>
 														<div class="row" id="service-options"></div>
+														<hr class="my-4">
+														<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+															<h6 class="mb-0">Choose Date &amp; Time</h6>
+															<button type="button" id="quick-slot" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center rounded-pill"><i class="isax isax-flash-1 me-1"></i>Book fastest available slot</button>
+														</div>
+														<div class="row">
+															<div class="col-lg-5">
+																<div class="card">
+																	<div class="card-body p-2 pt-3">
+																		<div id="datetimepickershow"></div>
+																	</div>
+																</div>
+															</div>
+															<div class="col-lg-7">
+																<div class="card booking-wizard-slots">
+																	<div class="card-body" id="slot-groups"></div>
+																</div>
+															</div>
+														</div>
+														<p class="text-muted small mb-2"><i class="isax isax-clock me-1"></i>OPD: Monday to Saturday, 9:00 AM - 7:00 PM. Sunday: emergency only.</p>
+														<p id="slot-hint" class="fw-medium mb-2" aria-live="polite"></p>
 													</div>
 												</div>
 											</div>
@@ -456,115 +459,63 @@
 										<div class="card-footer">
 											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
 												<a href="search.html" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill"><i class="isax isax-arrow-left-2 me-1"></i>Back</a>
-												<button type="button" id="to-slot" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill">Select Date &amp; Time <i class="isax isax-arrow-right-3 ms-1"></i></button>
+												<button type="button" id="to-info" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill" disabled>Add Your Details <i class="isax isax-arrow-right-3 ms-1"></i></button>
 											</div>
 										</div>
 									</section>
 
-									<!-- Step 2: Date & Time -->
-									<section id="pane-2" hidden aria-label="Choose date and time">
-										<div class="card-body booking-body">
-											<div class="card mb-0">
-												<div class="card-body pb-1">
-													<div class="row">
-														<div class="col-lg-5">
-															<div class="card">
-																<div class="card-body p-2 pt-3">
-																	<div id="datetimepickershow"></div>
-																</div>
-															</div>
-														</div>
-														<div class="col-lg-7">
-															<div class="card booking-wizard-slots">
-																<div class="card-body" id="slot-groups"></div>
-															</div>
-														</div>
-													</div>
-													<p class="text-muted small mb-2"><i class="isax isax-clock me-1"></i>OPD: Monday to Saturday, 9:00 AM - 7:00 PM. Sunday: emergency only.</p>
-													<p id="slot-hint" class="fw-medium mb-2" aria-live="polite"></p>
-												</div>
-											</div>
-										</div>
-										<div class="card-footer">
-											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
-												<button type="button" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill" data-go="1"><i class="isax isax-arrow-left-2 me-1"></i>Back</button>
-												<button type="button" id="to-info" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill" disabled>Add Basic Information <i class="isax isax-arrow-right-3 ms-1"></i></button>
-											</div>
-										</div>
-									</section>
-
-<!-- Step 3: Basic information -->
-									<section id="pane-3" hidden aria-label="Basic information">
-										<div class="card-body booking-body">
-											<div class="card mb-0">
-												<div class="card-body">
-													<form id="patient-form" novalidate>
-														<div class="row g-3">
-															<div class="col-md-4 field-wrap">
-																<label class="form-label" for="pt-first">First Name <span class="text-danger">*</span></label>
-																<input type="text" class="form-control" id="pt-first" autocomplete="given-name" maxlength="40">
-																<div class="field-error">Please enter the first name.</div>
-															</div>
-															<div class="col-md-4 field-wrap">
-																<label class="form-label" for="pt-last">Last Name <span class="text-danger">*</span></label>
-																<input type="text" class="form-control" id="pt-last" autocomplete="family-name" maxlength="40">
-																<div class="field-error">Please enter the last name.</div>
-															</div>
-															<div class="col-md-4 field-wrap">
-																<label class="form-label" for="pt-phone">Phone Number <span class="text-danger">*</span></label>
-																<input type="tel" class="form-control" id="pt-phone" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10-digit mobile">
-																<div class="field-error">Enter a valid 10-digit Indian mobile number.</div>
-															</div>
-															<div class="col-md-4 field-wrap">
-																<label class="form-label" for="pt-email">Email Address <span class="text-muted">(optional)</span></label>
-																<input type="email" class="form-control" id="pt-email" autocomplete="email" maxlength="120">
-																<div class="field-error">Enter a valid email address.</div>
-															</div>
-															<div class="col-6 col-md-4 field-wrap">
-																<label class="form-label" for="pt-age">Age <span class="text-danger">*</span></label>
-																<input type="number" class="form-control" id="pt-age" min="0" max="120" inputmode="numeric">
-																<div class="field-error">Enter age (0-120).</div>
-															</div>
-															<div class="col-6 col-md-4 field-wrap">
-																<label class="form-label" for="pt-gender">Gender <span class="text-danger">*</span></label>
-																<select class="form-select" id="pt-gender">
-																	<option value="">Select</option>
-																	<option>Female</option>
-																	<option>Male</option>
-																	<option>Other</option>
-																</select>
-																<div class="field-error">Please select.</div>
-															</div>
-															<div class="col-12">
-																<label class="form-label" for="pt-reason">Symptoms / Reason for Visit <span class="text-muted">(optional)</span></label>
-																<textarea class="form-control" id="pt-reason" rows="3" maxlength="300" placeholder="e.g. cough and breathlessness for 2 weeks"></textarea>
-															</div>
-														</div>
-													</form>
-												</div>
-											</div>
-										</div>
-										<div class="card-footer">
-											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
-												<button type="button" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill" data-go="2"><i class="isax isax-arrow-left-2 me-1"></i>Back</button>
-												<button type="submit" form="patient-form" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill">Select Payment <i class="isax isax-arrow-right-3 ms-1"></i></button>
-											</div>
-										</div>
-									</section>
-
-									<!-- Step 4: Payment -->
-									<section id="pane-4" hidden aria-label="Payment">
+									<!-- Step 2: Your details + Payment -->
+									<section id="pane-2" hidden aria-label="Your details and payment">
 										<div class="card-body booking-body">
 											<div class="row">
 												<div class="col-lg-6 d-flex">
 													<div class="card flex-fill mb-3 mb-lg-0">
 														<div class="card-body">
-															<h6 class="mb-3">Payment Gateway</h6>
-															<div class="border rounded p-3 mb-3">
-																<p class="mb-1 fw-medium" id="pay-patient-name"></p>
-																<p class="mb-2 text-muted small" id="pay-patient-meta"></p>
-																<button type="button" class="btn btn-link p-0" data-go="3">Edit details</button>
-															</div>
+															<h6 class="mb-3">Your Details</h6>
+															<form id="patient-form" novalidate>
+																<div class="row g-3 mb-2">
+																	<div class="col-md-6 field-wrap">
+																		<label class="form-label" for="pt-first">First Name <span class="text-danger">*</span></label>
+																		<input type="text" class="form-control" id="pt-first" autocomplete="given-name" maxlength="40">
+																		<div class="field-error">Please enter the first name.</div>
+																	</div>
+																	<div class="col-md-6 field-wrap">
+																		<label class="form-label" for="pt-last">Last Name <span class="text-danger">*</span></label>
+																		<input type="text" class="form-control" id="pt-last" autocomplete="family-name" maxlength="40">
+																		<div class="field-error">Please enter the last name.</div>
+																	</div>
+																	<div class="col-md-6 field-wrap">
+																		<label class="form-label" for="pt-phone">Phone Number <span class="text-danger">*</span></label>
+																		<input type="tel" class="form-control" id="pt-phone" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10-digit mobile">
+																		<div class="field-error">Enter a valid 10-digit Indian mobile number.</div>
+																	</div>
+																	<div class="col-md-6 field-wrap">
+																		<label class="form-label" for="pt-email">Email <span class="text-muted">(optional)</span></label>
+																		<input type="email" class="form-control" id="pt-email" autocomplete="email" maxlength="120">
+																		<div class="field-error">Enter a valid email address.</div>
+																	</div>
+																	<div class="col-6 field-wrap">
+																		<label class="form-label" for="pt-age">Age <span class="text-muted">(optional)</span></label>
+																		<input type="number" class="form-control" id="pt-age" min="0" max="120" inputmode="numeric">
+																		<div class="field-error">Enter age (0-120).</div>
+																	</div>
+																	<div class="col-6 field-wrap">
+																		<label class="form-label" for="pt-gender">Gender <span class="text-muted">(optional)</span></label>
+																		<select class="form-select" id="pt-gender">
+																			<option value="">Select</option>
+																			<option>Female</option>
+																			<option>Male</option>
+																			<option>Other</option>
+																		</select>
+																		<div class="field-error">Please select.</div>
+																	</div>
+																	<div class="col-12">
+																		<label class="form-label" for="pt-reason">Symptoms / Reason for Visit <span class="text-muted">(optional)</span></label>
+																		<textarea class="form-control" id="pt-reason" rows="2" maxlength="300" placeholder="e.g. cough and breathlessness for 2 weeks"></textarea>
+																	</div>
+																</div>
+															</form>
+															<hr>
 															<p class="fw-medium mb-2">Pay securely using</p>
 															<div class="mb-3">
 																<span class="pay-method"><i class="fas fa-mobile-screen-button"></i> UPI</span>
@@ -584,7 +535,7 @@
 												<div class="col-lg-6 d-flex">
 													<div class="card flex-fill mb-0">
 														<div class="card-body">
-															<h6 class="mb-3">Booking Info</h6>
+															<h6 class="mb-3">Booking Summary</h6>
 															<div class="mb-3">
 																<h6 class="fs-14 fw-medium mb-1">Date &amp; Time</h6>
 																<p class="mb-0" id="sum-when"></p>
@@ -607,14 +558,14 @@
 										</div>
 										<div class="card-footer">
 											<div class="d-flex align-items-center flex-wrap gap-2 justify-content-between">
-												<button type="button" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill" data-go="3"><i class="isax isax-arrow-left-2 me-1"></i>Back</button>
+												<button type="button" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill" data-go="1"><i class="isax isax-arrow-left-2 me-1"></i>Back</button>
 												<button type="button" id="pay-btn" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill"><i class="fas fa-lock me-2"></i><span>Pay</span></button>
 											</div>
 										</div>
 									</section>
 
-									<!-- Step 5: Confirmation -->
-									<section id="pane-5" hidden aria-label="Confirmation">
+									<!-- Step 3: Confirmation -->
+									<section id="pane-3" hidden aria-label="Confirmation">
 										<div class="card-body booking-body">
 											<div class="card mb-0">
 												<div class="card-body text-center py-5">
@@ -963,7 +914,7 @@
 			const stepsBar = $('wizard-steps');
 			const widget = document.querySelector('.booking-widget');
 			const notice = $('preview-notice');
-			const panes = [1, 2, 3, 4, 5].reduce((o, n) => (o[n] = $('pane-' + n), o), {});
+			const panes = [1, 2, 3].reduce((o, n) => (o[n] = $('pane-' + n), o), {});
 			const toInfo = $('to-info');
 			const hint = $('slot-hint');
 
@@ -978,21 +929,9 @@
 			const total = () => lines().reduce((sum, l) => sum + l.price, 0);
 			const servicesText = () => lines().map((l) => l.name).join(', ');
 
-			/* ---------- Step 1: speciality + services ---------- */
-			const buildSpeciality = () => {
-				const sel = $('s1-specialty');
-				const list = catalog.specialities.slice();
-				if (!list.includes(info.speciality)) list.unshift(info.speciality);
-				list.forEach((n) => sel.add(new Option(n, n)));
-				sel.value = info.speciality;
-				sel.addEventListener('change', () => {
-					if (sel.value === info.speciality) return;
-					$('s1-doctor').textContent = doctor + ' (' + info.speciality + ')';
-					$('s1-note').hidden = false;
-					sel.value = info.speciality; // the booking stays with this doctor
-				});
-			};
-
+			/* ---------- Step 1: services ---------- */
+			// Speciality is fixed to the doctor chosen on the previous page, so it isn't
+			// shown as an editable field here (there's nothing valid to change it to).
 			const buildServices = () => {
 				const wrap = $('service-options');
 				const f = info.fees;
@@ -1124,12 +1063,11 @@
 				if (!ok) {
 					$('s1-fields').hidden = true;
 					$('no-doctor').hidden = false;
-					$('to-slot').disabled = true;
+					$('to-info').disabled = true;
 					$('no-doctor-text').textContent = doctor
 						? 'We could not load this doctor\'s booking details. Please try again, or call ' + HOSPITAL_PHONE + '.'
 						: 'Please choose a doctor first to start your booking.';
 				} else {
-					buildSpeciality();
 					buildServices();
 					initCalendar();
 					notice.hidden = live;
@@ -1169,6 +1107,26 @@
 			})();
 
 			/* ---------- Navigation ---------- */
+			// Fills in the read-only summaries (header strip + the Details & Payment pane)
+			// from current state; called whenever we land on step 2.
+			const renderSummary = () => {
+				$('info-consult').textContent = servicesText();
+				$('info-when').textContent = when();
+				$('sum-when').textContent = when();
+				const box = $('sum-lines');
+				box.innerHTML = '';
+				lines().forEach((l) => {
+					const row = document.createElement('div');
+					row.className = 'd-flex justify-content-between mb-2';
+					row.innerHTML = '<span></span><span></span>';
+					row.children[0].textContent = l.name;
+					row.children[1].textContent = money(l.price);
+					box.appendChild(row);
+				});
+				$('sum-total').textContent = money(total());
+				$('pay-btn').querySelector('span').textContent = 'Pay ' + money(total());
+			};
+
 			const go = (step) => {
 				Object.keys(panes).forEach((n) => { panes[n].hidden = +n !== step; });
 				stepsBar.querySelectorAll('li').forEach((li) => {
@@ -1176,27 +1134,27 @@
 					li.classList.toggle('progress-active', n === step);
 					li.classList.toggle('progress-activated', n < step);
 				});
-				$('booking-info').hidden = step < 3;
-				if (step >= 3) {
-					$('info-consult').textContent = servicesText();
-					$('info-when').textContent = when();
-				}
+				$('booking-info').hidden = step < 2;
+				if (step >= 2) renderSummary();
 				stepsBar.scrollIntoView({ behavior: 'smooth', block: 'start' });
-				if (step === 5) $('done-title').focus({ preventScroll: true });
+				if (step === 3) $('done-title').focus({ preventScroll: true });
 			};
 			document.querySelectorAll('[data-go]').forEach((b) =>
 				b.addEventListener('click', () => go(+b.dataset.go)));
-			$('to-slot').addEventListener('click', () => go(2));
-			toInfo.addEventListener('click', () => { if (state.iso && state.time) go(3); });
+			toInfo.addEventListener('click', () => { if (state.iso && state.time) go(2); });
+			$('quick-slot').addEventListener('click', () => {
+				const open = document.querySelector('#slot-groups input[name="slot"]:not(:disabled)');
+				if (open) { open.checked = true; open.dispatchEvent(new Event('change')); }
+			});
 
-			/* ---------- Step 3: validation ---------- */
+			/* ---------- Step 2: patient details (only name + phone are required) ---------- */
 			const rules = {
 				'pt-first': (v) => v.length >= 1,
 				'pt-last': (v) => v.length >= 1,
 				'pt-phone': (v) => /^[6-9]\d{9}$/.test(v),
 				'pt-email': (v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-				'pt-age': (v) => /^\d{1,3}$/.test(v) && +v <= 120,
-				'pt-gender': (v) => !!v
+				'pt-age': (v) => !v || (/^\d{1,3}$/.test(v) && +v <= 120),
+				'pt-gender': () => true // optional: whatever is selected (or nothing) is fine
 			};
 			const check = (id) => {
 				const el = $(id);
@@ -1213,44 +1171,21 @@
 			$('pt-phone').addEventListener('input', (e) => {
 				e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
 			});
+			// No submit button on this form any more (details + payment share one step);
+			// only stop a stray Enter keypress from reloading the page.
+			$('patient-form').addEventListener('submit', (e) => e.preventDefault());
 
-			$('patient-form').addEventListener('submit', (e) => {
-				e.preventDefault();
-				const results = Object.keys(rules).map(check);
-				if (results.includes(false)) {
-					const firstBad = document.querySelector('.field-wrap.has-error .form-control, .field-wrap.has-error .form-select');
-					if (firstBad) firstBad.focus();
-					return;
-				}
-				state.patient = {
-					name: $('pt-first').value.trim() + ' ' + $('pt-last').value.trim(),
-					phone: $('pt-phone').value.trim(),
-					email: $('pt-email').value.trim(),
-					age: +$('pt-age').value,
-					gender: $('pt-gender').value,
-					type: state.consult,
-					reason: $('pt-reason').value.trim()
-				};
-				$('pay-patient-name').textContent = state.patient.name;
-				$('pay-patient-meta').textContent = state.patient.age + ' yrs, ' + state.patient.gender +
-					' · +91 ' + state.patient.phone + (state.patient.email ? ' · ' + state.patient.email : '');
-				$('sum-when').textContent = when();
-				const box = $('sum-lines');
-				box.innerHTML = '';
-				lines().forEach((l) => {
-					const row = document.createElement('div');
-					row.className = 'd-flex justify-content-between mb-2';
-					row.innerHTML = '<span></span><span></span>';
-					row.children[0].textContent = l.name;
-					row.children[1].textContent = money(l.price);
-					box.appendChild(row);
-				});
-				$('sum-total').textContent = money(total());
-				$('pay-btn').querySelector('span').textContent = 'Pay ' + money(total());
-				go(4);
+			const collectPatient = () => ({
+				name: $('pt-first').value.trim() + ' ' + $('pt-last').value.trim(),
+				phone: $('pt-phone').value.trim(),
+				email: $('pt-email').value.trim(),
+				age: $('pt-age').value.trim() ? +$('pt-age').value : null,
+				gender: $('pt-gender').value,
+				type: state.consult,
+				reason: $('pt-reason').value.trim()
 			});
 
-			/* ---------- Step 4: payment ---------- */
+			/* ---------- Step 2: payment ---------- */
 			const payBtn = $('pay-btn');
 			const payMsg = $('pay-msg');
 			let paidPending = false;
@@ -1357,10 +1292,17 @@
 
 			payBtn.addEventListener('click', async () => {
 				payMsg.hidden = true;
+				const results = Object.keys(rules).map(check);
+				if (results.includes(false)) {
+					const firstBad = document.querySelector('.field-wrap.has-error .form-control, .field-wrap.has-error .form-select');
+					if (firstBad) firstBad.focus();
+					return;
+				}
 				if (!$('pay-terms').checked) {
 					showMsg('Please accept the Terms & Conditions and Privacy Policy to continue.', 'warning');
 					return;
 				}
+				state.patient = collectPatient();
 				setBusy(true);
 				try {
 					await (live ? payLive(buildBooking()) : payDemo());
@@ -1374,7 +1316,7 @@
 				}
 			});
 
-			/* ---------- Step 5: confirmation ---------- */
+			/* ---------- Step 3: confirmation ---------- */
 			const calendarUrl = () => {
 				const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(state.time);
 				if (!m) return '#';
@@ -1407,7 +1349,7 @@
 				$('done-demo').hidden = !isDemo;
 				$('add-calendar').href = calendarUrl();
 				$('add-calendar').hidden = isDemo;
-				go(5);
+				go(3);
 			}
 		})();
 	</script>
