@@ -73037,4 +73037,379 @@ body.testimonial-dragging {
   }
 }
 
+/* Our Medical Team Hero Banner Section */
+.team-hero-section {
+  padding: 40px 0 60px;
+}
+
+.team-hero-banner {
+  position: relative;
+  background: #f4f8fe;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 16px 45px rgba(15, 45, 90, 0.08);
+  border: 1px solid rgba(11, 86, 160, 0.08);
+  min-height: 460px;
+  display: flex;
+  align-items: center;
+}
+
+.team-hero-svg-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.team-hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 56px 40px 56px 60px;
+  max-width: 650px;
+}
+
+.team-eyebrow-wrapper {
+  margin-bottom: 12px;
+}
+
+.team-eyebrow-text {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: #155592;
+  line-height: 1;
+}
+
+.team-eyebrow-line {
+  display: block;
+  width: 42px;
+  height: 3.5px;
+  border-radius: 3px;
+  background: var(--pink, #dd2590);
+  margin-top: 8px;
+}
+
+.team-hero-title {
+  font-size: 44px;
+  font-weight: 800;
+  color: #081735;
+  line-height: 1.15;
+  margin: 16px 0 14px;
+  letter-spacing: -0.5px;
+}
+
+.team-hero-desc {
+  font-size: 16px;
+  line-height: 1.65;
+  color: #50617a;
+  margin-bottom: 32px;
+  max-width: 510px;
+}
+
+.team-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.team-stat-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 18px rgba(10, 45, 95, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.team-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(10, 45, 95, 0.09);
+}
+
+.stat-icon-wrap {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon-blue {
+  background: #eaf3ff;
+  color: #0066d6;
+}
+
+.stat-icon-pink {
+  background: var(--pink-transparent, #fcebf5);
+  color: var(--pink, #dd2590);
+}
+
+.stat-text-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-size: 17px;
+  font-weight: 800;
+  color: #081735;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.team-hero-doctor-wrap {
+  position: absolute;
+  right: 35px;
+  bottom: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.team-hero-doctor-img {
+  height: 106%;
+  max-height: 495px;
+  width: auto;
+  object-fit: contain;
+  object-position: bottom center;
+  display: block;
+  filter: drop-shadow(0 10px 24px rgba(10, 40, 90, 0.1));
+}
+
+@media (max-width: 1199.98px) {
+  .team-hero-content {
+    padding: 44px 30px 44px 44px;
+    max-width: 580px;
+  }
+  .team-hero-title {
+    font-size: 38px;
+  }
+  .team-hero-doctor-wrap {
+    right: 15px;
+  }
+  .team-hero-doctor-img {
+    max-height: 440px;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .team-hero-banner {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+  }
+  .team-hero-content {
+    max-width: 100%;
+    padding: 40px 30px 24px;
+  }
+  .team-hero-doctor-wrap {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    height: 380px;
+    margin-top: -20px;
+    justify-content: center;
+  }
+  .team-hero-doctor-img {
+    height: 100%;
+    max-height: 380px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .team-hero-content {
+    padding: 30px 20px 20px;
+  }
+  .team-hero-title {
+    font-size: 30px;
+  }
+  .team-stats-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .team-stat-card {
+    width: 100%;
+  }
+  .team-hero-doctor-wrap {
+    height: 300px;
+  }
+  .team-hero-doctor-img {
+    max-height: 300px;
+  }
+}
+
+/* Why Choose Us Modern Cards */
+.why-choose-section {
+  padding: 70px 0 80px;
+  background: #f8fafc;
+}
+
+.why-choose-card-modern {
+  position: relative;
+  background: #ffffff;
+  border-radius: 26px;
+  border: 1px solid rgba(11, 86, 160, 0.08);
+  box-shadow: 0 10px 30px rgba(10, 45, 95, 0.04);
+  padding: 38px 24px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.why-choose-card-modern .card-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.why-choose-icon-badge {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(11, 86, 160, 0.08);
+  transition: all 0.35s ease;
+  flex-shrink: 0;
+  margin: 0 auto 24px;
+}
+
+.why-choose-icon-ring {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 76px;
+  height: 76px;
+  pointer-events: none;
+  transition: all 0.35s ease;
+}
+
+.why-choose-icon-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.35s ease;
+}
+
+.why-choose-card-modern h4 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #081735;
+  line-height: 1.35;
+  margin-bottom: 12px;
+  transition: color 0.35s ease;
+}
+
+.why-choose-card-modern p {
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: #50617a;
+  margin-bottom: 0;
+  transition: color 0.35s ease;
+}
+
+.why-choose-watermark {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 125px;
+  height: 125px;
+  pointer-events: none;
+  opacity: 0;
+  color: #0b56a0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  z-index: 1;
+  transform: scale(0.95);
+}
+
+/* Hover / Active UI (Pioneers in Respiratory Excellence Model) */
+.why-choose-card-modern:hover,
+.why-choose-card-modern.is-active {
+  background: linear-gradient(150deg, #0052cc 0%, #0066e6 50%, #004bbb 100%);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 45px rgba(0, 82, 204, 0.28);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.why-choose-card-modern:hover h4,
+.why-choose-card-modern.is-active h4 {
+  color: #ffffff;
+}
+
+.why-choose-card-modern:hover p,
+.why-choose-card-modern.is-active p {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.why-choose-card-modern:hover .why-choose-icon-badge,
+.why-choose-card-modern.is-active .why-choose-icon-badge {
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  transform: scale(1.05);
+}
+
+.why-choose-card-modern:hover .why-choose-watermark,
+.why-choose-card-modern.is-active .why-choose-watermark {
+  opacity: 0.16;
+  color: #ffffff;
+  transform: scale(1.06);
+}
+
+/* Spacing for Book Appointment CTA below cards */
+.why-choose-cta {
+  margin-top: 55px;
+  padding-top: 20px;
+}
+
+.why-choose-cta p {
+  margin-top: 12px;
+  color: #64748b;
+  font-size: 14.5px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 767.98px) {
+  .why-choose-cta {
+    margin-top: 40px;
+    padding-top: 10px;
+  }
+}
+
 /*# sourceMappingURL=style.css.map */
