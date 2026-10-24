@@ -107,7 +107,7 @@
     // Location
     {
       patterns: ["location", "address", "where", "directions", "map", "tirunelveli", "how to reach", "vannarpettai"],
-      answer: "📍 <strong>Our Location:</strong><br><br>Nivya Respiratory & Multispeciality Hospitals<br>110-F/5 Barani Nagar, Vannarpettai,<br>Tirunelveli, Tamil Nadu 627003<br><br><a href='https://www.google.com/maps/place/Nivya+Respiratory+and+Multispeciality+Hospitals/@8.730369,77.722786,15z/data=!4m6!3m5!1s0x3b0411f348002ee9:0x5061835044f6fa5d!8m2!3d8.7303693!4d77.7227857!16s%2Fg%2F1264bfpsk' target='_blank' rel='noopener'>📌 Open in Google Maps</a>"
+      answer: "📍 <strong>Our Location:</strong><br><br>Nivya Respiratory & Multispeciality Hospitals<br>110-F/5 Barani Nagar, Vannarpettai,<br>Tirunelveli, Tamil Nadu 627003<br><br><a href='https://www.google.com/maps?q=8.7303166,77.7227378' target='_blank' rel='noopener'>📌 Open in Google Maps</a>"
     },
 
     // Contact

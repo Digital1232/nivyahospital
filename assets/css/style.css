@@ -53103,19 +53103,23 @@ ul li {
   background: #ffffff;
   box-shadow: 0 25px 50px rgba(15, 23, 42, 0.08);
 }
+
 .doctor-card-modern .card-img img {
   border-radius: 24px 24px 0 0;
   object-fit: cover;
   aspect-ratio: 4 / 3;
 }
+
 .doctor-card-modern .badge {
   font-weight: 600;
   padding: 0.3rem 0.9rem;
 }
+
 .doctor-card-modern .btn-dark {
   background: #060b3a;
   border: none;
 }
+
 .doctor-card-modern h3 a {
   color: #0f172a;
 }
@@ -53203,7 +53207,7 @@ ul li {
   }
 }
 
-.doctor-section-two .row > [class*="col-"] {
+.doctor-section-two .row>[class*="col-"] {
   display: flex;
 }
 
@@ -72670,6 +72674,7 @@ body.testimonial-dragging {
   .medical-team-card {
     padding: 30px 24px !important;
   }
+
   .medical-team-photo {
     margin-top: 24px;
   }
@@ -73204,12 +73209,15 @@ body.testimonial-dragging {
     padding: 44px 30px 44px 44px;
     max-width: 580px;
   }
+
   .team-hero-title {
     font-size: 38px;
   }
+
   .team-hero-doctor-wrap {
     right: 15px;
   }
+
   .team-hero-doctor-img {
     max-height: 440px;
   }
@@ -73221,10 +73229,12 @@ body.testimonial-dragging {
     align-items: stretch;
     min-height: auto;
   }
+
   .team-hero-content {
     max-width: 100%;
     padding: 40px 30px 24px;
   }
+
   .team-hero-doctor-wrap {
     position: relative;
     right: auto;
@@ -73233,6 +73243,7 @@ body.testimonial-dragging {
     margin-top: -20px;
     justify-content: center;
   }
+
   .team-hero-doctor-img {
     height: 100%;
     max-height: 380px;
@@ -73243,19 +73254,24 @@ body.testimonial-dragging {
   .team-hero-content {
     padding: 30px 20px 20px;
   }
+
   .team-hero-title {
     font-size: 30px;
   }
+
   .team-stats-row {
     flex-direction: column;
     align-items: stretch;
   }
+
   .team-stat-card {
     width: 100%;
   }
+
   .team-hero-doctor-wrap {
     height: 300px;
   }
+
   .team-hero-doctor-img {
     max-height: 300px;
   }

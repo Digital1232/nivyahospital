@@ -526,7 +526,7 @@
 															<p class="text-muted small mb-3"><i class="fas fa-shield-halved me-1"></i><span id="gateway-note"></span></p>
 															<div class="form-check">
 																<input class="form-check-input" type="checkbox" id="pay-terms">
-																<label class="form-check-label" for="pay-terms">I agree to the <a href="terms-condition.html" target="_blank" rel="noopener">Terms &amp; Conditions</a> and <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+																<label class="form-check-label" for="pay-terms">I agree to the <a href="terms-condition.html" target="_blank" rel="noopener">Terms &amp; Conditions</a>, <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>, <a href="cancellation-refund-policy.html" target="_blank" rel="noopener">Cancellation &amp; Refund Policy</a> and <a href="service-delivery-policy.html" target="_blank" rel="noopener">Service Delivery Policy</a>.</label>
 															</div>
 															<div id="pay-msg" class="alert mt-3 mb-0" role="alert" hidden></div>
 														</div>
@@ -1299,7 +1299,7 @@
 					return;
 				}
 				if (!$('pay-terms').checked) {
-					showMsg('Please accept the Terms & Conditions and Privacy Policy to continue.', 'warning');
+					showMsg('Please accept the Terms & Conditions, Privacy Policy, and Hospital Policies to continue.', 'warning');
 					return;
 				}
 				state.patient = collectPatient();
