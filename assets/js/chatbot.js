@@ -46,7 +46,7 @@
     // Consultation Fees
     {
       patterns: ["fee", "fees", "cost", "charge", "price", "consultation fee", "how much", "rate", "new patient", "old patient"],
-      answer: "💰 <strong>Consultation Fees:</strong><br><br>🔵 New Patient: <strong>₹800</strong><br>🟢 Old Patient: <strong>₹500</strong><br><br>These fees apply for all our consultants."
+      answer: "💰 <strong>Consultation Fees:</strong><br><br>• <strong>Dr. P. Manimozhian:</strong> New Patient: <strong>₹800</strong> | Old Patient: <strong>₹500</strong><br>• <strong>Dr. M. Nivya:</strong> <strong>₹200</strong><br>• <strong>Dr. M.A. Mathan:</strong> <strong>₹200</strong><br>• <strong>Dr. Naveen Paul Singh:</strong> <strong>₹400</strong>"
     },
 
     // Appointment / Booking

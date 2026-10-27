@@ -25,13 +25,13 @@
 		"Dr. M. Nivya": {
 			"speciality": "Diabetology",
 			"avatar": "assets/img/doctors/dr-nivya-avatar.jpg",
-			"fees": { "new": 800, "old": 500 },
+			"fees": { "new": 200, "old": 200 },
 			"addons": []
 		},
 		"Dr. M.A. Mathan": {
 			"speciality": "Emergency & Critical Care Medicine",
 			"avatar": "assets/img/doctors/dr-mathan-avatar.jpg",
-			"fees": { "new": 800, "old": 500 },
+			"fees": { "new": 200, "old": 200 },
 			"addons": []
 		},
 		"Dr. Naveen Paul Singh": {
