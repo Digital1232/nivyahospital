@@ -4,3 +4,7 @@ node_modules/
 .git/
 .vscode/
 .claude/
+scripts/
+generate_specialty_pages.js
+README.md
+cleanup-report.md

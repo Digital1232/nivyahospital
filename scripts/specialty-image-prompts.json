@@ -1,0 +1,82 @@
+[
+  {
+    "key": "emergency-critical-care-hero",
+    "prompt": "Use case: photorealistic-natural. Asset type: landscape 3:2 hospital website specialty hero photograph, no text overlay. Primary request: Emergency and Critical Care Medicine. An Indian emergency physician in blue scrubs and an Indian nurse calmly assessing an adult patient resting on an emergency department bed, bedside cardiac monitor and organized emergency equipment in the background. A credible modern Indian hospital, not futuristic, careful natural hand anatomy, professional non-graphic care, patient fully covered, clinician faces and key equipment in central 80 percent for responsive cropping. Photorealistic editorial healthcare photography, natural skin texture, soft bright daylight, clean white and soft blue palette with subtle lavender accents, balanced medium-wide composition, compassionate and reassuring, polished but authentic. No blood, no visible injury, no operations, no text, no logos, no watermarks. Create a single standalone image, no collage.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-bf9d1c58-2cf7-4fde-860a-e758ab3d55ce.png",
+    "output": "assets/img/specialities/generated/emergency-critical-care-hero.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "general-medicine-hero",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: A female Indian general physician wearing a white coat over pale blue clothing uses a stethoscope correctly on the upper back of a seated middle-aged male patient wearing a modest light shirt, respectful general health examination in a bright consultation room, blood pressure cuff and neat examination desk softly visible. Calm reassuring everyday primary care, not surgery.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-c9c98d07-a1ce-483d-9d0a-9057fdb5ff4f.png",
+    "output": "assets/img/specialities/generated/general-medicine-hero.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "cardiology-hero",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: An Indian cardiologist in a white coat sits beside an older Indian woman patient at a consultation desk, explaining a simple unlabelled anatomical heart model between them, an unobtrusive ECG monitor with a plausible waveform in the softly blurred background. Focus on compassionate heart health assessment and prevention, realistic scale of heart model, no readable screen text.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-91bb69ef-fe9b-4e4b-9ccb-4c47a3119bd4.png",
+    "output": "assets/img/specialities/generated/cardiology-hero.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "orthopaedics-hero",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: An Indian orthopaedic doctor in a white coat calmly explains a realistic knee joint model to a middle-aged Indian male patient seated at a clinic desk. A conventional knee X-ray on a viewing monitor softly in the background, credible bones and joints, modern orthopaedic consultation, friendly and reassuring.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-8eeae1de-4c09-4074-b9fd-b0e7133589f6.png",
+    "output": "assets/img/specialities/generated/orthopaedics-hero.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "orthopaedics-conditions",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: A South Indian physiotherapist in a pale blue clinical uniform carefully guides a middle-aged Indian woman through a gentle seated knee mobility exercise in a rehabilitation room. The patient sits on a treatment table in modest comfortable clothing, therapist supports lower leg naturally, neutral knee position, no extreme bending. Background has simple parallel bars and exercise bands, warm encouraging recovery and movement, realistic anatomy. This illustrates joint pain, arthritis and rehabilitation after injury.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-15e04f80-78d1-48b3-a221-7e6f153c1dcb.png",
+    "output": "assets/img/specialities/generated/orthopaedics-conditions.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "neurology-hero",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: An Indian neurologist in a white coat discusses a conventional medical monitor showing a plausible grayscale brain MRI with a seated middle-aged Indian patient in a bright neurology consultation room. Neurologist and patient in three-quarter view with monitor beside them, natural reassuring explanation, no digital holograms, no readable text or diagnostic claims.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-8fcd2ad3-d682-4910-8d64-4e9d5b49cc53.png",
+    "output": "assets/img/specialities/generated/neurology-hero.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "neurology-conditions",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: An Indian female neurologist wearing a white coat performs a routine neurological reflex assessment on a seated older Indian male patient, using a small reflex hammer near the knee with natural professional hand positioning. A subtle realistic brain anatomical model rests on a nearby desk and an ordinary brain scan monitor is blurred in the background. Patient is calm, seated securely on a clinical examination table, friendly noninvasive diagnostic care illustrating neurological assessment.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-9f9f92bd-008d-423b-85ce-aec9fe8f2c21.png",
+    "output": "assets/img/specialities/generated/neurology-conditions.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "gastro-enterology-conditions",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: An Indian gastroenterologist in a white coat explaining a medically plausible anatomical digestive system model on a desk to a middle-aged Indian woman patient. The small conventional teaching model shows stomach, liver and intestines, human figures normal scale, model positioned between doctor and patient, a clean modern consultation room. Compassionate digestive health consultation focused on understanding stomach and liver problems, no invasive procedures, no exposed body, no graphic imagery.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-b33fe525-4c9f-4e56-81d4-5a3cfef4523b.png",
+    "output": "assets/img/specialities/generated/gastro-enterology-conditions.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "oncology-services",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: A compassionate female Indian oncologist wearing a white coat has a reassuring conversation with an adult Indian woman receiving outpatient cancer care, seated comfortably in a pale blue treatment recliner, modest shawl, another caring clinician softly blurred in the background. A conventional infusion stand is unobtrusively nearby, no close-up needles or visible skin puncture. Human connection and supportive cancer care, realistic dignified adult faces, calm warm daylight, professional and hopeful without exaggerated celebration.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-4bf191ae-b096-4112-8d24-960897d490e6.png",
+    "output": "assets/img/specialities/generated/oncology-services.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  },
+  {
+    "key": "psychiatry-conditions",
+    "prompt": "Use case: photorealistic-natural. Asset type: single landscape 3:2 photograph for an Indian multispeciality hospital website. Photorealistic editorial healthcare photography, authentic natural skin and fabric textures, bright soft daylight, clean white and soft blue setting with restrained lavender accents, compassionate professional mood. Medium-wide eye-level composition, keep faces, hands and important objects within central 80 percent for responsive cropping. Fictional Indian clinicians and adult patients. Natural credible hands, realistic clinical environment. No text, no logos, no watermarks, no collage, no visible injury, no blood, no dramatic glowing holograms. Primary request: A female Indian psychiatrist in professional pale blue clothing listens attentively to a young adult Indian woman in a calm private counselling room. Two comfortable chairs angled toward each other, natural open posture, respectful eye contact, patient wearing modest casual clothes and speaking comfortably. Soft daylight, small plant and a discreet notebook in the psychiatrist's lap, no doctor touching patient, no medication display. Reassuring confidential mental health support for anxiety, depression and stress, not a staged handshake.",
+    "source": "C:\\Users\\vps\\.codex\\generated_images\\01a17d5d-1aba-7ec1-8a69-ad8e522ca7b8\\exec-ce31c938-532c-4523-92a6-448bc4af95db.png",
+    "output": "assets/img/specialities/generated/psychiatry-conditions.jpg",
+    "method": "Built-in image_gen",
+    "generatedDate": "2026-10-28"
+  }
+]
