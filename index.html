@@ -367,17 +367,19 @@
 
 				<!-- About Img -->
 				<div class="col-lg-6">
-					<div class="about-img-two wow fadeInUp" data-wow-duration="2s">
-						<img src="assets/img/about/about.png" alt="Nivya Respiratory and Multispeciality Hospitals"
-							class="img-fluid rounded-4 shadow">
-						<a href="https://www.youtube.com/shorts/lx12zjW4mDk" target="_blank" data-fancybox>
-							<button class="animate-button" data-text="Play Video · Play Video ·">
-								<p class="button-text"></p>
-								<span class="button-circle">
-									<i class="isax isax-play"></i>
-								</span>
-							</button>
-						</a>
+					<div class="about-img-two hospital-entrance-image wow fadeInUp" data-wow-duration="2s">
+						<svg class="hospital-entrance-photo" viewBox="0 0 1024 1536" width="1024" height="1536" role="img" aria-labelledby="home-hospital-photo-title">
+							<title id="home-hospital-photo-title">Nivya Hospital entrance and building in bright daylight</title>
+							<defs>
+								<mask id="home-hospital-split" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536" style="mask-type: luminance;">
+									<rect width="1024" height="1536" rx="40" fill="white" />
+									<path d="M 0 614 H 360 A 140 140 0 0 1 360 894 H 0" fill="none" stroke="black" stroke-width="22" stroke-linejoin="round" />
+									<path d="M 1024 1220 H 700 A 169 169 0 0 0 700 1558" fill="none" stroke="black" stroke-width="22" stroke-linejoin="round" />
+									<path d="M 0 563 Q 0 603 40 603 H 0 Z M 0 625 H 40 Q 0 625 0 665 Z M 0 843 Q 0 883 40 883 H 0 Z M 0 905 H 40 Q 0 905 0 945 Z M 1024 1169 V 1209 H 984 Q 1024 1209 1024 1169 Z M 1024 1231 H 984 Q 1024 1231 1024 1271 Z" fill="black" />
+								</mask>
+							</defs>
+							<image href="assets/img/about/hospital-entrance-daylight.png" width="1024" height="1536" preserveAspectRatio="xMidYMid meet" mask="url(#home-hospital-split)" />
+						</svg>
 					</div>
 				</div>
 				<!-- About Img End -->

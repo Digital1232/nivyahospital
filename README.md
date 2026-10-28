@@ -1,6 +1,6 @@
 # Nivya Hospital
 
-Static hospital website with 34 public HTML pages, shared assets, and Vercel payment API functions.
+Static hospital website with 39 public HTML pages, shared assets, and Vercel payment API functions.
 
 ## Structure
 
@@ -16,3 +16,9 @@ Run node scripts/check-local-assets.js to inventory local references and missing
 Run node scripts/audit-assets.js to list unreferenced candidates for manual review. It does not delete files. Candidates may include original photography; never delete those automatically.
 
 Keep assets/js/booking-catalog.json: it is shared by the booking page and payment API. Keep HTML policy aliases so existing links continue to work.
+
+## Health blog
+
+Edit `scripts/health-blog-content.json`, then run `node scripts/build-health-blog.js` to rebuild six static article pages and the grid/list indexes. Articles include source links, appropriate health-information notices, and links to the relevant hospital specialty. Do not add a named clinical reviewer unless that person has actually reviewed the article.
+
+`assets/js/health-blog.js` handles article search and category filters. Content remains in the generated HTML for direct links, accessibility and search engines.

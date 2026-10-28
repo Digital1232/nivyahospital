@@ -43944,6 +43944,24 @@ ul.benifits-col li i {
   height: auto;
 }
 
+.about-img-two.hospital-entrance-image {
+  display: block;
+  padding-right: 0;
+  filter: drop-shadow(0 8px 12px rgba(20, 40, 65, 0.12));
+}
+
+.hospital-entrance-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 991.98px) {
+  .about-img-two.hospital-entrance-image {
+    margin-right: 0;
+  }
+}
+
 .about-img-two .animate-button {
   top: 40%;
   right: 0;

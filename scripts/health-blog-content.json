@@ -1,0 +1,138 @@
+[
+  {
+    "file": "blog-details.html",
+    "title": "Living Well with Asthma: Triggers, Inhalers and Everyday Care",
+    "category": "Respiratory Care",
+    "categorySlug": "respiratory-care",
+    "image": "assets/img/specialities/pulmonology-pft.jpg",
+    "alt": "A pulmonary function assessment in a hospital",
+    "excerpt": "Understand common asthma symptoms, recognise your triggers and prepare for a useful conversation with your lung specialist.",
+    "specialty": "Pulmonology",
+    "specialtyPage": "pulmonology.html",
+    "intro": "Wheezing, a tight chest or coughing that interrupts sleep can make an ordinary day feel difficult. Asthma affects the airways and can cause symptoms that come and go. With appropriate treatment, many people can stay active and manage their symptoms well.",
+    "sections": [
+      {"heading": "Notice your own pattern", "paragraphs": ["Common symptoms include cough, wheeze, breathlessness and chest tightness. They may be worse at night, early in the morning or during activity. Other conditions can produce similar symptoms, so an assessment matters before assuming that every cough is asthma.", "Dust, smoke, pollen, strong fragrances and respiratory infections can trigger symptoms in some people. Your triggers may differ from someone else's. A short note of when symptoms appear can make your appointment more useful."]},
+      {"heading": "Make your treatment plan practical", "paragraphs": ["Use medicines as prescribed and ask your doctor or nurse to check your inhaler technique. Bring your inhaler and spacer, if you use one, to your review. Ask for a personal asthma action plan that explains your usual treatment and what to do if breathing gets worse.", "Arrange a review if symptoms wake you at night, restrict daily activities or make you need symptom-relief medicine more often. Do not change inhaler doses or stop treatment based on an online article."]},
+      {"heading": "Prepare for your appointment", "list": ["Bring your current medicines and previous lung-test reports.", "Describe night-time symptoms, activity limits and possible triggers.", "Ask your clinician to demonstrate your inhaler and check your technique."]}
+    ],
+    "alert": "Severe or rapidly worsening breathlessness needs urgent medical help. If you already have an asthma action plan, follow its emergency instructions. Call 112 for an emergency in India; do not wait for an online appointment.",
+    "sources": [
+      {"title": "WHO: Asthma", "url": "https://www.who.int/news-room/fact-sheets/detail/asthma"},
+      {"title": "NHS: Asthma", "url": "https://www.nhs.uk/conditions/asthma/"},
+      {"title": "Government of India: Emergency Response Support System", "url": "https://112.gov.in/"}
+    ]
+  },
+  {
+    "file": "blog-persistent-cough.html",
+    "title": "A Cough That Will Not Go Away: When to Get It Checked",
+    "category": "Respiratory Care",
+    "categorySlug": "respiratory-care",
+    "image": "assets/img/blog/blog-32.jpg",
+    "alt": "A person discussing respiratory symptoms with a healthcare professional",
+    "excerpt": "A lingering cough deserves attention. Learn what to tell your doctor and which warning signs should not wait.",
+    "specialty": "Pulmonology",
+    "specialtyPage": "pulmonology.html",
+    "intro": "A cough after a respiratory infection often settles, but a cough that keeps returning or lasts for weeks should not simply become part of daily life. The cause cannot be identified from the sound of a cough alone. A clinical history and examination help decide what to investigate.",
+    "sections": [
+      {"heading": "Know when to book a review", "paragraphs": ["The NHS recommends medical review for a cough lasting more than three weeks. Seek advice sooner if you feel very unwell, the cough is getting worse or you have another reason to be concerned. Unexplained weight loss is also a reason to speak with a doctor.", "Persistent cough can have different causes, including infections, allergies, acid reflux or smoking-related disease. COPD can cause a long-term cough, phlegm and breathlessness, but these symptoms do not confirm COPD by themselves. Your clinician may recommend a breathing test if it is appropriate."]},
+      {"heading": "Bring the details that help", "list": ["When the cough started and whether it happens at night or with activity.", "Whether you bring up phlegm, have fever or notice breathing difficulty.", "Any tobacco use or exposure to smoke, cooking fumes, workplace dust or chemicals.", "Your current medicines and previous prescriptions, scans or breathing-test reports."]},
+      {"heading": "Avoid treating every cough the same way", "paragraphs": ["Smoking and air pollution are important contributors to COPD. Reducing exposure to tobacco smoke and other harmful fumes supports lung health; ask for help with quitting if you need it. Treatment for a persistent cough depends on its cause, rather than a single remedy that works for everyone.", "Tell your doctor what you have already tried. Do not repeatedly use leftover medicines instead of arranging an assessment. A pharmacist or clinician can advise whether an over-the-counter product is suitable for you."]}
+    ],
+    "alert": "Get urgent medical help for difficulty breathing, chest pain or coughing up blood. Severe symptoms need emergency assessment rather than waiting for a routine clinic appointment.",
+    "sources": [
+      {"title": "NHS: Cough", "url": "https://www.nhs.uk/symptoms/cough/"},
+      {"title": "WHO: Chronic obstructive pulmonary disease", "url": "https://www.who.int/news-room/fact-sheets/detail/chronic-obstructive-pulmonary-disease-(copd)"}
+    ]
+  },
+  {
+    "file": "blog-diabetes-care.html",
+    "title": "Diabetes Care: Small Daily Habits and Regular Follow-ups",
+    "category": "General Medicine",
+    "categorySlug": "general-medicine",
+    "image": "assets/img/specialities/generated/general-medicine-hero.jpg",
+    "alt": "A general physician carrying out a routine examination",
+    "excerpt": "Understand possible symptoms, everyday care and the questions to bring to your next diabetes consultation.",
+    "specialty": "General Medicine",
+    "specialtyPage": "general-medicine.html",
+    "intro": "Diabetes care is a continuing conversation between you and your healthcare team. It includes understanding your results, making manageable daily changes and taking treatment as prescribed. Feeling well does not always mean blood sugar is within your personal target range.",
+    "sections": [
+      {"heading": "Symptoms can be easy to overlook", "paragraphs": ["Possible symptoms include unusual thirst, frequent urination, tiredness, blurred vision and weight loss without trying. Some people with type 2 diabetes have few or no noticeable symptoms for a long time. Symptoms alone cannot diagnose diabetes; ask your clinician about appropriate testing.", "Tell your doctor about symptoms you have noticed, when they began and any family history of diabetes. Bring previous blood-test results rather than relying on memory. This gives the consultation a clear starting point."]},
+      {"heading": "Build a plan you can follow", "paragraphs": ["Healthy eating, physical activity, prescribed medicines and follow-up all have a place in diabetes management. A plan should fit your health needs and daily routine. Ask for practical guidance on food choices, portions and activity that suits you.", "Regular care also looks beyond a single blood-sugar reading. Diabetes can affect the eyes, kidneys, nerves and blood vessels. Ask which checks you need and when to return. Your clinician should set your monitoring schedule and treatment targets; another person's numbers or prescription may not suit you."]},
+      {"heading": "Questions for your next visit", "list": ["What do my latest results mean for my treatment plan?", "When should I check blood sugar, and what should I do with the results?", "Which eye, kidney, foot and cardiovascular checks are due?", "Who should I contact if I feel unwell or have concerns about my medicines?"]},
+      {"heading": "Keep your care information together", "paragraphs": ["Bring a current medicine list, any home readings your clinician has requested and questions about difficulties following your plan. If work hours or food routines make a recommendation hard to follow, say so. The goal of the visit is a plan you understand and can use."]}
+    ],
+    "sources": [
+      {"title": "WHO: Diabetes", "url": "https://www.who.int/news-room/fact-sheets/detail/diabetes"},
+      {"title": "CDC: Symptoms of Diabetes", "url": "https://www.cdc.gov/diabetes/signs-symptoms/index.html"}
+    ]
+  },
+  {
+    "file": "blog-heart-health.html",
+    "title": "Heart Health Starts with Knowing Your Risk Factors",
+    "category": "Heart Health",
+    "categorySlug": "heart-health",
+    "image": "assets/img/specialities/generated/cardiology-hero.jpg",
+    "alt": "A cardiologist discussing heart health with a patient",
+    "excerpt": "Learn why blood pressure, cholesterol, tobacco use and everyday routines belong in a heart-health conversation.",
+    "specialty": "Cardiology",
+    "specialtyPage": "cardiology.html",
+    "intro": "Looking after your heart is not only about how fit you feel. Blood pressure, cholesterol, blood sugar, tobacco use and family history can all be part of the picture. A conversation with your clinician can help you understand which risks apply to you and which changes deserve attention first.",
+    "sections": [
+      {"heading": "Start with your own health information", "paragraphs": ["Heart and blood-vessel disease is linked to factors including tobacco use, unhealthy diet, physical inactivity, raised blood pressure, raised cholesterol and diabetes. Knowing your results helps you discuss risk more clearly than guessing from symptoms alone.", "Bring previous test reports, your medicine list and relevant family history to your consultation. Ask your doctor which checks are appropriate for your age, history and symptoms. A screening test is useful when it answers a clinical question; everyone does not need the same set of investigations."]},
+      {"heading": "Choose changes that can last", "paragraphs": ["A balanced eating pattern with vegetables, fruit, pulses and whole grains supports heart health. Reducing excess salt and foods high in saturated fat can help with risk reduction. Physical activity and stopping smoking are also important parts of prevention.", "Ask for advice on an activity level that suits your current health, particularly if you have symptoms or an existing heart condition. Continue prescribed blood-pressure, cholesterol or diabetes treatment as directed, and discuss side effects rather than stopping medicines yourself."]},
+      {"heading": "Make follow-up useful", "list": ["Ask what your blood pressure, cholesterol and blood-sugar results mean.", "Agree on one or two realistic changes to start with.", "Check when you should return and which reports to bring.", "Tell your clinician about new symptoms instead of waiting for the next planned review."]}
+    ],
+    "alert": "New chest pain or discomfort, especially with breathlessness, sweating, nausea or pain in an arm or jaw, needs urgent assessment. For a suspected medical emergency in India, call 112. Do not use a routine online booking as the first response.",
+    "sources": [
+      {"title": "WHO: Cardiovascular diseases", "url": "https://www.who.int/news-room/fact-sheets/detail/cardiovascular-diseases-(cvds)"},
+      {"title": "NHS: Preventing coronary heart disease", "url": "https://www.nhs.uk/conditions/coronary-heart-disease/prevention/"},
+      {"title": "Government of India: Emergency Response Support System", "url": "https://112.gov.in/"}
+    ]
+  },
+  {
+    "file": "blog-stroke-warning-signs.html",
+    "title": "Recognising a Stroke: Know FAST and Act Without Delay",
+    "category": "Emergency Care",
+    "categorySlug": "emergency-care",
+    "image": "assets/img/specialities/generated/emergency-critical-care-hero.jpg",
+    "alt": "An emergency medical team caring for a patient",
+    "excerpt": "Sudden face weakness, arm weakness or speech difficulty can be an emergency. Learn the FAST signs and the next step.",
+    "specialty": "Emergency & Critical Care Medicine",
+    "specialtyPage": "emergency-critical-care-medicine.html",
+    "intro": "Stroke symptoms usually begin suddenly. Recognising the change and getting emergency help quickly matters more than trying to work out the cause at home. A stroke can happen at any age, so do not dismiss a new symptom simply because someone is young or normally well.",
+    "sections": [
+      {"heading": "Remember FAST", "list": ["Face: has one side of the face become weak or started to droop?", "Arms: can the person raise both arms and keep them raised, or is one weak or numb?", "Speech: is speech suddenly slurred, unusual or difficult to understand?", "Time: call 112 for emergency help in India if you suspect a stroke."]},
+      {"heading": "There can be other sudden signs", "paragraphs": ["A stroke can also cause sudden trouble seeing, loss of balance, difficulty walking, confusion or a severe headache with no known cause. FAST is a helpful reminder, but it does not describe every possible stroke symptom.", "Do not wait for every sign to appear. Get urgent help even if the symptoms seem to improve or disappear. A brief episode can still need emergency assessment."]},
+      {"heading": "Help the emergency team", "paragraphs": ["Note when the symptoms were first noticed. If you know when the person was last without symptoms, share that information too. Tell the emergency team what changed and follow the dispatcher's instructions.", "Use emergency medical transport rather than driving yourself. Do not delay the call to arrange an outpatient visit or collect every previous report. Prompt assessment allows the medical team to identify the cause and decide on the treatment that is appropriate."]},
+      {"heading": "Have the conversation before an emergency", "paragraphs": ["Share the FAST reminder with the people you live with. Keep your address and essential contact information easy to find. If you are supporting an older relative, make sure family members know that sudden speech or movement changes require an immediate response."]}
+    ],
+    "alert": "Suspected stroke is an emergency. Call 112 now in India and follow the dispatcher's instructions. Do not wait for a hospital website reply or an online appointment.",
+    "sources": [
+      {"title": "NHS: Symptoms of a stroke", "url": "https://www.nhs.uk/conditions/stroke/symptoms/"},
+      {"title": "CDC: Signs and Symptoms of Stroke", "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html"},
+      {"title": "Government of India: Emergency Response Support System", "url": "https://112.gov.in/"}
+    ]
+  },
+  {
+    "file": "blog-sleep-apnoea.html",
+    "title": "Loud Snoring and Daytime Tiredness: Could It Be Sleep Apnoea?",
+    "category": "Respiratory Care",
+    "categorySlug": "respiratory-care",
+    "image": "assets/img/specialities/generated/general-medicine-hero.jpg",
+    "alt": "A physician assessing a patient during a clinical consultation",
+    "excerpt": "Repeated breathing pauses, disturbed sleep and daytime sleepiness are reasons to discuss your sleep with a clinician.",
+    "specialty": "Pulmonology & Sleep Care",
+    "specialtyPage": "pulmonology.html",
+    "intro": "Snoring does not automatically mean you have sleep apnoea. However, loud snoring together with witnessed breathing pauses or significant daytime tiredness deserves a medical conversation. Someone who shares your room may notice a pattern that you do not remember yourself.",
+    "sections": [
+      {"heading": "Look beyond the sound of snoring", "paragraphs": ["Sleep apnoea involves repeated interruptions to breathing during sleep. The common obstructive form happens when the upper airway becomes blocked. Possible clues include gasping or choking noises, repeated waking, morning headaches and difficulty concentrating during the day.", "Bring a description of what happens at night and how you feel the next day. If a partner or family member has noticed breathing pauses, their observations can help your clinician understand the concern."]},
+      {"heading": "Testing helps establish the cause", "paragraphs": ["Your clinician may recommend a sleep assessment and, if appropriate, an overnight sleep test. These tests can record breathing and other measurements while you sleep. Ask what the test involves and how you will receive and discuss the results.", "Treatment depends on the type and severity of the problem and your individual circumstances. It may include lifestyle changes, breathing support such as CPAP or other options recommended after assessment. A snoring remedy or someone else's device is not a substitute for a diagnosis."]},
+      {"heading": "What to bring to a sleep consultation", "list": ["Your usual bedtime, wake time and any repeated night-time awakenings.", "Details of snoring, gasping or breathing pauses noticed by someone else.", "How tiredness affects work, concentration or daily activities.", "Your medicine list and any previous sleep-test reports."]},
+      {"heading": "Take daytime sleepiness seriously", "paragraphs": ["Do not drive when you feel sleepy. Explain any safety concerns to your clinician, including work that involves driving or machinery. Addressing the problem is about daytime safety as well as getting a more restful night."]}
+    ],
+    "sources": [
+      {"title": "NHS: Sleep apnoea", "url": "https://www.nhs.uk/conditions/sleep-apnoea/"},
+      {"title": "NHLBI: Sleep Apnea", "url": "https://www.nhlbi.nih.gov/health/sleep-apnea"}
+    ]
+  }
+]
