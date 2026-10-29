@@ -420,6 +420,13 @@
 									<!-- /Doctor header -->
 
 									<!-- Step 1: Services + Date & Time -->
+									<section id="fee-pending" class="card-body booking-body" aria-labelledby="fee-pending-title" hidden>
+										<h5 id="fee-pending-title">Contact for consultation fee</h5>
+										<p>Consultation fee will be confirmed by the hospital.</p>
+										<p>Online payment is currently unavailable for this doctor. Please call the hospital to confirm the fee, availability and your appointment.</p>
+										<a href="tel:+919566443300" class="btn btn-primary-gradient mb-3">Call to book: +91 95664 43300</a>
+										<p class="mb-0"><a href="search.html">Back to doctors</a></p>
+									</section>
 									<section id="pane-1" aria-label="Choose service, date and time">
 										<div class="card-body booking-body">
 											<div class="card mb-0">
@@ -914,6 +921,8 @@
 			const state = { consult: 'new', addons: new Set(), iso: null, time: null, patient: null };
 			let catalog = null;
 			let info = null; // this doctor's catalog entry
+			const feePending = () => !info || info.feeStatus === 'pending' || !info.fees ||
+				!['new', 'old'].every((type) => Number.isFinite(info.fees[type]) && info.fees[type] > 0);
 			let live = false; // real Razorpay payment (vs simulated preview)
 
 			const stepsBar = $('wizard-steps');
@@ -1097,6 +1106,14 @@
 				if (info.avatar) { // face-centred crop instead of the full desk photo from the URL
 					const photo = $('booking-doctor-avatar');
 					if (photo) photo.src = info.avatar;
+				}
+				if (feePending()) {
+					stepsBar.hidden = true;
+					Object.values(panes).forEach((pane) => { pane.hidden = true; });
+					$('fee-pending').hidden = false;
+					$('pay-btn').disabled = true;
+					widget.classList.remove('is-loading');
+					return;
 				}
 				let enabled = false;
 				if (!demo) {
@@ -1296,6 +1313,7 @@
 			});
 
 			payBtn.addEventListener('click', async () => {
+				if (feePending()) return;
 				payMsg.hidden = true;
 				const results = Object.keys(rules).map(check);
 				if (results.includes(false)) {

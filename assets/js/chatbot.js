@@ -46,7 +46,7 @@
     // Consultation Fees
     {
       patterns: ["fee", "fees", "cost", "charge", "price", "consultation fee", "how much", "rate", "new patient", "old patient"],
-      answer: "💰 <strong>Consultation Fees:</strong><br><br>• <strong>Dr. P. Manimozhian:</strong> New Patient: <strong>₹800</strong> | Old Patient: <strong>₹500</strong><br>• <strong>Dr. M. Nivya:</strong> <strong>₹200</strong><br>• <strong>Dr. M.A. Mathan:</strong> <strong>₹200</strong><br>• <strong>Dr. Naveen Paul Singh:</strong> <strong>₹400</strong>"
+      answer: "💰 <strong>Consultation Fees:</strong><br><br>• <strong>Dr. P. Manimozhian:</strong> New Patient: <strong>₹800</strong> | Old Patient: <strong>₹500</strong><br>• <strong>Dr. M. Nivya:</strong> <strong>₹200</strong><br>• <strong>Dr. M.A. Mathan:</strong> <strong>₹200</strong><br>• <strong>Dr. Naveen Paul Singh:</strong> Contact the hospital for the consultation fee. Call <a href='tel:+919566443300'>+91 95664 43300</a>"
     },
 
     // Appointment / Booking

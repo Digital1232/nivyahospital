@@ -41,6 +41,10 @@ const validateBooking = (b) => {
 	if (!b || typeof b !== 'object' || !b.patient || typeof b.patient !== 'object') return { error: 'Invalid booking details.' };
 	const doc = Object.prototype.hasOwnProperty.call(CATALOG.doctors, b.doctor) ? CATALOG.doctors[b.doctor] : null;
 	if (!doc) return { error: 'Unknown doctor.' };
+	if (doc.feeStatus === 'pending' || !doc.fees ||
+		!['new', 'old'].every((type) => Number.isFinite(doc.fees[type]) && doc.fees[type] > 0)) {
+		return { error: 'Consultation fee will be confirmed by the hospital. Please call +91 95664 43300 to book; online payment is unavailable for this doctor.' };
+	}
 
 	const p = b.patient;
 	const type = p.type === 'old' ? 'old' : 'new';
