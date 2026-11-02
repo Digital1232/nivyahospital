@@ -319,7 +319,7 @@ specialties.forEach((spec) => {
   const pageTitle = `${spec.pageName} | Nivya Respiratory and Multispeciality Hospitals`;
   const metaDescription = spec.heroDescription;
   const keywords = spec.keywords.join(', ');
-  const ogUrl = `https://nivyahospitals.com/${spec.slug}`;
+  const ogUrl = `https://www.nivyahospitals.com/${spec.slug}`;
 
   content = content.replace('Pulmonology | Nivya Respiratory and Multispeciality Hospitals', pageTitle);
   content = replaceOnce(content, patterns.metaDesc, `<meta name="description" content="${metaDescription}">`);

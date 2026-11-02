@@ -8,7 +8,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date = '2026-10-28';
 const displayDate = '28 October 2026';
-const site = 'https://nivyahospital.vercel.app/';
+const site = 'https://www.nivyahospitals.com/';
 const page = f => f.replace(/\.html$/, '').replace(/^index$/, ''); // clean URL for a page file
 const header = read('blog-grid.html').match(/<header\b[\s\S]*?<\/header>/)[0]
   .replace(/^[\t ]+/gm, indent => indent.replace(/\t/g, '    '))
@@ -59,7 +59,7 @@ function shell({file,title,description,imagePath,content,article,bodyTitle}) {
   <link rel="canonical" href="${site+page(file)}">
   <meta property="og:type" content="${article?'article':'website'}"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${site+page(file)}"><meta property="og:image" content="${site+imagePath}"><meta property="og:site_name" content="Nivya Hospitals">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${site+imagePath}">
-  <link rel="shortcut icon" href="assets/img/favicon.png" type="image/x-icon"><link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon.png"><link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
   <script src="assets/js/theme-script.js"></script>
   <link rel="stylesheet" href="assets/css/bootstrap.min.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><link rel="stylesheet" href="assets/css/iconsax.css"><link rel="stylesheet" href="assets/css/feather.css"><link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/health-blog.css">
   <script type="application/ld+json">${JSON.stringify(structured).replace(/</g,'\\u003c')}</script>
