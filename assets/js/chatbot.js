@@ -22,25 +22,25 @@
     // Manimozhian
     {
       patterns: ["manimozhian", "pulmonologist", "lung", "chest", "pulmonology", "bronchoscopy", "allergy", "sleep", "asthma", "copd", "cough", "breath", "breathing", "breathlessness", "wheezing"],
-      answer: "🫁 <strong>Dr. P. Manimozhian</strong><br>Specialisation: Pulmonology, Bronchoscopy, Allergy & Sleep Medicine<br>Qualification: MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Experience: 21+ Years<br><br>Treats: Asthma, COPD, Lung Infections, Sleep Apnea, Allergies<br><br><a href='doctor-manimozhiyan-profile.html'>View Full Profile →</a>"
+      answer: "🫁 <strong>Dr. P. Manimozhian</strong><br>Specialisation: Pulmonology, Bronchoscopy, Allergy & Sleep Medicine<br>Qualification: MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Experience: 21+ Years<br><br>Treats: Asthma, COPD, Lung Infections, Sleep Apnea, Allergies<br><br><a href='/doctor-manimozhiyan-profile'>View Full Profile →</a>"
     },
 
     // Nivya
     {
       patterns: ["nivya", "diabetes", "diabetologist", "general physician", "sugar", "general medicine", "cardiology", "fever", "blood pressure", "hypertension"],
-      answer: "👩‍⚕️ <strong>Dr. M. Nivya</strong><br>Specialisation: Diabetology & General Medicine<br>Qualification: MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Experience: 15+ Years<br><br>Treats: Diabetes, General Health, Cardiology Consultations<br><br><a href='doctor-nivya-profile.html'>View Full Profile →</a>"
+      answer: "👩‍⚕️ <strong>Dr. M. Nivya</strong><br>Specialisation: Diabetology & General Medicine<br>Qualification: MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Experience: 15+ Years<br><br>Treats: Diabetes, General Health, Cardiology Consultations<br><br><a href='/doctor-nivya-profile'>View Full Profile →</a>"
     },
 
     // Mathan
     {
       patterns: ["mathan", "emergency", "emergencies", "ambulance", "critical care", "icu", "intensivist", "trauma", "accident"],
-      answer: "🚨 <strong>Dr. M.A. Mathan</strong><br>Specialisation: Emergency & Critical Care Medicine<br>Qualification: MBBS, MEM (Emergency & Critical Care Medicine)<br>Experience: 10+ Years<br><br>Handles: Emergency Cases, ICU Management, Trauma, Acute Medical Emergencies<br><br>🚑 <strong>24x7 Emergency &amp; Ambulance:</strong> <a href='tel:+919566443300'>📞 +91 95664 43300</a><br><br><a href='doctor-mathan-profile.html'>View Full Profile →</a>"
+      answer: "🚨 <strong>Dr. M.A. Mathan</strong><br>Specialisation: Emergency & Critical Care Medicine<br>Qualification: MBBS, MEM (Emergency & Critical Care Medicine)<br>Experience: 10+ Years<br><br>Handles: Emergency Cases, ICU Management, Trauma, Acute Medical Emergencies<br><br>🚑 <strong>24x7 Emergency &amp; Ambulance:</strong> <a href='tel:+919566443300'>📞 +91 95664 43300</a><br><br><a href='/doctor-mathan-profile'>View Full Profile →</a>"
     },
 
     // Naveen Paul / Dentist
     {
       patterns: ["naveen", "paul", "dentist", "dentistry", "dental", "teeth", "tooth", "root canal", "braces", "cavity"],
-      answer: "🦷 <strong>Dr. Naveen Paul Singh</strong><br>Specialisation: Dentistry & Dental Surgery<br>Qualification: BDS<br>Experience: 10+ Years<br><br>Treats: Root Canal, Tooth Extraction, Dental Implants, Cosmetic Dentistry, Gum Care<br><br><a href='doctor-naveen-paul-profile.html'>View Full Profile →</a>"
+      answer: "🦷 <strong>Dr. Naveen Paul Singh</strong><br>Specialisation: Dentistry & Dental Surgery<br>Qualification: BDS<br>Experience: 10+ Years<br><br>Treats: Root Canal, Tooth Extraction, Dental Implants, Cosmetic Dentistry, Gum Care<br><br><a href='/doctor-naveen-paul-profile'>View Full Profile →</a>"
     },
 
     // Consultation Fees
@@ -52,56 +52,56 @@
     // Appointment / Booking
     {
       patterns: ["appointment", "book", "booking", "schedule", "visit", "when", "slot"],
-      answer: "📅 <strong>Book an Appointment:</strong><br><br>Choose your doctor on our website:<br><a href='search.html'>👉 Choose Doctor & Book</a><br><br>Bookings are confirmed by phone:<br>📞 <a href='tel:+919566443300'>+91 95664 43300</a><br><br>⏰ OPD Timings:<br>Mon–Sat: 9:00 AM – 7:00 PM<br>Sunday: Emergency Only"
+      answer: "📅 <strong>Book an Appointment:</strong><br><br>Choose your doctor on our website:<br><a href='/search'>👉 Choose Doctor & Book</a><br><br>Bookings are confirmed by phone:<br>📞 <a href='tel:+919566443300'>+91 95664 43300</a><br><br>⏰ OPD Timings:<br>Mon–Sat: 9:00 AM – 7:00 PM<br>Sunday: Emergency Only"
     },
 
     // Specialities
     {
       weight: -4,
       patterns: ["speciality", "specialities", "department", "departments", "services", "treatment", "what do you treat"],
-      answer: "🏥 <strong>Our Specialities:</strong><br><br>🫁 Pulmonology<br>🚨 Emergency & Critical Care<br>💊 General Medicine<br>❤️ Cardiology<br>🦴 Orthopaedics<br>🦷 Dentistry<br>🔪 General Surgery<br>🧠 Neurology<br>🫃 Gastroenterology<br>🔬 Radiology<br>🎗️ Oncology<br>🧘 Psychiatry<br><br><a href='index.html#specialities'>View All Specialities →</a>"
+      answer: "🏥 <strong>Our Specialities:</strong><br><br>🫁 Pulmonology<br>🚨 Emergency & Critical Care<br>💊 General Medicine<br>❤️ Cardiology<br>🦴 Orthopaedics<br>🦷 Dentistry<br>🔪 General Surgery<br>🧠 Neurology<br>🫃 Gastroenterology<br>🔬 Radiology<br>🎗️ Oncology<br>🧘 Psychiatry<br><br><a href='/#specialities'>View All Specialities →</a>"
     },
 
     // Orthopaedics
     {
       patterns: ["orthopaedics", "orthopaedic", "orthopedics", "orthopedic", "ortho", "bone", "fracture", "joint", "arthritis", "spine", "knee", "back pain", "sports injury"],
-      answer: "🦴 <strong>Orthopaedics:</strong><br><br>• Fractures & Injuries<br>• Arthritis<br>• Joint Pain<br>• Sports Injuries<br>• Spine Disorders<br><br><a href='orthopaedics.html'>Learn More →</a>"
+      answer: "🦴 <strong>Orthopaedics:</strong><br><br>• Fractures & Injuries<br>• Arthritis<br>• Joint Pain<br>• Sports Injuries<br>• Spine Disorders<br><br><a href='/orthopaedics'>Learn More →</a>"
     },
 
     // General Surgery
     {
       patterns: ["surgery", "general surgery", "wound", "thyroid", "breast", "lipoma", "piles", "fissure"],
-      answer: "🔪 <strong>General Surgery:</strong><br><br>• Comprehensive Wound Care<br>• Thyroid Mass Surgery<br>• Breast Mass Surgery<br>• Lipoma Surgery<br>• Piles & Fissure<br>• Hernia Repair<br>• Appendix Surgery<br><br><a href='general-surgery.html'>Learn More →</a>"
+      answer: "🔪 <strong>General Surgery:</strong><br><br>• Comprehensive Wound Care<br>• Thyroid Mass Surgery<br>• Breast Mass Surgery<br>• Lipoma Surgery<br>• Piles & Fissure<br>• Hernia Repair<br>• Appendix Surgery<br><br><a href='/general-surgery'>Learn More →</a>"
     },
 
     // Neurology
     {
       patterns: ["neurology", "neuro", "brain", "nerve", "stroke", "epilepsy", "migraine", "parkinson"],
-      answer: "🧠 <strong>Neurology:</strong><br><br>• Stroke<br>• Epilepsy<br>• Migraine<br>• Neuropathy<br>• Parkinson's Disease<br><br><a href='neurology.html'>Learn More →</a>"
+      answer: "🧠 <strong>Neurology:</strong><br><br>• Stroke<br>• Epilepsy<br>• Migraine<br>• Neuropathy<br>• Parkinson's Disease<br><br><a href='/neurology'>Learn More →</a>"
     },
 
     // Gastroenterology
     {
       patterns: ["gastro", "gastroenterology", "stomach", "gut", "acid", "reflux", "gerd", "ulcer", "liver", "diarrhea", "constipation", "pancreas"],
-      answer: "🫃 <strong>Gastroenterology:</strong><br><br>• GERD (Acid Reflux)<br>• Liver Diseases<br>• Gastritis<br>• Ulcers<br>• Diarrhea<br>• Constipation<br>• Pancreatic Disease<br><br><a href='gastro-enterology.html'>Learn More →</a>"
+      answer: "🫃 <strong>Gastroenterology:</strong><br><br>• GERD (Acid Reflux)<br>• Liver Diseases<br>• Gastritis<br>• Ulcers<br>• Diarrhea<br>• Constipation<br>• Pancreatic Disease<br><br><a href='/gastro-enterology'>Learn More →</a>"
     },
 
     // Radiology
     {
       patterns: ["radiology", "xray", "x-ray", "scan", "ultrasound", "imaging", "doppler"],
-      answer: "🔬 <strong>Radiology:</strong><br><br>• X-Ray<br>• Ultrasound<br>• Colour Doppler<br>• MRI & CT Scan Referrals<br><br><a href='radiology.html'>Learn More →</a>"
+      answer: "🔬 <strong>Radiology:</strong><br><br>• X-Ray<br>• Ultrasound<br>• Colour Doppler<br>• MRI & CT Scan Referrals<br><br><a href='/radiology'>Learn More →</a>"
     },
 
     // Oncology
     {
       patterns: ["oncology", "cancer", "tumor", "tumour", "chemo", "chemotherapy"],
-      answer: "🎗️ <strong>Oncology:</strong><br><br>• Cancer Screening<br>• Diagnosis and Staging<br>• Complete Cancer Treatment<br>• Supportive Care<br><br><a href='oncology.html'>Learn More →</a>"
+      answer: "🎗️ <strong>Oncology:</strong><br><br>• Cancer Screening<br>• Diagnosis and Staging<br>• Complete Cancer Treatment<br>• Supportive Care<br><br><a href='/oncology'>Learn More →</a>"
     },
 
     // Psychiatry
     {
       patterns: ["psychiatry", "mental", "anxiety", "anxious", "depression", "depressed", "stress", "sleep disorder", "memory", "schizophrenia"],
-      answer: "🧘 <strong>Psychiatry:</strong><br><br>• Anxiety<br>• Depression<br>• Stress Disorders<br>• Sleep Disorders<br>• Schizophrenia<br>• Memory Problems<br><br><a href='psychiatry.html'>Learn More →</a>"
+      answer: "🧘 <strong>Psychiatry:</strong><br><br>• Anxiety<br>• Depression<br>• Stress Disorders<br>• Sleep Disorders<br>• Schizophrenia<br>• Memory Problems<br><br><a href='/psychiatry'>Learn More →</a>"
     },
 
     // Location
@@ -113,38 +113,38 @@
     // Contact
     {
       patterns: ["contact", "phone", "call", "number", "email", "reach", "whatsapp"],
-      answer: "📞 <strong>Contact Us:</strong><br><br>Phone: <a href='tel:+919566443300'>+91 95664 43300</a><br>Email: <a href='mailto:info@nivyahospitals.com'>info@nivyahospitals.com</a><br><br>Or visit us at:<br>📍 Vannarpettai, Tirunelveli<br><br><a href='contact-us.html'>Contact Page →</a>"
+      answer: "📞 <strong>Contact Us:</strong><br><br>Phone: <a href='tel:+919566443300'>+91 95664 43300</a><br>Email: <a href='mailto:info@nivyahospitals.com'>info@nivyahospitals.com</a><br><br>Or visit us at:<br>📍 Vannarpettai, Tirunelveli<br><br><a href='/contact-us'>Contact Page →</a>"
     },
 
     // Timings
     {
       patterns: ["timing", "timings", "hours", "open", "time", "opd", "working hours", "sunday", "weekend"],
-      answer: "⏰ <strong>Hospital Timings:</strong><br><br>🗓️ Monday – Saturday: <strong>9:00 AM – 7:00 PM</strong><br>🚨 Sunday: <strong>Emergency Services Only</strong><br><br>For appointments: <a href='search.html'>Book Here →</a>"
+      answer: "⏰ <strong>Hospital Timings:</strong><br><br>🗓️ Monday – Saturday: <strong>9:00 AM – 7:00 PM</strong><br>🚨 Sunday: <strong>Emergency Services Only</strong><br><br>For appointments: <a href='/search'>Book Here →</a>"
     },
 
     // About
     {
       patterns: ["about", "nivya hospital", "who are you", "hospital info", "history", "about us"],
-      answer: "🏥 <strong>About Nivya Respiratory & Multispeciality Hospitals:</strong><br><br>A leading hospital in Tirunelveli dedicated to respiratory and multispeciality care. Known for several <em>firsts</em> in Tirunelveli including the 1st Pulmonology hospital, 1st Computerized PFT, 1st Sleep Study Centre and more.<br><br><a href='about-us.html'>Read Our Full Story →</a>"
+      answer: "🏥 <strong>About Nivya Respiratory & Multispeciality Hospitals:</strong><br><br>A leading hospital in Tirunelveli dedicated to respiratory and multispeciality care. Known for several <em>firsts</em> in Tirunelveli including the 1st Pulmonology hospital, 1st Computerized PFT, 1st Sleep Study Centre and more.<br><br><a href='/about-us'>Read Our Full Story →</a>"
     },
 
     // TB / PCR
     {
       patterns: ["tb", "tuberculosis", "genexpert", "pcr", "igra", "latent tb"],
-      answer: "🧪 <strong>TB Services:</strong><br><br>• TB PCR (GeneXpert) – 1st in Tirunelveli private sector<br>• Latent TB Infection Blood Test (IGRA)<br>• Complete TB Diagnosis & Treatment<br><br><a href='pulmonology.html'>Pulmonology Services →</a>"
+      answer: "🧪 <strong>TB Services:</strong><br><br>• TB PCR (GeneXpert) – 1st in Tirunelveli private sector<br>• Latent TB Infection Blood Test (IGRA)<br>• Complete TB Diagnosis & Treatment<br><br><a href='/pulmonology'>Pulmonology Services →</a>"
     },
 
     // PFT / Lung Test
     {
       patterns: ["pft", "pulmonary function", "feno", "ios", "6mwt", "spirometry", "lung test"],
-      answer: "🫁 <strong>Pulmonary Function Tests (PFT):</strong><br><br>We are the 1st hospital in Tirunelveli to have:<br>• FeNO (Fractional Exhaled Nitric Oxide)<br>• IOS (Impulse Oscillometry System)<br>• 6MWT (6-Minute Walk Test)<br>• Computerized PFT<br><br><a href='pulmonology.html'>Learn More →</a>"
+      answer: "🫁 <strong>Pulmonary Function Tests (PFT):</strong><br><br>We are the 1st hospital in Tirunelveli to have:<br>• FeNO (Fractional Exhaled Nitric Oxide)<br>• IOS (Impulse Oscillometry System)<br>• 6MWT (6-Minute Walk Test)<br>• Computerized PFT<br><br><a href='/pulmonology'>Learn More →</a>"
     },
 
     // Thank you / bye
     {
       low: true,
       patterns: ["thank", "thanks", "thank you", "bye", "goodbye", "ok thanks", "great", "ok"],
-      answer: "😊 You're welcome! Feel free to ask anything else.<br><br>For appointments: <a href='search.html'>📅 Book Now</a><br>For emergencies: <a href='tel:+919566443300'>📞 Call Us</a>"
+      answer: "😊 You're welcome! Feel free to ask anything else.<br><br>For appointments: <a href='/search'>📅 Book Now</a><br>For emergencies: <a href='tel:+919566443300'>📞 Call Us</a>"
     }
   ];
 

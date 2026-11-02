@@ -68,13 +68,13 @@
 					<a id="mobile_btn" href="javascript:void(0);">
 						<i class="fa-solid fa-bars"></i>
 					</a>
-					<a href="index.html" class="navbar-brand logo">
+					<a href="/" class="navbar-brand logo">
 						<img src="assets/img/logo copy.png" class="img-fluid normal-logo" alt="Logo">
 					</a>
 				</div>
 				<div class="main-menu-wrapper">
 					<div class="menu-header">
-						<a href="index.html" class="menu-logo">
+						<a href="/" class="menu-logo">
 							<img src="assets/img/logo copy.png" class="img-fluid" alt="Logo">
 						</a>
 						<a id="menu_close" class="menu-close" href="javascript:void(0);">
@@ -83,17 +83,17 @@
 					</div>
 					<ul class="main-nav">
 						<li class="has-submenu">
-							<a href="index.html">Home</a>
+							<a href="/">Home</a>
 						</li>
-						<li><a href="about-us.html">About Us</a></li>
+						<li><a href="/about-us">About Us</a></li>
 						<li class="has-submenu">
 							<a href="javascript:void(0);">Doctors </a>
 							<ul class="submenu">
-								<li><a href="search.html">Doctors List</a></li>
-								<li><a href="doctor-manimozhiyan-profile.html">Dr. P. Manimozhian</a></li>
-								<li><a href="doctor-nivya-profile.html">Dr. M. Nivya</a></li>
-								<li><a href="doctor-mathan-profile.html">Dr. M.A. Mathan</a></li>
-								<li><a href="doctor-naveen-paul-profile.html">Dr. Naveen Paul Singh</a></li>
+								<li><a href="/search">Doctors List</a></li>
+								<li><a href="/doctor-manimozhiyan-profile">Dr. P. Manimozhian</a></li>
+								<li><a href="/doctor-nivya-profile">Dr. M. Nivya</a></li>
+								<li><a href="/doctor-mathan-profile">Dr. M.A. Mathan</a></li>
+								<li><a href="/doctor-naveen-paul-profile">Dr. Naveen Paul Singh</a></li>
 							</ul>
 						</li>
 
@@ -105,27 +105,27 @@
 										<div class="row">
 											<div class="col-lg-3 sub-menu-left">
 												<ul class="sub-menu-list">
-													<li><a href="pulmonology.html">Pulmonology</a></li>
-													<li><a href="emergency-critical-care-medicine.html">Emergency &
+													<li><a href="/pulmonology">Pulmonology</a></li>
+													<li><a href="/emergency-critical-care-medicine">Emergency &
 															Critical Care Medicine</a></li>
-													<li><a href="general-medicine.html">General Medicine</a></li>
-													<li><a href="cardiology.html">Cardiology</a></li>
+													<li><a href="/general-medicine">General Medicine</a></li>
+													<li><a href="/cardiology">Cardiology</a></li>
 												</ul>
 											</div>
 											<div class="col-lg-3 sub-menu-left">
 												<ul class="sub-menu-list">
-													<li><a href="orthopaedics.html">Orthopaedics</a></li>
-													<li><a href="dentistry.html">Dentistry</a></li>
-													<li><a href="general-surgery.html">General Surgery</a></li>
-													<li><a href="neurology.html">Neurology</a></li>
+													<li><a href="/orthopaedics">Orthopaedics</a></li>
+													<li><a href="/dentistry">Dentistry</a></li>
+													<li><a href="/general-surgery">General Surgery</a></li>
+													<li><a href="/neurology">Neurology</a></li>
 												</ul>
 											</div>
 											<div class="col-lg-3 sub-menu-left">
 												<ul class="sub-menu-list">
-													<li><a href="gastro-enterology.html">Gastro Enterology</a></li>
-													<li><a href="radiology.html">Radiology</a></li>
-													<li><a href="oncology.html">Oncology</a></li>
-													<li><a href="psychiatry.html">Psychiatry</a></li>
+													<li><a href="/gastro-enterology">Gastro Enterology</a></li>
+													<li><a href="/radiology">Radiology</a></li>
+													<li><a href="/oncology">Oncology</a></li>
+													<li><a href="/psychiatry">Psychiatry</a></li>
 												</ul>
 											</div>
 										</div>
@@ -136,10 +136,10 @@
 
 
 						<li>
-							<a href="blog-grid.html">Blog</a>
+							<a href="/blog-grid">Blog</a>
 						</li>
 						<li class="has-submenu active">
-							<a href="contact-us.html">Contact Us</a>
+							<a href="/contact-us">Contact Us</a>
 						</li>
 					</ul>
 					</li>
@@ -194,7 +194,7 @@
 				</div>
 				<ul class="nav header-navbar-rht">
 					<li>
-						<a href="search.html" class="btn btn-md btn-primary-gradient">
+						<a href="/search" class="btn btn-md btn-primary-gradient">
 							<span>Book Appointment</span>
 						</a>
 					</li>
@@ -212,7 +212,7 @@
 				<div class="col-md-12 col-12 text-center">
 					<nav aria-label="breadcrumb" class="page-breadcrumb">
 						<ol class="breadcrumb">
-							<li class="breadcrumb-item"><a href="index.html"><i class="isax isax-home-15"></i></a></li>
+							<li class="breadcrumb-item"><a href="/"><i class="isax isax-home-15"></i></a></li>
 							<li class="breadcrumb-item active">Contact Us</li>
 						</ol>
 						<h2 class="breadcrumb-title">Contact Us</h2>
@@ -279,41 +279,45 @@
 				<div class="col-lg-7 col-md-12 d-flex">
 					<div class="card contact-form-card w-100">
 						<div class="card-body">
-							<form action="#">
+							<form id="contactForm" action="#" novalidate>
 								<div class="row">
 									<div class="col-md-6">
 										<div class="mb-3">
-											<label class="form-label">Name</label>
-											<input type="text" class="form-control">
+											<label class="form-label" for="cf-name">Name <span class="text-danger">*</span></label>
+											<input type="text" class="form-control" id="cf-name" name="name" autocomplete="name" required>
 										</div>
 									</div>
 									<div class="col-md-6">
 										<div class="mb-3">
-											<label class="form-label">Email</label>
-											<input type="text" class="form-control">
+											<label class="form-label" for="cf-email">Email</label>
+											<input type="email" class="form-control" id="cf-email" name="email" autocomplete="email">
 										</div>
 									</div>
 									<div class="col-md-6">
 										<div class="mb-3">
-											<label class="form-label">Phone Number</label>
-											<input type="text" class="form-control">
+											<label class="form-label" for="cf-phone">Phone Number <span class="text-danger">*</span></label>
+											<input type="tel" class="form-control" id="cf-phone" name="phone" autocomplete="tel" inputmode="tel" pattern="[0-9+ \-]{10,15}" required>
 										</div>
 									</div>
 									<div class="col-md-6">
 										<div class="mb-3">
-											<label class="form-label">Services</label>
-											<input type="text" class="form-control">
+											<label class="form-label" for="cf-service">Services</label>
+											<input type="text" class="form-control" id="cf-service" name="service" placeholder="e.g. Pulmonology">
 										</div>
 									</div>
 									<div class="col-md-12">
 										<div class="mb-3">
-											<label class="form-label">Message</label>
-											<textarea class="form-control" rows="6"></textarea>
+											<label class="form-label" for="cf-message">Message <span class="text-danger">*</span></label>
+											<textarea class="form-control" id="cf-message" name="message" rows="6" required></textarea>
 										</div>
 									</div>
 									<div class="col-md-12">
 										<div class="form-group-btn mb-0">
-											<button type="submit" class="btn btn-primary-gradient">Send Message</button>
+											<div class="d-flex flex-wrap gap-2 align-items-center">
+												<button type="submit" class="btn btn-primary-gradient"><i class="fa-brands fa-whatsapp me-2"></i>Send on WhatsApp</button>
+												<button type="button" class="btn btn-outline-primary" id="cf-email-btn"><i class="fa-regular fa-envelope me-2"></i>Send by Email</button>
+											</div>
+											<p class="small text-muted mt-2 mb-0" id="cf-status" role="status" aria-live="polite">Your message opens in WhatsApp or your email app, ready to send to the hospital.</p>
 										</div>
 									</div>
 								</div>
@@ -393,13 +397,13 @@
 						<div class="footer-widget">
 							<h5 class="footer-title">Company &amp; Legal</h5>
 							<ul class="footer-menu">
-								<li><a href="about-us.html">About Us</a></li>
-								<li><a href="search.html">Our Doctors</a></li>
-								<li><a href="privacy-policy.html">Privacy Policy</a></li>
-								<li><a href="terms-condition.html">Terms &amp; Conditions</a></li>
-								<li><a href="cancellation-refund-policy.html">Cancellation &amp; Refund</a></li>
-								<li><a href="service-delivery-policy.html">Service Delivery Policy</a></li>
-								<li><a href="contact-us.html">Contact Us</a></li>
+								<li><a href="/about-us">About Us</a></li>
+								<li><a href="/search">Our Doctors</a></li>
+								<li><a href="/privacy-policy">Privacy Policy</a></li>
+								<li><a href="/terms-condition">Terms &amp; Conditions</a></li>
+								<li><a href="/cancellation-refund-policy">Cancellation &amp; Refund</a></li>
+								<li><a href="/service-delivery-policy">Service Delivery Policy</a></li>
+								<li><a href="/contact-us">Contact Us</a></li>
 							</ul>
 						</div>
 						<!-- Footer Widget End -->
@@ -461,13 +465,13 @@
 						<p class="mb-0">Copyright &copy; 2026 Nivya Hospital. All Rights Reserved.</p>
 					</div>
 					<ul class="d-flex flex-wrap gap-3 list-unstyled mb-0" style="font-size: 13px;">
-						<li><a href="privacy-policy.html" class="footer-policy-link">Privacy Policy</a></li>
+						<li><a href="/privacy-policy" class="footer-policy-link">Privacy Policy</a></li>
 						<li><span class="text-white-50">|</span></li>
-						<li><a href="terms-condition.html" class="footer-policy-link">Terms &amp; Conditions</a></li>
+						<li><a href="/terms-condition" class="footer-policy-link">Terms &amp; Conditions</a></li>
 						<li><span class="text-white-50">|</span></li>
-						<li><a href="cancellation-refund-policy.html" class="footer-policy-link">Cancellation &amp; Refund Policy</a></li>
+						<li><a href="/cancellation-refund-policy" class="footer-policy-link">Cancellation &amp; Refund Policy</a></li>
 						<li><span class="text-white-50">|</span></li>
-						<li><a href="service-delivery-policy.html" class="footer-policy-link">Service Delivery Policy</a></li>
+						<li><a href="/service-delivery-policy" class="footer-policy-link">Service Delivery Policy</a></li>
 					</ul>
 				</div>
 			</div>
@@ -483,7 +487,7 @@
 	<!-- start offcanvas -->
 	<div class="offcanvas offcanvas-offset offcanvas-end support_popup" tabindex="-1" id="support_item">
 		<div class="offcanvas-header">
-			<a href="index.html"><img src="assets/img/logo.svg" alt="logo" class="img-fluid logo"></a>
+			<a href="/"><img src="assets/img/logo.svg" alt="logo" class="img-fluid logo"></a>
 			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i
 					class="isax isax-close-circle"></i></button>
 		</div>
@@ -584,6 +588,43 @@
 
 	<!-- Nivya Hospital Chatbot -->
 	<script src="assets/js/chatbot.js"></script>
+
+	<!-- Contact form: sends the message to the hospital via WhatsApp or email -->
+	<script>
+	(function () {
+		var form = document.getElementById('contactForm');
+		if (!form) return;
+		var WHATSAPP = '919566443300';
+		var EMAIL = 'nivyahospitalstvl@gmail.com';
+		var status = document.getElementById('cf-status');
+		function val(id) { return document.getElementById(id).value.trim(); }
+		function build() {
+			if (!form.reportValidity()) return null;
+			var lines = ['Hello Nivya Hospital,', '', val('cf-message'), '',
+				'Name: ' + val('cf-name'), 'Phone: ' + val('cf-phone')];
+			if (val('cf-email')) lines.push('Email: ' + val('cf-email'));
+			if (val('cf-service')) lines.push('Service: ' + val('cf-service'));
+			return lines.join('\n');
+		}
+		function done(where) {
+			status.textContent = 'Opening ' + where + '... please press Send there to deliver your message.';
+		}
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			var text = build();
+			if (!text) return;
+			window.open('https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+			done('WhatsApp');
+		});
+		document.getElementById('cf-email-btn').addEventListener('click', function () {
+			var text = build();
+			if (!text) return;
+			var subject = 'Website enquiry from ' + val('cf-name');
+			window.location.href = 'mailto:' + EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text);
+			done('your email app');
+		});
+	})();
+	</script>
 </body>
 
 
