@@ -6,10 +6,37 @@ const crypto = require('crypto');
 // Authoritative fees and services, shared with the booking page (edit that file, not this one).
 const CATALOG = require('../../assets/js/booking-catalog.json');
 
+// Trim so a key pasted with a stray space or newline still works.
 const keys = () => {
-	const id = process.env.RAZORPAY_KEY_ID;
-	const secret = process.env.RAZORPAY_KEY_SECRET;
+	const id = String(process.env.RAZORPAY_KEY_ID || '').trim();
+	const secret = String(process.env.RAZORPAY_KEY_SECRET || '').trim();
 	return id && secret ? { id, secret } : null;
+};
+
+// 'test' for rzp_test_ keys (no real money moves), 'live' otherwise.
+const mode = () => {
+	const k = keys();
+	return k ? (k.id.startsWith('rzp_test_') ? 'test' : 'live') : null;
+};
+
+// The site is also served from Hostinger (www.nivyahospitals.com), which cannot run
+// these functions, so the booking page there calls this Vercel API cross-origin.
+const ALLOWED_ORIGINS = ['https://www.nivyahospitals.com', 'https://nivyahospitals.com'];
+// Sets CORS headers; returns true when the request was a preflight that is now answered.
+const cors = (req, res) => {
+	const origin = req.headers.origin;
+	if (ALLOWED_ORIGINS.includes(origin)) {
+		res.setHeader('Access-Control-Allow-Origin', origin);
+		res.setHeader('Vary', 'Origin');
+		res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+		res.setHeader('Access-Control-Max-Age', '86400');
+	}
+	if (req.method === 'OPTIONS') {
+		res.status(204).end();
+		return true;
+	}
+	return false;
 };
 
 const razorpay = async (method, path, body) => {
@@ -111,4 +138,4 @@ const signatureOk = (orderId, paymentId, signature, secret) => {
 	return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
 
-module.exports = { CATALOG, keys, razorpay, validateBooking, newBookingId, signatureOk };
+module.exports = { CATALOG, keys, mode, cors, razorpay, validateBooking, newBookingId, signatureOk };

@@ -365,6 +365,9 @@
 							<div id="preview-notice" class="alert alert-warning" role="status" hidden>
 								<strong>Preview:</strong> online payment isn't switched on yet, so nothing is charged and the hospital does not receive this booking. To book now, please call <a href="tel:+919566443300" class="alert-link">+91 95664 43300</a>.
 							</div>
+							<div id="test-mode-notice" class="alert alert-info" role="status" hidden>
+								<strong>Test mode:</strong> payments use Razorpay's test system, so no real money is charged and this is not a confirmed appointment. To book now, please call <a href="tel:+919566443300" class="alert-link">+91 95664 43300</a>.
+							</div>
 
 							<div class="booking-widget multistep-form mb-5">
 								<div class="card booking-card mb-0">
@@ -816,11 +819,15 @@
 			   until then the wizard runs as a clearly-labelled preview with a simulated
 			   payment. ?demo=1 forces the preview.
 			------------------------------------------------------------------ */
+			// The payment API runs on Vercel. When the page is served from another host
+			// (Hostinger: www.nivyahospitals.com) it calls the Vercel API directly.
+			const API_BASE = /(^|\.)vercel\.app$/.test(window.location.hostname) ? '' : 'https://nivyahospital.vercel.app';
 			const API = {
-				status: '/api/status',
-				createOrder: '/api/create-order',
-				verify: '/api/verify-payment'
+				status: API_BASE + '/api/status',
+				createOrder: API_BASE + '/api/create-order',
+				verify: API_BASE + '/api/verify-payment'
 			};
+			let testMode = false;
 			const CATALOG_URL = 'assets/js/booking-catalog.json';
 			const HOSPITAL_PHONE = '+91 95664 43300';
 			const BOOKING_DAYS = 14;
@@ -1005,8 +1012,10 @@
 					buildServices();
 					initCalendar();
 					notice.hidden = live;
+					$('test-mode-notice').hidden = !(live && testMode);
 					$('gateway-note').textContent = live
-						? 'Payment opens in Razorpay\'s secure window. We never see or store your card or UPI details.'
+						? (testMode ? 'Test mode: use Razorpay test card or UPI details; nothing is charged. ' : '') +
+							'Payment opens in Razorpay\'s secure window. We never see or store your card or UPI details.'
 						: 'Preview only: no payment window will open and nothing is charged.';
 				}
 				stepsBar.classList.remove('is-loading');
@@ -1041,7 +1050,9 @@
 					const timer = setTimeout(() => ctl.abort(), 2500);
 					try {
 						const r = await fetch(API.status, { cache: 'no-store', signal: ctl.signal });
-						enabled = r.ok && !!(await r.json()).enabled;
+						const st = r.ok ? await r.json() : {};
+						enabled = !!st.enabled;
+						testMode = st.mode === 'test';
 					} catch (e) { enabled = false; }
 					clearTimeout(timer);
 				}

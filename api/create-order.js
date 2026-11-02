@@ -1,8 +1,9 @@
 // POST booking details -> creates a Razorpay order. The fee is looked up here,
 // so the browser can never choose its own amount.
-const { keys, razorpay, validateBooking, newBookingId } = require('./_lib/razorpay');
+const { cors, keys, razorpay, validateBooking, newBookingId } = require('./_lib/razorpay');
 
 module.exports = async (req, res) => {
+	if (cors(req, res)) return;
 	res.setHeader('Cache-Control', 'no-store');
 	if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed.' });
 	const k = keys();

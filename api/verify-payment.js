@@ -1,9 +1,10 @@
 // POST the Razorpay checkout result -> verifies the signature with the secret key,
 // makes sure the payment is really for this order and amount, captures it if needed,
 // and returns the booking number.
-const { keys, razorpay, signatureOk } = require('./_lib/razorpay');
+const { cors, keys, razorpay, signatureOk } = require('./_lib/razorpay');
 
 module.exports = async (req, res) => {
+	if (cors(req, res)) return;
 	res.setHeader('Cache-Control', 'no-store');
 	if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed.' });
 	const k = keys();
