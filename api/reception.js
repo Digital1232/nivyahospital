@@ -6,6 +6,7 @@ const { q, one, configured } = require('./_lib/db');
 const auth = require('./_lib/auth');
 const S = require('./_lib/schedule');
 const catalog = require('./_lib/catalog');
+const { reconcilePending } = require('./_lib/payments');
 
 const DOCTORS = Object.keys(CATALOG.doctors);
 const STATUSES = ['booked', 'confirmed', 'arrived', 'in_consult', 'completed', 'cancelled', 'no_show'];
@@ -91,6 +92,7 @@ const actions = {
 	},
 
 	async dashboard(b) {
+		await reconcilePending(); // paid website bookings whose browser never reported back
 		const date = b.date ? dateOf(b.date) : S.todayIso();
 		const rows = await q(`SELECT doctor, source, status, token_no FROM appointments WHERE date = $1`, [date]);
 		const count = (f) => rows.filter(f).length;
@@ -146,6 +148,7 @@ const actions = {
 	},
 
 	async appointments(b) {
+		await reconcilePending();
 		const where = [];
 		const params = [];
 		const add = (sql, v) => { params.push(v); where.push(sql.replace('?', '$' + params.length)); };

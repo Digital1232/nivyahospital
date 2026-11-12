@@ -839,7 +839,8 @@
 			const API = {
 				status: API_BASE + '/api/status',
 				createOrder: API_BASE + '/api/create-order',
-				verify: API_BASE + '/api/verify-payment'
+				verify: API_BASE + '/api/verify-payment',
+				orderStatus: API_BASE + '/api/order-status'
 			};
 			let testMode = false;
 			// Reception's schedule for this doctor (OP days/hours, leave, full slots); null = no limits known.
@@ -1139,7 +1140,31 @@
 					clearTimeout(timer);
 				}
 				applyMode(true, enabled);
+				if (enabled) resumePaidBooking();
 			})();
+
+			/* ---------- Payment started earlier but never reported (tab closed or redirected) ---------- */
+			const pendingStore = {
+				KEY: 'nivyaPendingPayment',
+				read() { try { return JSON.parse(localStorage.getItem(this.KEY) || 'null'); } catch (e) { return null; } },
+				save(v) { try { localStorage.setItem(this.KEY, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+				clear() { try { localStorage.removeItem(this.KEY); } catch (e) { /* ignore */ } }
+			};
+			async function resumePaidBooking() {
+				const p = pendingStore.read();
+				if (!p || !p.orderId) return;
+				if (Date.now() - p.at > 2 * 24 * 3600 * 1000) return pendingStore.clear();
+				if (p.doctor !== doctor) return; // checked when the patient opens that doctor's page
+				try {
+					const res = await fetch(API.orderStatus + '?order=' + encodeURIComponent(p.orderId), { cache: 'no-store' });
+					const out = res.ok ? await res.json() : null;
+					if (!out) { if (res.status === 404 || res.status === 400) pendingStore.clear(); return; }
+					if (!out.paid) return; // not paid (yet): leave the normal booking form
+					Object.assign(state, { consult: p.consult || state.consult, addons: new Set(p.addons || []), iso: p.iso, time: p.time, patient: p.patient });
+					pendingStore.clear();
+					finish(out.bookingId, false, out.receipt);
+				} catch (e) { /* offline: try again next visit */ }
+			}
 
 			/* ---------- Navigation ---------- */
 			// Fills in the read-only summaries (header strip + the Details & Payment pane)
@@ -1296,7 +1321,8 @@
 									razorpay_payment_id: resp.razorpay_payment_id,
 									razorpay_signature: resp.razorpay_signature
 								});
-							finish(out.bookingId || resp.razorpay_payment_id, false, out.receipt);
+								pendingStore.clear();
+								finish(out.bookingId || resp.razorpay_payment_id, false, out.receipt);
 								paidPending = false;
 							} catch (err) {
 								showMsg('Your payment went through, but we could not confirm the booking automatically. ' +
@@ -1313,6 +1339,11 @@
 					});
 					rzp.on('payment.failed', (r) => {
 						showMsg((r.error && r.error.description) || 'Payment failed. Please try again.');
+					});
+					// If the bank page closes or replaces this tab, the booking can be picked up on return.
+					pendingStore.save({
+						orderId: order.orderId, doctor, at: Date.now(), consult: state.consult,
+						addons: Array.from(state.addons), iso: state.iso, time: state.time, patient: state.patient
 					});
 					rzp.open();
 				});
