@@ -313,7 +313,7 @@
 				<div class="panel mb-3">
 					<h3 class="h6 mb-3">By doctor</h3>
 					<div class="table-responsive"><table class="table table-sm align-middle mb-0">
-						<thead><tr><th>Doctor</th><th>Total</th><th>Online</th><th>Walk-in</th><th>Completed</th><th>Cancelled</th><th>No-show</th><th>New</th><th>Follow-up</th><th>Paid online</th></tr></thead>
+						<thead><tr><th>Doctor</th><th>Total</th><th>Online</th><th>Walk-in</th><th>Completed</th><th>Cancelled</th><th>No-show</th><th>New</th><th>Follow-up</th><th id="rp-paid-head" hidden>Paid online</th></tr></thead>
 						<tbody id="rp-doctors"></tbody>
 					</table></div>
 				</div>
@@ -616,15 +616,19 @@
 			reports: async function () {
 				var d = report = await api('reports', { from: $('rp-from').value, to: $('rp-to').value });
 				var t = d.totals;
+				var rev = !!d.showRevenue; // admins only
 				var cards = [['Appointments', t.total], ['Online', t.online], ['Walk-ins', t.walkin], ['Completed', t.completed],
-					['Cancelled', t.cancelled], ['No-shows', t.noShow], ['New patients', d.newRegistrations], ['Paid online', money(t.paidPaise) || 'Rs 0'],
-					['Avg. wait', d.avgWaitMin == null ? '-' : d.avgWaitMin + ' min']];
+					['Cancelled', t.cancelled], ['No-shows', t.noShow], ['New patients', d.newRegistrations]]
+					.concat(rev ? [['Paid online', money(t.paidPaise) || 'Rs 0']] : [])
+					.concat([['Avg. wait', d.avgWaitMin == null ? '-' : d.avgWaitMin + ' min']]);
+				$('rp-paid-head').hidden = !rev;
 				$('rp-stats').innerHTML = cards.map(function (c) {
 					return '<div class="col-6 col-md-4 col-xl"><div class="stat"><div class="l">' + c[0] + '</div><div class="n" style="font-size:22px">' + esc(c[1]) + '</div></div></div>';
 				}).join('');
 				$('rp-doctors').innerHTML = d.byDoctor.map(function (r) {
 					return '<tr><td class="fw-semibold">' + esc(r.doctor) + '</td><td>' + r.total + '</td><td>' + r.online + '</td><td>' + r.walkin + '</td><td>' + r.completed +
-						'</td><td>' + r.cancelled + '</td><td>' + r.noShow + '</td><td>' + r.newPatients + '</td><td>' + r.followUps + '</td><td>' + (money(r.paidPaise) || '-') + '</td></tr>';
+						'</td><td>' + r.cancelled + '</td><td>' + r.noShow + '</td><td>' + r.newPatients + '</td><td>' + r.followUps + '</td>' +
+						(rev ? '<td>' + (money(r.paidPaise) || '-') + '</td>' : '') + '</tr>';
 				}).join('');
 				var max = Math.max.apply(null, [1].concat(d.byDay.map(function (r) { return r.total; })));
 				$('rp-days').innerHTML = d.byDay.length ? d.byDay.slice().reverse().map(function (r) {
@@ -1084,8 +1088,9 @@
 		$('ac-more').addEventListener('click', function () { run(loadActivity(true)); });
 		$('rp-export').addEventListener('click', function () {
 			if (!report) return;
-			var head = ['Date', 'Total', 'Online', 'Walk-in', 'Completed', 'Cancelled', 'No-show', 'New', 'Follow-up', 'Paid online (Rs)'];
-			var row = function (label, r) { return [label, r.total, r.online, r.walkin, r.completed, r.cancelled, r.noShow, r.newPatients, r.followUps, r.paidPaise / 100]; };
+			var rev = !!report.showRevenue;
+			var head = ['Date', 'Total', 'Online', 'Walk-in', 'Completed', 'Cancelled', 'No-show', 'New', 'Follow-up'].concat(rev ? ['Paid online (Rs)'] : []);
+			var row = function (label, r) { return [label, r.total, r.online, r.walkin, r.completed, r.cancelled, r.noShow, r.newPatients, r.followUps].concat(rev ? [r.paidPaise / 100] : []); };
 			var rows = report.byDay.map(function (r) { return row(r.date, r); });
 			rows.push(row('TOTAL', report.totals), []);
 			rows.push(['Doctor'].concat(head.slice(1)));
