@@ -125,6 +125,7 @@
 					<button data-view="booking" data-admin hidden><i class="fa-solid fa-indian-rupee-sign me-1"></i>Booking &amp; Fees</button>
 					<button data-view="reports"><i class="fa-solid fa-chart-column me-1"></i>Reports</button>
 					<button data-view="staff" data-admin hidden><i class="fa-solid fa-users-gear me-1"></i>Staff</button>
+					<button data-view="activity" data-admin hidden><i class="fa-solid fa-clock-rotate-left me-1"></i>Activity log</button>
 					<button data-view="settings"><i class="fa-solid fa-gear me-1"></i>Settings</button>
 				</nav>
 			</div>
@@ -209,7 +210,7 @@
 							<span>to</span>
 							<input type="date" id="ap-to" class="form-control form-control-sm" aria-label="To date">
 						</span>
-						<button type="button" id="ap-export" class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-file-csv me-1"></i>Export CSV</button>
+						<button type="button" id="ap-export" data-admin hidden class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-file-csv me-1"></i>Export CSV</button>
 					</div>
 				</div>
 				<p id="ap-count" class="small muted"></p>
@@ -374,6 +375,26 @@
 						</form>
 					</div>
 					<div class="col-lg-7"><div class="panel"><h2 class="h5 mb-3">Staff accounts</h2><div id="sf-list"></div></div></div>
+				</div>
+			</section>
+
+			<!-- Activity log (admin) -->
+			<section data-section="activity" hidden>
+				<div class="panel mb-3">
+					<div class="d-flex flex-wrap align-items-end gap-2">
+						<div><label class="form-label small" for="ac-from">From</label><input type="date" id="ac-from" class="form-control form-control-sm"></div>
+						<div><label class="form-label small" for="ac-to">To</label><input type="date" id="ac-to" class="form-control form-control-sm"></div>
+						<div><label class="form-label small" for="ac-actor">Done by</label><select id="ac-actor" class="form-select form-select-sm"><option value="">Everyone</option></select></div>
+						<button class="btn btn-sm btn-outline-secondary" type="button" id="ac-week">Last 7 days</button>
+					</div>
+					<p class="small muted mb-0 mt-2">Every sign-in and every change made in this panel: who did it, when, and to which booking or patient.</p>
+				</div>
+				<div class="panel">
+					<div class="table-responsive"><table class="table table-sm align-middle mb-0">
+						<thead><tr><th style="min-width:130px">When</th><th>Who</th><th>What</th><th>Booking / patient</th></tr></thead>
+						<tbody id="ac-list"></tbody>
+					</table></div>
+					<div class="text-center mt-2"><button class="btn btn-sm btn-outline-primary" type="button" id="ac-more" hidden>Show older</button></div>
 				</div>
 			</section>
 		</main>
@@ -662,8 +683,57 @@
 
 			booking: async function () { renderBooking((await api('booking')).booking); },
 
-			staff: async function () { renderStaff((await api('staff')).staff); }
+			staff: async function () { renderStaff((await api('staff')).staff); },
+
+			activity: function () { return loadActivity(false); }
 		};
+
+		/* ---------- Activity log (admin) ---------- */
+		var activityLast = null;
+		var ACT_LABEL = {
+			login: 'Signed in', walkin: 'Registered walk-in', confirm: 'Confirmed appointment', arrive: 'Checked in',
+			start: 'Called in to doctor', requeue: 'Sent back to queue', complete: 'Marked consultation done',
+			cancel: 'Cancelled appointment', no_show: 'Marked no-show', reschedule: 'Rescheduled appointment', note: 'Edited appointment note',
+			patient_edit: 'Edited patient', patient_delete: 'Deleted patient', schedule: 'Changed doctor timings',
+			leave_add: 'Added doctor leave', leave_remove: 'Removed doctor leave', booking_save: 'Changed fees / booking settings',
+			booking_reset: 'Reset fees / booking settings', settings: 'Changed hospital details / messages',
+			settings_reset: 'Reset hospital details / messages', staff_add: 'Added staff account', staff_update: 'Updated staff account',
+			password_change: 'Changed own password'
+		};
+		function activityDetail(e) {
+			var d = e.detail || {};
+			var mins = function (m) { var h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0'); return ((h % 12) || 12) + ':' + mm + ' ' + (h < 12 ? 'AM' : 'PM'); };
+			switch (e.action) {
+				case 'reschedule': return 'From ' + d.from + ' to ' + d.to;
+				case 'schedule': return d.doctor + ': ' + (d.days || []).map(function (x) { return DAY[x]; }).join(', ') + ', ' + mins(d.start) + '–' + mins(d.end) +
+					(d.cap ? ', limit ' + d.cap + '/slot' : '') + (d.online === false ? ', online booking paused' : '');
+				case 'leave_add': case 'leave_remove': return d.doctor + ' on ' + fmtDate(d.date);
+				case 'booking_save': case 'booking_reset': case 'walkin': return d.doctor || '';
+				case 'staff_add': case 'staff_update': return d.username + ' (' + (d.role === 'admin' ? 'admin' : 'staff') + (d.active === false ? ', disabled' : '') + ')';
+				case 'patient_delete': return d.appointments + ' visit(s) removed';
+				default: return d.from ? 'Was ' + (STATUS_LABEL[d.from] || d.from) : '';
+			}
+		}
+		async function loadActivity(more) {
+			if (!$('ac-from').value) { $('ac-to').value = today; $('ac-from').value = addDays(today, -6); }
+			var d = await api('activity', { from: $('ac-from').value, to: $('ac-to').value, actor: $('ac-actor').value, before: more && activityLast ? activityLast : undefined });
+			var sel = $('ac-actor'), keep = sel.value;
+			sel.innerHTML = '<option value="">Everyone</option>' + d.actors.map(function (a) { return '<option' + (a === keep ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('');
+			var html = d.entries.map(function (e) {
+				var when = new Date(e.at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+				var who = e.patient_name ? esc(e.patient_name) : (e.action === 'patient_delete' ? '<span class="muted">Patient #' + esc(e.detail && e.detail.patient) + ' (deleted)</span>' : '');
+				var booking = e.booking_id ? '<div class="small muted">' + esc(e.booking_id) + (e.appt_doctor ? ' &middot; ' + esc(e.appt_doctor) : '') + (e.appt_date ? ' &middot; ' + fmtDate(e.appt_date) + ' ' + esc(e.appt_time || '') : '') + '</div>'
+					: (e.appointment_id && !e.patient_name ? '<span class="muted small">Appointment deleted</span>' : '');
+				var detail = activityDetail(e);
+				return '<tr><td class="small text-nowrap">' + esc(when) + '</td><td class="fw-semibold">' + esc(e.actor) + '</td>' +
+					'<td>' + esc(ACT_LABEL[e.action] || e.action) + (detail ? '<div class="small muted">' + esc(detail) + '</div>' : '') + '</td>' +
+					'<td>' + who + booking + '</td></tr>';
+			}).join('');
+			if (more) $('ac-list').insertAdjacentHTML('beforeend', html);
+			else $('ac-list').innerHTML = html || '<tr><td colspan="4" class="muted">No activity in these dates.</td></tr>';
+			if (d.entries.length) activityLast = d.entries[d.entries.length - 1].id;
+			$('ac-more').hidden = !d.more;
+		}
 
 		function apptFilter() {
 			var mode = $('ap-range').value;
@@ -1009,6 +1079,9 @@
 		$('pt-search').addEventListener('input', function () { clearTimeout(ptTimer); ptTimer = setTimeout(function () { run(loaders.patients()); }, 300); });
 		['rm-date', 'rm-doctor'].forEach(function (id) { $(id).addEventListener('change', function () { run(loaders.reminders()); }); });
 		['rp-from', 'rp-to'].forEach(function (id) { $(id).addEventListener('change', function () { run(loaders.reports()); }); });
+		['ac-from', 'ac-to', 'ac-actor'].forEach(function (id) { $(id).addEventListener('change', function () { run(loadActivity(false)); }); });
+		$('ac-week').addEventListener('click', function () { $('ac-to').value = today; $('ac-from').value = addDays(today, -6); $('ac-actor').value = ''; run(loadActivity(false)); });
+		$('ac-more').addEventListener('click', function () { run(loadActivity(true)); });
 		$('rp-export').addEventListener('click', function () {
 			if (!report) return;
 			var head = ['Date', 'Total', 'Online', 'Walk-in', 'Completed', 'Cancelled', 'No-show', 'New', 'Follow-up', 'Paid online (Rs)'];

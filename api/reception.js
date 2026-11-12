@@ -146,7 +146,9 @@ const actions = {
 		};
 	},
 
-	async appointments(b) {
+	async appointments(b, user) {
+		// Bulk download of patient details is for admins only; staff work with the on-screen list.
+		need(!b.export || user.role === 'admin', 'Only an admin can export appointments.');
 		await reconcilePending();
 		const where = [];
 		const params = [];
@@ -425,6 +427,33 @@ const actions = {
 		return { deleted: { patient: id, appointments: appts.length } };
 	},
 
+	/* ---------- Activity log (admin only): who did what, and when ---------- */
+	async activity(b, user) {
+		need(user.role === 'admin', 'Only an admin can see the activity log.');
+		const from = b.from ? dateOf(b.from) : null;
+		const to = b.to ? dateOf(b.to) : null;
+		const where = [];
+		const params = [];
+		const add = (sql, v) => { params.push(v); where.push(sql.replace('?', '$' + params.length)); };
+		// Dates are hospital days (IST).
+		if (from) add(`l.at >= (?::date)::timestamp AT TIME ZONE 'Asia/Kolkata'`, from);
+		if (to) add(`l.at < ((?::date) + 1)::timestamp AT TIME ZONE 'Asia/Kolkata'`, to);
+		if (b.actor) add('l.actor = ?', clean(b.actor, 30).toLowerCase());
+		if (b.before) add('l.id < ?', Number(b.before) || 0);
+		const LIMIT = 100;
+		const rows = await q(`SELECT l.id, l.at, l.actor, l.action, l.detail, l.appointment_id,
+				a.booking_id, a.doctor AS appt_doctor, a.date AS appt_date, a.time AS appt_time,
+				COALESCE(pa.name, pd.name) AS patient_name
+			FROM audit_log l
+			LEFT JOIN appointments a ON a.id = l.appointment_id
+			LEFT JOIN patients pa ON pa.id = a.patient_id
+			LEFT JOIN patients pd ON l.appointment_id IS NULL AND (l.detail->>'patient') ~ '^[0-9]+$' AND pd.id = (l.detail->>'patient')::int
+			${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+			ORDER BY l.id DESC LIMIT ${LIMIT + 1}`, params);
+		const actors = (await q(`SELECT DISTINCT actor FROM audit_log ORDER BY actor`)).map((r) => r.actor);
+		return { entries: rows.slice(0, LIMIT), more: rows.length > LIMIT, actors };
+	},
+
 	/* ---------- Reports ---------- */
 	async reports(b) {
 		const from = dateOf(b.from);
@@ -552,6 +581,7 @@ module.exports = async (req, res) => {
 			const r = await auth.login(b.username, b.password);
 			if (r.error) return res.status(r.status).json({ error: r.error });
 			await auth.startSession(res, r.user);
+			await audit(r.user, 'login', null, {}).catch(() => {});
 			return res.status(200).json(await actions.me(b, r.user));
 		}
 		if (b.action === 'logout') { auth.endSession(res); return res.status(200).json({ ok: true }); }
