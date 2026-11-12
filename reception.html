@@ -23,7 +23,7 @@
 		.topbar img { height: 34px; }
 		.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
 		.tabs::-webkit-scrollbar { display: none; }
-		.tabs button { border: 0; background: none; padding: 12px 14px; color: var(--muted); font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; }
+		.tabs button { border: 0; background: none; padding: 12px 10px; color: var(--muted); font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; }
 		.tabs button.active { color: var(--brand); border-bottom-color: var(--brand); }
 		.panel { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
 		.stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; height: 100%; }
@@ -91,8 +91,12 @@
 					<button data-view="appointments"><i class="fa-regular fa-calendar-check me-1"></i>Appointments</button>
 					<button data-view="walkin"><i class="fa-solid fa-user-plus me-1"></i>Walk-in</button>
 					<button data-view="tokens"><i class="fa-solid fa-list-ol me-1"></i>Tokens</button>
+					<button data-view="patients"><i class="fa-solid fa-hospital-user me-1"></i>Patients</button>
+					<button data-view="reminders"><i class="fa-brands fa-whatsapp me-1"></i>Reminders</button>
 					<button data-view="schedule"><i class="fa-solid fa-user-doctor me-1"></i>Doctor Schedule</button>
+					<button data-view="reports"><i class="fa-solid fa-chart-column me-1"></i>Reports</button>
 					<button data-view="staff" data-admin hidden><i class="fa-solid fa-users-gear me-1"></i>Staff</button>
+					<button data-view="settings"><i class="fa-solid fa-gear me-1"></i>Settings</button>
 				</nav>
 			</div>
 		</header>
@@ -133,8 +137,21 @@
 							<select id="ap-source" class="form-select form-select-sm"><option value="">All</option><option value="online">Online</option><option value="walkin">Walk-in</option></select></div>
 						<div class="col-12 col-md-3"><label class="form-label small" for="ap-search">Search</label><input id="ap-search" class="form-control form-control-sm" placeholder="Name, phone or booking ID"></div>
 					</div>
-					<div class="form-check mt-2 small">
-						<input class="form-check-input" type="checkbox" id="ap-upcoming"><label class="form-check-label" for="ap-upcoming">Show all upcoming (ignore date)</label>
+					<div class="d-flex flex-wrap align-items-center gap-3 mt-2 small">
+						<label class="d-flex align-items-center gap-1 mb-0" for="ap-range">
+							<span>Show</span>
+							<select id="ap-range" class="form-select form-select-sm" style="width:auto">
+								<option value="day">the selected date</option>
+								<option value="upcoming">all upcoming</option>
+								<option value="range">a date range (history)</option>
+							</select>
+						</label>
+						<span id="ap-range-box" class="d-flex align-items-center gap-1" hidden>
+							<input type="date" id="ap-from" class="form-control form-control-sm" aria-label="From date">
+							<span>to</span>
+							<input type="date" id="ap-to" class="form-control form-control-sm" aria-label="To date">
+						</span>
+						<button type="button" id="ap-export" class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-file-csv me-1"></i>Export CSV</button>
 					</div>
 				</div>
 				<p id="ap-count" class="small muted"></p>
@@ -185,6 +202,98 @@
 				<div class="row g-3" id="sc-list"></div>
 			</section>
 
+			<!-- Patients -->
+			<section data-section="patients" hidden>
+				<div class="row g-3">
+					<div class="col-lg-5">
+						<div class="panel">
+							<label class="form-label" for="pt-search">Find a patient</label>
+							<input id="pt-search" class="form-control mb-3" placeholder="Name or mobile number" autocomplete="off">
+							<div id="pt-list"></div>
+						</div>
+					</div>
+					<div class="col-lg-7"><div id="pt-detail" class="panel muted">Select a patient to see details and visit history.</div></div>
+				</div>
+			</section>
+
+			<!-- Reminders -->
+			<section data-section="reminders" hidden>
+				<div class="panel mb-3">
+					<div class="d-flex flex-wrap align-items-end gap-2">
+						<div><label class="form-label small" for="rm-date">Appointments on</label><input type="date" id="rm-date" class="form-control form-control-sm"></div>
+						<div><label class="form-label small" for="rm-doctor">Doctor</label><select id="rm-doctor" class="form-select form-select-sm" data-doctors="all"></select></div>
+						<p class="small muted mb-0 ms-md-3">Press each WhatsApp button and then Send in WhatsApp. Ticks are saved on this computer, so you can see who is already done.</p>
+					</div>
+				</div>
+				<p id="rm-count" class="small muted"></p>
+				<div id="rm-list"></div>
+			</section>
+
+			<!-- Reports -->
+			<section data-section="reports" hidden>
+				<div class="panel mb-3">
+					<div class="d-flex flex-wrap align-items-end gap-2">
+						<div><label class="form-label small" for="rp-from">From</label><input type="date" id="rp-from" class="form-control form-control-sm"></div>
+						<div><label class="form-label small" for="rp-to">To</label><input type="date" id="rp-to" class="form-control form-control-sm"></div>
+						<div class="btn-group btn-group-sm" role="group" aria-label="Quick ranges">
+							<button type="button" class="btn btn-outline-secondary" data-rprange="today">Today</button>
+							<button type="button" class="btn btn-outline-secondary" data-rprange="7">7 days</button>
+							<button type="button" class="btn btn-outline-secondary" data-rprange="month">This month</button>
+							<button type="button" class="btn btn-outline-secondary" data-rprange="30">30 days</button>
+						</div>
+						<button type="button" id="rp-export" class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-file-csv me-1"></i>Export CSV</button>
+					</div>
+				</div>
+				<div class="row g-2 mb-3" id="rp-stats"></div>
+				<div class="panel mb-3">
+					<h3 class="h6 mb-3">By doctor</h3>
+					<div class="table-responsive"><table class="table table-sm align-middle mb-0">
+						<thead><tr><th>Doctor</th><th>Total</th><th>Online</th><th>Walk-in</th><th>Completed</th><th>Cancelled</th><th>No-show</th><th>New</th><th>Follow-up</th><th>Paid online</th></tr></thead>
+						<tbody id="rp-doctors"></tbody>
+					</table></div>
+				</div>
+				<div class="panel">
+					<h3 class="h6 mb-3">By day</h3>
+					<div id="rp-days"></div>
+				</div>
+			</section>
+
+			<!-- Settings -->
+			<section data-section="settings" hidden>
+				<div class="row g-3">
+					<div class="col-lg-8" data-admin hidden>
+						<form id="st-form" class="panel">
+							<h2 class="h5 mb-3">Hospital details &amp; WhatsApp messages</h2>
+							<div class="row g-2 mb-3">
+								<div class="col-sm-5"><label class="form-label small" for="st-phone">Hospital phone</label><input id="st-phone" class="form-control form-control-sm" required></div>
+								<div class="col-sm-7"><label class="form-label small" for="st-address">Address</label><input id="st-address" class="form-control form-control-sm" required></div>
+							</div>
+							<p class="small muted mb-2">You can use: {name} {doctor} {when} {id} {token} {reason} {phone} {address}</p>
+							<div id="st-templates"></div>
+							<div class="d-flex flex-wrap gap-2 mt-3">
+								<button class="btn btn-primary btn-sm" type="submit">Save settings</button>
+								<button class="btn btn-outline-secondary btn-sm" type="button" id="st-reset">Restore default messages</button>
+							</div>
+						</form>
+					</div>
+					<div class="col-lg-4">
+						<form id="pw-form" class="panel" autocomplete="off">
+							<h2 class="h5 mb-3">Change my password</h2>
+							<div id="pw-admin" class="small muted" hidden>The admin password is set in Vercel → Settings → Environment Variables (RECEPTION_ADMIN_PASSWORD). Change it there and redeploy.</div>
+							<div id="pw-fields">
+								<label class="form-label small" for="pw-current">Current password</label>
+								<input id="pw-current" type="password" class="form-control form-control-sm mb-2" autocomplete="current-password" required>
+								<label class="form-label small" for="pw-new">New password (min 8)</label>
+								<input id="pw-new" type="password" class="form-control form-control-sm mb-2" autocomplete="new-password" minlength="8" required>
+								<label class="form-label small" for="pw-new2">Repeat new password</label>
+								<input id="pw-new2" type="password" class="form-control form-control-sm mb-3" autocomplete="new-password" minlength="8" required>
+								<button class="btn btn-primary btn-sm" type="submit">Change password</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</section>
+
 			<!-- Staff -->
 			<section data-section="staff" hidden>
 				<div class="row g-3">
@@ -214,7 +323,7 @@
 		var HOSPITAL_PHONE = '+91 95664 43300';
 		var $ = function (id) { return document.getElementById(id); };
 		var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-		var me = null, doctors = [], today = '', current = 'dashboard', timer = null;
+		var me = null, doctors = [], today = '', current = 'dashboard', timer = null, settings = null, report = null;
 		var STATUS_LABEL = { booked: 'Booked', confirmed: 'Confirmed', arrived: 'Waiting', in_consult: 'In consultation', completed: 'Completed', cancelled: 'Cancelled', no_show: 'No-show' };
 		var DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -244,17 +353,49 @@
 		var minToTime = function (m) { var h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0'); return ((h % 12) || 12) + ':' + mm + ' ' + (h < 12 ? 'AM' : 'PM'); };
 		var badge = function (st) { return '<span class="badge-st st-' + st + '">' + esc(STATUS_LABEL[st] || st) + '</span>'; };
 		var money = function (p) { return p ? 'Rs ' + (p / 100).toLocaleString('en-IN') : ''; };
+		var addDays = function (iso, n) { return new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10); };
+		var store = {
+			get: function (k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } },
+			set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+		};
+
+		function downloadCsv(filename, header, rows) {
+			var cell = function (v) {
+				var s = String(v == null ? '' : v);
+				if (/^[=+\-@]/.test(s)) s = "'" + s; // stop spreadsheet formulas
+				return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+			};
+			var csv = '﻿' + [header].concat(rows).map(function (r) { return r.map(cell).join(','); }).join('\r\n');
+			var a = document.createElement('a');
+			a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+			a.download = filename;
+			document.body.appendChild(a); a.click();
+			setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+		}
+		var APPT_CSV_HEAD = ['Booking ID', 'Date', 'Time', 'Token', 'Doctor', 'Patient', 'Phone', 'Age', 'Gender', 'Type', 'Visit', 'Status', 'Paid (Rs)', 'Payment ID', 'Reason', 'Notes'];
+		var apptCsvRow = function (a) {
+			return [a.booking_id, a.date, a.time, a.token_no, a.doctor, a.name, a.phone, a.age, a.gender, a.source === 'online' ? 'Online' : 'Walk-in',
+				a.visit_type === 'old' ? 'Follow-up' : 'New', STATUS_LABEL[a.status] || a.status, a.amount_paise ? a.amount_paise / 100 : '', a.payment_id, a.reason, a.notes];
+		};
+
+		function setReportRange(kind) {
+			var from = today;
+			if (kind === '7') from = addDays(today, -6);
+			if (kind === '30') from = addDays(today, -29);
+			if (kind === 'month') from = today.slice(0, 8) + '01';
+			$('rp-from').value = from; $('rp-to').value = today;
+		}
 
 		/* ---------- WhatsApp messages (reception presses Send) ---------- */
 		function waLink(a, kind, extra) {
-			var name = a.name || 'Patient', when = fmtDate(a.date) + (a.time ? ' at ' + a.time : '');
-			var text = {
-				confirm: 'Hello ' + name + ', your appointment with ' + a.doctor + ' at Nivya Hospitals is confirmed for ' + when + '. Booking ID: ' + a.booking_id + '. Please show this at the reception. For help call ' + HOSPITAL_PHONE + '.',
-				reminder: 'Hello ' + name + ', a reminder of your appointment with ' + a.doctor + ' at Nivya Hospitals on ' + when + '. Booking ID: ' + a.booking_id + '. Address: 110-F/5 Barani Nagar, Vannarpettai, Tirunelveli.',
-				reschedule: 'Hello ' + name + ', your appointment with ' + a.doctor + ' at Nivya Hospitals has been rescheduled to ' + when + '. Booking ID: ' + a.booking_id + '. For help call ' + HOSPITAL_PHONE + '.',
-				cancel: 'Hello ' + name + ', your appointment with ' + a.doctor + ' on ' + when + ' at Nivya Hospitals has been cancelled' + (extra ? ' (' + extra + ')' : '') + '. Please call ' + HOSPITAL_PHONE + ' to book again.',
-				token: 'Hello ' + name + ', your token number for ' + a.doctor + ' today at Nivya Hospitals is ' + a.token_no + '. Please wait for your turn.'
-			}[kind];
+			var s = settings || {};
+			var tpl = (s.templates && s.templates[kind]) || '';
+			var vals = {
+				name: a.name || 'Patient', doctor: a.doctor, when: fmtDate(a.date) + (a.time ? ' at ' + a.time : ''),
+				id: a.booking_id, token: a.token_no == null ? '' : a.token_no, reason: extra ? ' (' + extra + ')' : '',
+				phone: s.hospitalPhone || HOSPITAL_PHONE, address: s.address || ''
+			};
+			var text = tpl.replace(/\{(\w+)\}/g, function (m, k) { return Object.prototype.hasOwnProperty.call(vals, k) ? vals[k] : m; });
 			return 'https://wa.me/91' + String(a.phone || '').replace(/\D/g, '').slice(-10) + '?text=' + encodeURIComponent(text);
 		}
 		function waKindFor(a) {
@@ -270,7 +411,12 @@
 		function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
 
 		function startApp(data) {
-			me = data.user; doctors = data.doctors; today = data.today;
+			me = data.user; doctors = data.doctors; today = data.today; settings = data.settings;
+			$('pw-admin').hidden = me.username !== 'admin';
+			$('pw-fields').hidden = me.username === 'admin';
+			$('rm-date').value = addDays(today, 1);
+			$('ap-from').value = addDays(today, -30); $('ap-to').value = today;
+			setReportRange('30');
 			$('who').textContent = me.name + (me.role === 'admin' ? ' (admin)' : '');
 			document.querySelectorAll('[data-admin]').forEach(function (el) { el.hidden = me.role !== 'admin'; });
 			document.querySelectorAll('select[data-doctors]').forEach(function (sel) {
@@ -317,15 +463,76 @@
 			},
 
 			appointments: async function () {
-				var upcoming = $('ap-upcoming').checked;
-				var d = await api('appointments', {
-					date: upcoming ? '' : $('ap-date').value, from: upcoming ? today : '',
-					doctor: $('ap-doctor').value, status: $('ap-status').value, source: $('ap-source').value, search: $('ap-search').value
-				});
+				var d = await api('appointments', apptFilter());
 				var list = d.appointments;
-				if (upcoming) list.sort(function (a, b) { return a.date === b.date ? (a.time_min || 0) - (b.time_min || 0) : a.date < b.date ? -1 : 1; });
-				$('ap-count').textContent = list.length + ' appointment' + (list.length === 1 ? '' : 's') + (list.length >= 300 ? ' (showing first 300)' : '');
+				if ($('ap-range').value === 'upcoming') list.sort(function (a, b) { return a.date === b.date ? (a.time_min || 0) - (b.time_min || 0) : a.date < b.date ? -1 : 1; });
+				$('ap-count').textContent = list.length + ' appointment' + (list.length === 1 ? '' : 's') + (list.length >= d.limit ? ' (showing the latest ' + d.limit + '; use Export CSV for all)' : '');
 				$('ap-list').innerHTML = list.length ? list.map(apptCard).join('') : '<div class="panel muted">No appointments found.</div>';
+			},
+
+			patients: async function () {
+				var d = await api('patientSearch', { search: $('pt-search').value });
+				$('pt-list').innerHTML = d.patients.length ? d.patients.map(function (p) {
+					return '<button type="button" class="appt w-100 text-start d-block" data-patient="' + p.id + '">' +
+						'<div class="fw-semibold">' + esc(p.name) + ' <span class="muted fw-normal">' + esc(p.phone) + '</span></div>' +
+						'<div class="meta">' + (p.age != null ? p.age + ' yrs ' : '') + esc(p.gender || '') + ' &middot; ' + p.bookings + ' booking' + (p.bookings === 1 ? '' : 's') +
+						', ' + p.visits + ' completed' + (p.last_visit ? ' &middot; last ' + fmtDate(p.last_visit) : '') + '</div></button>';
+				}).join('') : '<p class="muted mb-0">No patients found.</p>';
+			},
+
+			reminders: async function () {
+				var date = $('rm-date').value || addDays(today, 1);
+				var d = await api('appointments', { date: date, doctor: $('rm-doctor').value });
+				var list = d.appointments.filter(function (a) { return (a.status === 'booked' || a.status === 'confirmed') && a.phone; });
+				list.sort(function (a, b) { return a.doctor === b.doctor ? (a.time_min || 0) - (b.time_min || 0) : a.doctor < b.doctor ? -1 : 1; });
+				var sent = store.get('nv_reminded') || {};
+				var done = list.filter(function (a) { return sent[a.booking_id]; }).length;
+				$('rm-count').textContent = list.length ? done + ' of ' + list.length + ' reminded for ' + fmtDate(date) + '.' : '';
+				$('rm-list').innerHTML = list.length ? list.map(function (a) {
+					var ok = !!sent[a.booking_id];
+					return '<div class="appt d-flex flex-wrap align-items-center gap-2' + (ok ? ' opacity-75' : '') + '">' +
+						'<div class="flex-grow-1"><div class="fw-semibold">' + (ok ? '<i class="fa-solid fa-circle-check text-success me-1"></i>' : '') + esc(a.name) +
+						' <span class="muted fw-normal">' + esc(a.phone) + '</span></div>' +
+						'<div class="meta">' + esc(a.doctor) + ' &middot; ' + esc(a.time || '') + ' &middot; ' + esc(a.booking_id) + ' &middot; ' + badge(a.status) + '</div></div>' +
+						'<a class="btn btn-sm ' + (ok ? 'btn-outline-success' : 'btn-success') + '" target="_blank" rel="noopener" data-remind="' + esc(a.booking_id) + '" href="' +
+						esc(waLink(a, 'reminder')) + '"><i class="fa-brands fa-whatsapp me-1"></i>' + (ok ? 'Send again' : 'Send reminder') + '</a></div>';
+				}).join('') : '<div class="panel muted">No booked appointments to remind on ' + fmtDate(date) + '.</div>';
+			},
+
+			reports: async function () {
+				var d = report = await api('reports', { from: $('rp-from').value, to: $('rp-to').value });
+				var t = d.totals;
+				var cards = [['Appointments', t.total], ['Online', t.online], ['Walk-ins', t.walkin], ['Completed', t.completed],
+					['Cancelled', t.cancelled], ['No-shows', t.noShow], ['New patients', d.newRegistrations], ['Paid online', money(t.paidPaise) || 'Rs 0'],
+					['Avg. wait', d.avgWaitMin == null ? '-' : d.avgWaitMin + ' min']];
+				$('rp-stats').innerHTML = cards.map(function (c) {
+					return '<div class="col-6 col-md-4 col-xl"><div class="stat"><div class="l">' + c[0] + '</div><div class="n" style="font-size:22px">' + esc(c[1]) + '</div></div></div>';
+				}).join('');
+				$('rp-doctors').innerHTML = d.byDoctor.map(function (r) {
+					return '<tr><td class="fw-semibold">' + esc(r.doctor) + '</td><td>' + r.total + '</td><td>' + r.online + '</td><td>' + r.walkin + '</td><td>' + r.completed +
+						'</td><td>' + r.cancelled + '</td><td>' + r.noShow + '</td><td>' + r.newPatients + '</td><td>' + r.followUps + '</td><td>' + (money(r.paidPaise) || '-') + '</td></tr>';
+				}).join('');
+				var max = Math.max.apply(null, [1].concat(d.byDay.map(function (r) { return r.total; })));
+				$('rp-days').innerHTML = d.byDay.length ? d.byDay.slice().reverse().map(function (r) {
+					var pct = function (n) { return (n / max * 100).toFixed(1) + '%'; };
+					return '<div class="d-flex align-items-center gap-2 mb-1 small"><span style="width:110px" class="text-nowrap">' + fmtDate(r.date).replace(/ \d{4}$/, '') + '</span>' +
+						'<span class="flex-grow-1 d-flex" style="height:14px;background:#eef1f6;border-radius:4px;overflow:hidden" title="Online ' + r.online + ', walk-in ' + r.walkin + '">' +
+						'<span style="width:' + pct(r.online) + ';background:#0b56a0"></span><span style="width:' + pct(r.walkin) + ';background:#c518ca"></span></span>' +
+						'<span style="width:36px" class="text-end fw-semibold">' + r.total + '</span></div>';
+				}).join('') + '<div class="small muted mt-2"><span style="display:inline-block;width:10px;height:10px;background:#0b56a0;border-radius:2px"></span> Online &nbsp; ' +
+					'<span style="display:inline-block;width:10px;height:10px;background:#c518ca;border-radius:2px"></span> Walk-in</div>' : '<p class="muted mb-0">No appointments in this range.</p>';
+			},
+
+			settings: async function () {
+				if (me.role !== 'admin') return;
+				var s = (await api('me')).settings;
+				settings = s;
+				$('st-phone').value = s.hospitalPhone; $('st-address').value = s.address;
+				var LABEL = { confirm: 'Appointment confirmed', reminder: 'Reminder (day before)', reschedule: 'Rescheduled', cancel: 'Cancelled', token: 'Walk-in / check-in token' };
+				$('st-templates').innerHTML = Object.keys(s.templates).map(function (k) {
+					return '<label class="form-label small mb-1" for="st-t-' + k + '">' + esc(LABEL[k] || k) + '</label>' +
+						'<textarea class="form-control form-control-sm mb-2" rows="2" id="st-t-' + k + '" data-template="' + k + '" maxlength="600">' + esc(s.templates[k]) + '</textarea>';
+				}).join('');
 			},
 
 			walkin: async function () {},
@@ -363,6 +570,43 @@
 			staff: async function () { renderStaff((await api('staff')).staff); }
 		};
 
+		function apptFilter() {
+			var mode = $('ap-range').value;
+			return {
+				date: mode === 'day' ? $('ap-date').value : '',
+				from: mode === 'upcoming' ? today : mode === 'range' ? $('ap-from').value : '',
+				to: mode === 'range' ? $('ap-to').value : '',
+				doctor: $('ap-doctor').value, status: $('ap-status').value, source: $('ap-source').value, search: $('ap-search').value
+			};
+		}
+
+		async function showPatient(id) {
+			var d = await api('patient', { id: Number(id) });
+			var p = d.patient;
+			var opt = function (v) { return '<option' + (p.gender === v ? ' selected' : '') + '>' + v + '</option>'; };
+			$('pt-detail').classList.remove('muted');
+			$('pt-detail').innerHTML =
+				'<form id="pt-form" data-id="' + p.id + '" autocomplete="off">' +
+				'<div class="d-flex align-items-center gap-2 mb-3"><h2 class="h5 mb-0 me-auto">' + esc(p.name) + '</h2>' +
+				'<a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/91' + esc(p.phone) + '"><i class="fa-brands fa-whatsapp me-1"></i>Chat</a>' +
+				'<a class="btn btn-sm btn-outline-primary" href="tel:+91' + esc(p.phone) + '"><i class="fa-solid fa-phone me-1"></i>Call</a></div>' +
+				'<div class="row g-2">' +
+				'<div class="col-sm-6"><label class="form-label small">Name</label><input class="form-control form-control-sm" name="name" value="' + esc(p.name) + '" required></div>' +
+				'<div class="col-sm-6"><label class="form-label small">Mobile</label><input class="form-control form-control-sm" name="phone" value="' + esc(p.phone) + '" inputmode="numeric" maxlength="10" required></div>' +
+				'<div class="col-4 col-sm-2"><label class="form-label small">Age</label><input type="number" min="0" max="120" class="form-control form-control-sm" name="age" value="' + (p.age == null ? '' : p.age) + '"></div>' +
+				'<div class="col-8 col-sm-4"><label class="form-label small">Gender</label><select class="form-select form-select-sm" name="gender"><option value="">-</option>' + opt('Female') + opt('Male') + opt('Other') + '</select></div>' +
+				'<div class="col-sm-6"><label class="form-label small">Email</label><input type="email" class="form-control form-control-sm" name="email" value="' + esc(p.email || '') + '"></div>' +
+				'<div class="col-12"><label class="form-label small">Notes (allergies, conditions, anything staff should know)</label><textarea class="form-control form-control-sm" name="notes" rows="2" maxlength="1000">' + esc(p.notes || '') + '</textarea></div>' +
+				'</div><button class="btn btn-sm btn-primary mt-2" type="submit">Save patient</button></form>' +
+				'<hr><h3 class="h6 mb-2">Visit history (' + d.visits.length + ')</h3>' +
+				(d.visits.length ? d.visits.map(function (a) {
+					return '<div class="d-flex flex-wrap align-items-center gap-2 border-bottom py-2 small"><span class="text-nowrap fw-semibold" style="min-width:120px">' + fmtDate(a.date) + '</span>' +
+						'<span class="flex-grow-1">' + esc(a.doctor) + (a.time ? ' &middot; ' + esc(a.time) : '') + ' &middot; ' + (a.source === 'online' ? 'Online' : 'Walk-in') +
+						(a.token_no ? ' &middot; Token ' + a.token_no : '') + (a.reason ? '<br><span class="muted">' + esc(a.reason) + '</span>' : '') + '</span>' + badge(a.status) + '</div>';
+				}).join('') : '<p class="muted small">No visits yet.</p>');
+			if (window.innerWidth < 992) $('pt-detail').scrollIntoView({ behavior: 'smooth' });
+		}
+
 		function apptCard(a) {
 			var b = [];
 			var st = a.status;
@@ -382,7 +626,9 @@
 			return '<div class="appt" id="appt-' + a.id + '">' +
 				'<div class="d-flex flex-wrap align-items-start gap-2">' +
 				(a.token_no ? '<span class="token">' + a.token_no + '</span>' : '') +
-				'<div class="flex-grow-1"><div class="fw-semibold">' + esc(a.name) + ' <span class="muted fw-normal">' + esc(a.phone) + '</span></div>' +
+				'<div class="flex-grow-1"><div class="fw-semibold">' +
+				(a.patient_id ? '<button type="button" class="btn btn-link p-0 fw-semibold align-baseline text-decoration-none" data-patientnav="' + a.patient_id + '" title="Open patient history">' + esc(a.name) + '</button>' : esc(a.name)) +
+				' <span class="muted fw-normal">' + esc(a.phone) + '</span></div>' +
 				'<div class="meta">' + esc(a.doctor) + ' &middot; ' + fmtDate(a.date) + (a.time ? ' ' + esc(a.time) : '') + ' &middot; ' +
 				(a.source === 'online' ? '<i class="fa-solid fa-globe"></i> Online' : '<i class="fa-solid fa-person-walking"></i> Walk-in') +
 				' &middot; ' + (a.visit_type === 'old' ? 'Follow-up' : 'New') + (a.amount_paise ? ' &middot; Paid ' + money(a.amount_paise) : '') + '</div>' +
@@ -479,8 +725,23 @@
 		/* ---------- Events ---------- */
 		$('tabs').addEventListener('click', function (e) { var b = e.target.closest('button[data-view]'); if (b) show(b.dataset.view); });
 		document.addEventListener('click', function (e) {
-			var t = e.target.closest('[data-op],[data-callnext],[data-refresh],[data-resched],[data-unleave],[data-leave],[data-editstaff],[data-togglestaff],[data-match]');
+			var t = e.target.closest('[data-op],[data-callnext],[data-refresh],[data-resched],[data-unleave],[data-leave],[data-editstaff],[data-togglestaff],[data-match],[data-patient],[data-patientnav],[data-remind],[data-rprange]');
 			if (!t) return;
+			if (t.dataset.patient) return run(showPatient(t.dataset.patient));
+			if (t.dataset.patientnav) {
+				show('patients');
+				return run(showPatient(t.dataset.patientnav));
+			}
+			if (t.dataset.remind) {
+				var sent = store.get('nv_reminded') || {};
+				sent[t.dataset.remind] = Date.now();
+				// Keep the list small: forget ticks older than 30 days.
+				Object.keys(sent).forEach(function (k) { if (Date.now() - sent[k] > 30 * 86400000) delete sent[k]; });
+				store.set('nv_reminded', sent);
+				setTimeout(function () { loaders.reminders().catch(function () {}); }, 300);
+				return; // the link itself opens WhatsApp
+			}
+			if (t.dataset.rprange) { setReportRange(t.dataset.rprange); return run(loaders.reports()); }
 			if (t.dataset.op) return run(doOp(t.dataset.id, t.dataset.op));
 			if (t.dataset.callnext) return run(callNext(t.dataset.callnext));
 			if (t.hasAttribute('data-refresh')) return run(loaders[current]());
@@ -543,7 +804,63 @@
 		});
 		$('logout').addEventListener('click', function () { api('logout').finally(function () { me = null; showLogin(); }); });
 
-		['ap-date', 'ap-doctor', 'ap-status', 'ap-source', 'ap-upcoming'].forEach(function (id) { $(id).addEventListener('change', function () { run(loaders.appointments()); }); });
+		['ap-date', 'ap-doctor', 'ap-status', 'ap-source', 'ap-range', 'ap-from', 'ap-to'].forEach(function (id) { $(id).addEventListener('change', function () { run(loaders.appointments()); }); });
+		$('ap-range').addEventListener('change', function () {
+			$('ap-range-box').hidden = this.value !== 'range';
+			$('ap-date').disabled = this.value !== 'day';
+		});
+		$('ap-export').addEventListener('click', function () {
+			run(api('appointments', Object.assign(apptFilter(), { export: 1 })).then(function (d) {
+				if (!d.appointments.length) return toast('Nothing to export.', 'warning');
+				downloadCsv('nivya-appointments-' + today + '.csv', APPT_CSV_HEAD, d.appointments.map(apptCsvRow));
+			}));
+		});
+
+		var ptTimer;
+		$('pt-search').addEventListener('input', function () { clearTimeout(ptTimer); ptTimer = setTimeout(function () { run(loaders.patients()); }, 300); });
+		['rm-date', 'rm-doctor'].forEach(function (id) { $(id).addEventListener('change', function () { run(loaders.reminders()); }); });
+		['rp-from', 'rp-to'].forEach(function (id) { $(id).addEventListener('change', function () { run(loaders.reports()); }); });
+		$('rp-export').addEventListener('click', function () {
+			if (!report) return;
+			var head = ['Date', 'Total', 'Online', 'Walk-in', 'Completed', 'Cancelled', 'No-show', 'New', 'Follow-up', 'Paid online (Rs)'];
+			var row = function (label, r) { return [label, r.total, r.online, r.walkin, r.completed, r.cancelled, r.noShow, r.newPatients, r.followUps, r.paidPaise / 100]; };
+			var rows = report.byDay.map(function (r) { return row(r.date, r); });
+			rows.push(row('TOTAL', report.totals), []);
+			rows.push(['Doctor'].concat(head.slice(1)));
+			report.byDoctor.forEach(function (r) { rows.push(row(r.doctor, r)); });
+			downloadCsv('nivya-report-' + report.from + '-to-' + report.to + '.csv', head, rows);
+		});
+
+		document.addEventListener('submit', function (e) {
+			if (e.target.id !== 'pt-form') return;
+			e.preventDefault();
+			var f = e.target;
+			run(api('savePatient', {
+				id: Number(f.dataset.id), name: f.name.value, phone: f.phone.value, age: f.age.value, gender: f.gender.value, email: f.email.value, notes: f.notes.value
+			}).then(function () { toast('Patient saved.'); return Promise.all([showPatient(f.dataset.id), loaders.patients()]); }));
+		});
+
+		$('st-form').addEventListener('submit', function (e) {
+			e.preventDefault();
+			var templates = {};
+			document.querySelectorAll('[data-template]').forEach(function (t) { templates[t.dataset.template] = t.value; });
+			run(api('saveSettings', { hospitalPhone: $('st-phone').value, address: $('st-address').value, templates: templates }).then(function (d) {
+				settings = d.settings; toast('Settings saved.');
+			}));
+		});
+		$('st-reset').addEventListener('click', function () {
+			if (!window.confirm('Restore the original hospital phone, address and WhatsApp messages?')) return;
+			run(api('resetSettings').then(function (d) { settings = d.settings; toast('Defaults restored.'); return loaders.settings(); }));
+		});
+		$('pw-form').addEventListener('submit', function (e) {
+			e.preventDefault();
+			if ($('pw-new').value !== $('pw-new2').value) return toast('The new passwords do not match.', 'warning');
+			run(api('changePassword', { current: $('pw-current').value, password: $('pw-new').value }).then(function () {
+				$('pw-form').reset();
+				toast('Password changed. Please sign in with the new password.');
+				showLogin();
+			}));
+		});
 		var searchTimer;
 		$('ap-search').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(function () { run(loaders.appointments()); }, 350); });
 

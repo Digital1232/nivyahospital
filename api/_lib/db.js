@@ -80,6 +80,8 @@ const SCHEMA = [
 		online boolean NOT NULL DEFAULT true,
 		note text)`,
 	`CREATE TABLE IF NOT EXISTS doctor_leave (id serial PRIMARY KEY, doctor text NOT NULL, date text NOT NULL, reason text, UNIQUE (doctor, date))`,
+	`ALTER TABLE patients ADD COLUMN IF NOT EXISTS notes text`,
+	`CREATE INDEX IF NOT EXISTS appointments_patient ON appointments (patient_id)`,
 	`CREATE TABLE IF NOT EXISTS audit_log (id serial PRIMARY KEY, actor text NOT NULL, action text NOT NULL, appointment_id int, detail jsonb, at timestamptz NOT NULL DEFAULT now())`
 ];
 

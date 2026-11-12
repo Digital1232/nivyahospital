@@ -53,9 +53,40 @@ const TOKEN_CTE = `WITH t AS (
 	ON CONFLICT (date, doctor) DO UPDATE SET last = token_counters.last + 1
 	RETURNING last)`;
 
+// Hospital details and WhatsApp message templates, editable by an admin in Settings.
+// Placeholders: {name} {doctor} {when} {id} {token} {reason} {phone} {address}
+const PANEL_DEFAULTS = {
+	hospitalPhone: '+91 95664 43300',
+	address: '110-F/5 Barani Nagar, Vannarpettai, Tirunelveli',
+	templates: {
+		confirm: 'Hello {name}, your appointment with {doctor} at Nivya Hospitals is confirmed for {when}. Booking ID: {id}. Please show this at the reception. For help call {phone}.',
+		reminder: 'Hello {name}, a reminder of your appointment with {doctor} at Nivya Hospitals on {when}. Booking ID: {id}. Address: {address}.',
+		reschedule: 'Hello {name}, your appointment with {doctor} at Nivya Hospitals has been rescheduled to {when}. Booking ID: {id}. For help call {phone}.',
+		cancel: 'Hello {name}, your appointment with {doctor} on {when} at Nivya Hospitals has been cancelled{reason}. Please call {phone} to book again.',
+		token: 'Hello {name}, your token number for {doctor} today at Nivya Hospitals is {token}. Please wait for your turn.'
+	}
+};
+const TEMPLATE_KEYS = Object.keys(PANEL_DEFAULTS.templates);
+const panelSettings = async () => {
+	const row = await one(`SELECT value FROM settings WHERE key = 'panel'`);
+	const v = (row && row.value) || {};
+	return {
+		hospitalPhone: v.hospitalPhone || PANEL_DEFAULTS.hospitalPhone,
+		address: v.address || PANEL_DEFAULTS.address,
+		templates: Object.fromEntries(TEMPLATE_KEYS.map((k) => [k, (v.templates && v.templates[k]) || PANEL_DEFAULTS.templates[k]]))
+	};
+};
+
+const daysBetween = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000);
+
 const actions = {
 	async me(b, user) {
-		return { user: { username: user.u, name: user.name, role: user.role }, doctors: DOCTORS.map((d) => ({ name: d, speciality: CATALOG.doctors[d].speciality })), today: S.todayIso() };
+		return {
+			user: { username: user.u, name: user.name, role: user.role },
+			doctors: DOCTORS.map((d) => ({ name: d, speciality: CATALOG.doctors[d].speciality })),
+			today: S.todayIso(),
+			settings: await panelSettings()
+		};
 	},
 
 	async dashboard(b) {
@@ -102,6 +133,7 @@ const actions = {
 		if (b.from) add('a.date >= ?', dateOf(b.from));
 		if (b.to) add('a.date <= ?', dateOf(b.to));
 		if (b.doctor) add('a.doctor = ?', doctorOf(b.doctor));
+		if (b.patient_id) add('a.patient_id = ?', Number(b.patient_id));
 		if (b.source) { need(['online', 'walkin'].includes(b.source), 'Invalid source.'); add('a.source = ?', b.source); }
 		if (b.status) { need(STATUSES.includes(b.status), 'Invalid status.'); add('a.status = ?', b.status); }
 		const term = clean(b.search, 60);
@@ -110,9 +142,11 @@ const actions = {
 			const n = '$' + params.length;
 			where.push(`(lower(p.name) LIKE ${n} OR p.phone LIKE ${n} OR lower(a.booking_id) LIKE ${n})`);
 		}
+		// Exports may ask for more rows than the on-screen list.
+		const limit = b.export ? 5000 : 300;
 		const rows = await q(`${APPT_SELECT} ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-			ORDER BY a.date DESC, a.token_no NULLS LAST, a.time_min NULLS LAST, a.id DESC LIMIT 300`, params);
-		return { appointments: rows };
+			ORDER BY a.date DESC, a.token_no NULLS LAST, a.time_min NULLS LAST, a.id DESC LIMIT ${limit}`, params);
+		return { appointments: rows, limit };
 	},
 
 	async update(b, user) {
@@ -235,6 +269,134 @@ const actions = {
 		const r = await q(`DELETE FROM doctor_leave WHERE id = $1 RETURNING doctor, date`, [Number(b.id)]);
 		if (r.length) await audit(user, 'leave_remove', null, r[0]);
 		return actions.schedule();
+	},
+
+	/* ---------- Patients ---------- */
+	async patientSearch(b) {
+		const term = clean(b.search, 60).toLowerCase();
+		const params = [];
+		let where = '';
+		if (term) {
+			const digits = term.replace(/\D/g, '');
+			params.push('%' + term + '%');
+			where = `WHERE lower(p.name) LIKE $1`;
+			if (digits.length >= 3) { params.push(digits + '%'); where += ` OR p.phone LIKE $2`; }
+		}
+		const rows = await q(`SELECT p.id, p.name, p.phone, p.age, p.gender, p.email,
+				(SELECT max(a.date) FROM appointments a WHERE a.patient_id = p.id) AS last_visit,
+				(SELECT count(*)::int FROM appointments a WHERE a.patient_id = p.id AND a.status = 'completed') AS visits,
+				(SELECT count(*)::int FROM appointments a WHERE a.patient_id = p.id) AS bookings
+			FROM patients p ${where} ORDER BY last_visit DESC NULLS LAST, p.id DESC LIMIT 100`, params);
+		return { patients: rows };
+	},
+
+	async patient(b) {
+		const id = Number(b.id);
+		need(Number.isInteger(id), 'Invalid patient.');
+		const p = await one(`SELECT * FROM patients WHERE id = $1`, [id]);
+		need(p, 'Patient not found.');
+		const visits = await q(`${APPT_SELECT} WHERE a.patient_id = $1 ORDER BY a.date DESC, a.id DESC LIMIT 200`, [id]);
+		return { patient: p, visits };
+	},
+
+	async savePatient(b, user) {
+		const id = Number(b.id);
+		need(Number.isInteger(id), 'Invalid patient.');
+		const name = clean(b.name, 80);
+		need(name.length >= 2, 'Enter the patient name.');
+		const phone = clean(b.phone, 10);
+		need(/^[6-9]\d{9}$/.test(phone), 'Enter a valid 10-digit mobile number.');
+		const age = b.age === '' || b.age == null ? null : Number(b.age);
+		need(age === null || (Number.isInteger(age) && age >= 0 && age <= 120), 'Enter a valid age.');
+		const gender = clean(b.gender, 10) || null;
+		need(!gender || ['Female', 'Male', 'Other'].includes(gender), 'Invalid gender.');
+		const email = clean(b.email, 120) || null;
+		need(!email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), 'Enter a valid email or leave it empty.');
+		const clash = await one(`SELECT id FROM patients WHERE phone = $1 AND name_key = $2 AND id <> $3`, [phone, name.toLowerCase(), id]);
+		need(!clash, 'Another patient with this name and phone number already exists.');
+		const r = await q(`UPDATE patients SET name = $2, name_key = $3, phone = $4, age = $5, gender = $6, email = $7, notes = $8 WHERE id = $1 RETURNING id`,
+			[id, name, name.toLowerCase(), phone, age, gender, email, clean(b.notes, 1000) || null]);
+		need(r.length, 'Patient not found.');
+		await audit(user, 'patient_edit', null, { patient: id });
+		return actions.patient({ id });
+	},
+
+	/* ---------- Reports ---------- */
+	async reports(b) {
+		const from = dateOf(b.from);
+		const to = dateOf(b.to);
+		need(from <= to, 'The start date must be before the end date.');
+		need(daysBetween(from, to) <= 366, 'Pick a range of one year or less.');
+		const rows = await q(`SELECT a.date, a.doctor, a.source, a.status, a.visit_type, a.amount_paise, a.payment_id,
+				a.arrived_at, a.started_at, a.completed_at
+			FROM appointments a WHERE a.date BETWEEN $1 AND $2`, [from, to]);
+		const blank = () => ({ total: 0, online: 0, walkin: 0, completed: 0, cancelled: 0, noShow: 0, newPatients: 0, followUps: 0, paidPaise: 0 });
+		const tally = (t, r) => {
+			t.total++;
+			t[r.source === 'online' ? 'online' : 'walkin']++;
+			if (r.status === 'completed') t.completed++;
+			if (r.status === 'cancelled') t.cancelled++;
+			if (r.status === 'no_show') t.noShow++;
+			if (r.visit_type === 'old') t.followUps++; else t.newPatients++;
+			if (r.source === 'online' && r.payment_id) t.paidPaise += Number(r.amount_paise) || 0;
+		};
+		const totals = blank();
+		const byDoctor = Object.fromEntries(DOCTORS.map((d) => [d, blank()]));
+		const byDay = {};
+		const waits = [];
+		for (const r of rows) {
+			tally(totals, r);
+			if (byDoctor[r.doctor]) tally(byDoctor[r.doctor], r);
+			tally(byDay[r.date] = byDay[r.date] || blank(), r);
+			if (r.arrived_at && r.started_at) {
+				const m = (new Date(r.started_at) - new Date(r.arrived_at)) / 60000;
+				if (m >= 0 && m < 600) waits.push(m);
+			}
+		}
+		const newRegs = await one(`SELECT count(*)::int AS n FROM patients WHERE (created_at + interval '330 minutes')::date BETWEEN $1::date AND $2::date`, [from, to]);
+		return {
+			from, to, totals,
+			avgWaitMin: waits.length ? Math.round(waits.reduce((s, x) => s + x, 0) / waits.length) : null,
+			newRegistrations: newRegs.n,
+			byDoctor: DOCTORS.map((d) => ({ doctor: d, ...byDoctor[d] })),
+			byDay: Object.keys(byDay).sort().map((d) => ({ date: d, ...byDay[d] }))
+		};
+	},
+
+	/* ---------- Settings ---------- */
+	async saveSettings(b, user) {
+		need(user.role === 'admin', 'Only an admin can change settings.');
+		const phone = clean(b.hospitalPhone, 30);
+		need(phone.replace(/\D/g, '').length >= 10, 'Enter the hospital phone number.');
+		const address = clean(b.address, 200);
+		need(address.length >= 5, 'Enter the hospital address.');
+		const templates = {};
+		for (const k of TEMPLATE_KEYS) {
+			const t = String((b.templates && b.templates[k]) || '').trim().slice(0, 600);
+			need(t.length >= 10, 'Message templates cannot be empty.');
+			templates[k] = t;
+		}
+		await q(`INSERT INTO settings (key, value) VALUES ('panel', $1) ON CONFLICT (key) DO UPDATE SET value = $1`,
+			[JSON.stringify({ hospitalPhone: phone, address, templates })]);
+		await audit(user, 'settings', null, {});
+		return { settings: await panelSettings() };
+	},
+
+	async resetSettings(b, user) {
+		need(user.role === 'admin', 'Only an admin can change settings.');
+		await q(`DELETE FROM settings WHERE key = 'panel'`);
+		await audit(user, 'settings_reset', null, {});
+		return { settings: await panelSettings() };
+	},
+
+	async changePassword(b, user) {
+		need(user.u !== 'admin', 'The admin password is set in Vercel (RECEPTION_ADMIN_PASSWORD).');
+		const row = await one(`SELECT pass_hash FROM staff WHERE username = $1 AND active`, [user.u]);
+		need(row && auth.checkPassword(b.current, row.pass_hash), 'Your current password is wrong.');
+		need(String(b.password || '').length >= 8, 'The new password must be at least 8 characters.');
+		await q(`UPDATE staff SET pass_hash = $2, token_version = token_version + 1 WHERE username = $1`, [user.u, auth.hashPassword(b.password)]);
+		await audit(user, 'password_change', null, {});
+		return { ok: true, relogin: true };
 	},
 
 	async staff(b, user) {
