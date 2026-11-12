@@ -68,6 +68,9 @@ const validateBooking = (b) => {
 	if (!b || typeof b !== 'object' || !b.patient || typeof b.patient !== 'object') return { error: 'Invalid booking details.' };
 	const doc = Object.prototype.hasOwnProperty.call(CATALOG.doctors, b.doctor) ? CATALOG.doctors[b.doctor] : null;
 	if (!doc) return { error: 'Unknown doctor.' };
+	if (doc.bookingMode === 'request') {
+		return { error: 'Please request an appointment with the hospital. Online payment is unavailable for this doctor.' };
+	}
 	if (doc.feeStatus === 'pending' || !doc.fees ||
 		!['new', 'old'].every((type) => Number.isFinite(doc.fees[type]) && doc.fees[type] > 0)) {
 		return { error: 'Consultation fee will be confirmed by the hospital. Please call +91 95664 43300 to book; online payment is unavailable for this doctor.' };
@@ -109,7 +112,13 @@ const validateBooking = (b) => {
 	const time = m[1] + ':' + m[2] + ' ' + m[3];
 	const slotMin = ((+m[1] % 12) + (m[3] === 'PM' ? 12 : 0)) * 60 + +m[2];
 	if (new Date(date + 'T00:00:00Z').getUTCDay() === 0) return { error: 'OPD is closed on Sundays. Please pick another day.' };
-	if (slotMin < 9 * 60 || slotMin >= 19 * 60) return { error: 'Please choose a time between 9 AM and 7 PM.' };
+	if (doc.bookingSessions) {
+		if (!doc.bookingSessions.some((session) => session.slots.includes(time))) {
+			return { error: 'Please choose one of the doctor’s scheduled consultation times.' };
+		}
+	} else if (slotMin < 9 * 60 || slotMin >= 19 * 60) {
+		return { error: 'Please choose a time between 9 AM and 7 PM.' };
+	}
 	if (date === today && slotMin <= ist.getUTCHours() * 60 + ist.getUTCMinutes()) {
 		return { error: 'That time slot has already passed. Please pick another.' };
 	}

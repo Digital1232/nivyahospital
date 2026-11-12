@@ -25,18 +25,26 @@
 		"Dr. M. Nivya": {
 			"speciality": "Diabetology",
 			"avatar": "assets/img/doctors/dr-nivya-avatar.jpg",
+			"opHours": "10:30 AM–12:30 PM and 4:00 PM–5:00 PM",
+			"calendarMinutes": 30,
+			"bookingSessions": [
+				{ "name": "Morning", "slots": ["10:30 AM", "11:15 AM", "12:00 PM"] },
+				{ "name": "Evening", "slots": ["4:00 PM", "4:30 PM"] }
+			],
 			"fees": { "new": 200, "old": 200 },
 			"addons": []
 		},
 		"Dr. M.A. Mathan": {
 			"speciality": "Emergency & Critical Care Medicine",
 			"avatar": "assets/img/doctors/dr-mathan-avatar.jpg",
+			"bookingMode": "request",
 			"fees": { "new": 200, "old": 200 },
 			"addons": []
 		},
 		"Dr. Naveen Paul Singh": {
 			"speciality": "Dentistry",
 			"avatar": "assets/img/doctors/dr-naveen-paul-avatar.jpg",
+			"opHours": "9:00 AM–5:00 PM",
 			"feeStatus": "pending",
 			"fees": { "new": null, "old": null },
 			"addons": []

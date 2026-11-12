@@ -419,14 +419,26 @@
 									</div>
 									<!-- /Doctor header -->
 
-									<!-- Step 1: Services + Date & Time -->
+									<section id="appointment-request" class="card-body booking-body" aria-labelledby="appointment-request-title" hidden>
+										<h5 id="appointment-request-title">Request Appointment</h5>
+										<p>Choose a preferred date and send your request on WhatsApp. The hospital will confirm your appointment time.</p>
+										<form id="appointment-request-form">
+											<label class="form-label" for="request-date">Preferred date</label>
+											<input id="request-date" class="form-control mb-3" style="max-width: 16rem" type="date" required>
+											<button type="submit" class="btn btn-primary-gradient mb-3">Continue to WhatsApp</button>
+										</form>
+										<p id="request-status" role="status" hidden>Press Send in WhatsApp to deliver your request to the hospital.</p>
+										<p class="mb-0">Prefer to call? <a href="tel:+919566443300">+91 95664 43300</a></p>
+									</section>
 									<section id="fee-pending" class="card-body booking-body" aria-labelledby="fee-pending-title" hidden>
 										<h5 id="fee-pending-title">Contact for consultation fee</h5>
+										<p id="fee-pending-hours" hidden></p>
 										<p>Consultation fee will be confirmed by the hospital.</p>
 										<p>Online payment is currently unavailable for this doctor. Please call the hospital to confirm the fee, availability and your appointment.</p>
 										<a href="tel:+919566443300" class="btn btn-primary-gradient mb-3">Call to book: +91 95664 43300</a>
 										<p class="mb-0"><a href="/search">Back to doctors</a></p>
 									</section>
+									<!-- Step 1: Services + Date & Time -->
 									<section id="pane-1" aria-label="Choose service, date and time">
 										<div class="card-body booking-body">
 											<div class="card mb-0">
@@ -457,7 +469,7 @@
 																</div>
 															</div>
 														</div>
-														<p class="text-muted small mb-2"><i class="isax isax-clock me-1"></i>OPD: Monday to Saturday, 9:00 AM - 7:00 PM. Sunday: emergency only.</p>
+												<p class="text-muted small mb-2"><i class="isax isax-clock me-1"></i><span id="booking-op-hours">OPD: Monday to Saturday, 9:00 AM - 7:00 PM. Sunday: emergency only.</span></p>
 														<p id="slot-hint" class="fw-medium mb-2" aria-live="polite"></p>
 													</div>
 												</div>
@@ -600,6 +612,7 @@
 												<a href="tel:+919566443300" class="btn btn-md btn-dark d-inline-flex align-items-center rounded-pill"><i class="isax isax-call me-1"></i>Call Us</a>
 												<div class="d-flex flex-wrap gap-2">
 													<button type="button" class="btn btn-md btn-outline-primary d-inline-flex align-items-center rounded-pill" onclick="window.print()"><i class="fas fa-print me-2"></i>Print</button>
+												<button type="button" id="download-receipt" class="btn btn-md btn-outline-primary align-items-center rounded-pill" hidden><i class="fas fa-download me-2"></i>Download Receipt</button>
 													<a href="#" id="add-calendar" target="_blank" rel="noopener" class="btn btn-md btn-outline-primary d-inline-flex align-items-center rounded-pill"><i class="isax isax-calendar-add me-1"></i>Add To Calendar</a>
 													<a href="/search" class="btn btn-md btn-primary-gradient d-inline-flex align-items-center rounded-pill">Start New Booking</a>
 												</div>
@@ -807,6 +820,7 @@
 		})();
 	</script>
 
+	<script src="assets/js/booking-receipt.js"></script>
 	<script>
 		// Online booking + payment wizard:
 		// specialty & services -> date & time -> basic information -> payment -> confirmation.
@@ -848,9 +862,16 @@
 			const state = { consult: 'new', addons: new Set(), iso: null, time: null, patient: null };
 			let catalog = null;
 			let info = null; // this doctor's catalog entry
+			const sessions = () => info.bookingSessions || SESSIONS;
+			const hospitalNow = () => moment().utcOffset(330);
+			const bookingNow = () => info.bookingSessions ? hospitalNow() : moment();
 			const feePending = () => !info || info.feeStatus === 'pending' || !info.fees ||
 				!['new', 'old'].every((type) => Number.isFinite(info.fees[type]) && info.fees[type] > 0);
 			let live = false; // real Razorpay payment (vs simulated preview)
+			let receipt = null;
+			$('download-receipt').addEventListener('click', () => {
+				if (receipt) window.downloadBookingReceipt(receipt);
+			});
 
 			const stepsBar = $('wizard-steps');
 			const widget = document.querySelector('.booking-widget');
@@ -917,8 +938,7 @@
 				const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(t);
 				return ((+m[1] % 12) + (m[3] === 'PM' ? 12 : 0)) * 60 + +m[2];
 			};
-			const nowMinutes = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); };
-			const slotOpen = (iso, t, todayIso) => iso !== todayIso || slotMinutes(t) > nowMinutes();
+			const slotOpen = (iso, t, now) => iso !== now.format('YYYY-MM-DD') || slotMinutes(t) > now.hours() * 60 + now.minutes();
 
 			const updateNext = () => {
 				toInfo.disabled = !(state.iso && state.time);
@@ -930,9 +950,9 @@
 			const renderSlots = () => {
 				const wrap = $('slot-groups');
 				wrap.innerHTML = '';
-				const todayIso = moment().format('YYYY-MM-DD');
+				const now = bookingNow();
 				let any = false;
-				SESSIONS.forEach((sess) => {
+				sessions().forEach((sess) => {
 					const title = document.createElement('div');
 					title.className = 'book-title';
 					title.innerHTML = '<h6 class="fs-14 mb-2"></h6>';
@@ -940,7 +960,7 @@
 					const grp = document.createElement('div');
 					grp.className = 'token-slot mt-2 mb-3';
 					sess.slots.forEach((t) => {
-						const open = slotOpen(state.iso, t, todayIso);
+						const open = slotOpen(state.iso, t, now);
 						any = any || open;
 						const box = document.createElement('div');
 						box.className = 'form-check-inline visits me-0';
@@ -961,14 +981,15 @@
 			};
 
 			const firstAvailableDay = () => {
-				const todayIso = moment().format('YYYY-MM-DD');
+				const now = bookingNow();
+				const today = moment(now.format('YYYY-MM-DD'), 'YYYY-MM-DD');
 				for (let i = 0; i <= BOOKING_DAYS; i++) {
-					const d = moment().add(i, 'days');
+					const d = today.clone().add(i, 'days');
 					if (d.day() === 0) continue; // Sunday: emergency only
 					const iso = d.format('YYYY-MM-DD');
-					if (SESSIONS.some((s) => s.slots.some((t) => slotOpen(iso, t, todayIso)))) return d;
+					if (sessions().some((s) => s.slots.some((t) => slotOpen(iso, t, now)))) return d;
 				}
-				return moment();
+				return today;
 			};
 
 			const initCalendar = () => {
@@ -984,8 +1005,9 @@
 					});
 				}
 				const dp = $dp.data('DateTimePicker');
-				dp.minDate(moment().startOf('day'));
-				dp.maxDate(moment().add(BOOKING_DAYS, 'days').endOf('day'));
+				const today = moment(bookingNow().format('YYYY-MM-DD'), 'YYYY-MM-DD');
+				dp.minDate(today.clone().startOf('day'));
+				dp.maxDate(today.clone().add(BOOKING_DAYS, 'days').endOf('day'));
 				dp.daysOfWeekDisabled([0]);
 				$dp.on('dp.change', (e) => {
 					if (!e.date) return;
@@ -999,6 +1021,20 @@
 			};
 
 			/* ---------- Mode ---------- */
+			const initAppointmentRequest = () => {
+				const preferredDate = $('request-date');
+				preferredDate.min = hospitalNow().format('YYYY-MM-DD');
+				$('appointment-request-form').addEventListener('submit', (event) => {
+					event.preventDefault();
+					preferredDate.min = hospitalNow().format('YYYY-MM-DD');
+					if (!preferredDate.reportValidity()) return;
+					const message = 'Hello Nivya Hospital, I would like to request an appointment with ' +
+						doctor + '. My preferred date is ' + dateLong(preferredDate.value) + '. Please confirm a time.';
+					window.open('https://wa.me/919566443300?text=' + encodeURIComponent(message), '_blank', 'noopener');
+					$('request-status').hidden = false;
+				});
+			};
+
 			const applyMode = (ok, isLive) => {
 				live = isLive;
 				if (!ok) {
@@ -1010,6 +1046,7 @@
 						: 'Please choose a doctor first to start your booking.';
 				} else {
 					buildServices();
+					if (info.opHours) $('booking-op-hours').textContent = 'OPD: Monday to Saturday, ' + info.opHours + '. Sunday: emergency only.';
 					initCalendar();
 					notice.hidden = live;
 					$('test-mode-notice').hidden = !(live && testMode);
@@ -1036,10 +1073,19 @@
 					const photo = $('booking-doctor-avatar');
 					if (photo) photo.src = info.avatar;
 				}
-				if (feePending()) {
+				if (info.bookingMode === 'request' || feePending()) {
 					stepsBar.hidden = true;
 					Object.values(panes).forEach((pane) => { pane.hidden = true; });
-					$('fee-pending').hidden = false;
+					if (info.bookingMode === 'request') {
+						initAppointmentRequest();
+						$('appointment-request').hidden = false;
+					} else {
+						if (info.opHours) {
+							$('fee-pending-hours').textContent = 'OP consultation hours: ' + info.opHours;
+							$('fee-pending-hours').hidden = false;
+						}
+						$('fee-pending').hidden = false;
+					}
 					$('pay-btn').disabled = true;
 					widget.classList.remove('is-loading');
 					return;
@@ -1214,7 +1260,7 @@
 									razorpay_payment_id: resp.razorpay_payment_id,
 									razorpay_signature: resp.razorpay_signature
 								});
-								finish(out.bookingId || resp.razorpay_payment_id, false);
+								finish(out.bookingId || resp.razorpay_payment_id, false, out.receipt);
 								paidPending = false;
 							} catch (err) {
 								showMsg('Your payment went through, but we could not confirm the booking automatically. ' +
@@ -1244,7 +1290,7 @@
 			});
 
 			payBtn.addEventListener('click', async () => {
-				if (feePending()) return;
+				if (feePending() || info.bookingMode === 'request') return;
 				payMsg.hidden = true;
 				const results = Object.keys(rules).map(check);
 				if (results.includes(false)) {
@@ -1272,26 +1318,29 @@
 
 			/* ---------- Step 3: confirmation ---------- */
 			const calendarUrl = () => {
-				const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(state.time);
-				if (!m) return '#';
-				let h = +m[1] % 12;
-				if (m[3] === 'PM') h += 12;
+				const start = slotMinutes(state.time);
 				const day = state.iso.replace(/-/g, '');
-				const stamp = (hh) => day + 'T' + String(hh).padStart(2, '0') + m[2] + '00';
+				const stamp = (minutes) => day + 'T' + String(Math.floor(minutes / 60)).padStart(2, '0') +
+					String(minutes % 60).padStart(2, '0') + '00';
 				return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
 					'&text=' + encodeURIComponent('Appointment with ' + doctor + ' - Nivya Hospitals') +
-					'&dates=' + stamp(h) + '/' + stamp(h + 1) +
+					'&dates=' + stamp(start) + '/' + stamp(start + (info.calendarMinutes || 60)) +
 					'&ctz=Asia%2FKolkata' +
 					'&location=' + encodeURIComponent('Nivya Hospitals, ' + location) +
 					'&details=' + encodeURIComponent('Consultation with ' + doctor + '. Phone: ' + HOSPITAL_PHONE);
 			};
 
-			function finish(bookingId, isDemo) {
+			function finish(bookingId, isDemo, verifiedReceipt) {
+				receipt = verifiedReceipt ? {
+					...verifiedReceipt, bookingId, doctor, patient: state.patient.name,
+					services: servicesText(), appointment: state.iso + ' at ' + state.time + ' IST'
+				} : null;
+				$('download-receipt').hidden = !receipt;
 				$('done-id').textContent = bookingId;
 				$('done-title').textContent = isDemo
 					? 'Demo booking complete'
 					: 'Your booking has been confirmed with ' + doctor;
-				$('done-sub').textContent = isDemo
+				$('done-sub').textContent = isDemo || receipt?.test
 					? 'Nothing was charged.'
 					: 'Payment received. Please keep this booking number for your visit.';
 				$('done-patient').textContent = state.patient.name;
@@ -1299,7 +1348,9 @@
 				$('done-consult').textContent = servicesText();
 				$('done-when').textContent = when();
 				$('done-location').textContent = location;
-				$('done-amount').textContent = isDemo ? money(0) + ' (demo)' : money(total());
+				$('done-amount').textContent = isDemo ? money(0) + ' (demo)' : receipt
+					? money(receipt.amountPaise / 100) + (receipt.test ? ' (test)' : '')
+					: money(total());
 				$('done-demo').hidden = !isDemo;
 				$('add-calendar').href = calendarUrl();
 				$('add-calendar').hidden = isDemo;
