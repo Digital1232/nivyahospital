@@ -1,8 +1,9 @@
-admin/assets/img/photos/
+# Old Express/MySQL backend and template admin assets: not used by the site
+# (the live backend is api/ on Vercel). Kept out of the repo and the live site.
+Backend/
+admin/
 node_modules/
-Backend/node_modules/
 .vscode/
 .claude/
 .env
-Backend/.env
 *.zip
