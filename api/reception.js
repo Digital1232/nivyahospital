@@ -109,7 +109,26 @@ const actions = {
 			};
 		});
 		const leave = await q(`SELECT doctor, reason FROM doctor_leave WHERE date = $1`, [date]);
+		const tomorrow = new Date(Date.parse(date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
+		// Patients booked for today who have not checked in yet, in time order.
+		const expectedList = await q(`${APPT_SELECT} WHERE a.date = $1 AND a.status IN ('booked', 'confirmed')
+			ORDER BY a.time_min NULLS LAST, a.id LIMIT 50`, [date]);
+		const tomorrowRows = await q(`SELECT doctor, status, count(*)::int AS n FROM appointments
+			WHERE date = $1 AND status IN ('booked', 'confirmed') GROUP BY doctor, status`, [tomorrow]);
+		const upcomingLeave = await q(`SELECT id, doctor, date, reason FROM doctor_leave WHERE date > $1 AND date <= $2 ORDER BY date, doctor LIMIT 20`,
+			[date, new Date(Date.parse(date + 'T00:00:00Z') + 30 * 86400000).toISOString().slice(0, 10)]);
 		return {
+			expectedList,
+			tomorrow: {
+				date: tomorrow,
+				perDoctor: DOCTORS.map((d) => ({
+					doctor: d,
+					booked: tomorrowRows.filter((r) => r.doctor === d).reduce((s, r) => s + r.n, 0),
+					unconfirmed: tomorrowRows.filter((r) => r.doctor === d && r.status === 'booked').reduce((s, r) => s + r.n, 0)
+				})),
+				leave: (await q(`SELECT doctor FROM doctor_leave WHERE date = $1`, [tomorrow])).map((r) => r.doctor)
+			},
+			upcomingLeave,
 			date,
 			totals: {
 				online: count((r) => r.source === 'online' && live(r)),

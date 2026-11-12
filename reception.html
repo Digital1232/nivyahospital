@@ -18,13 +18,39 @@
 		:root { --brand: #0b56a0; --brand-2: #c518ca; --bg: #f3f6fb; --line: #e3e8f0; --muted: #5b6475; }
 		[hidden] { display: none !important; }
 		body { background: var(--bg); color: #1d2433; font-size: 15px; }
-		.topbar { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+		/* Phones and tablets: top bar with scrolling tabs */
+		.topbar { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20;
+			display: grid; grid-template-columns: auto 1fr; grid-template-areas: "brand user" "nav nav"; align-items: center; column-gap: 12px; padding: 8px 12px 0; }
+		.tb-brand { grid-area: brand; display: flex; align-items: center; gap: 12px; }
+		.tb-user { grid-area: user; display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; }
+		.tb-nav { grid-area: nav; min-width: 0; }
 		.topbar .brand { font-weight: 700; color: var(--brand); white-space: nowrap; }
 		.topbar img { height: 34px; }
 		.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
 		.tabs::-webkit-scrollbar { display: none; }
 		.tabs button { border: 0; background: none; padding: 12px 10px; color: var(--muted); font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; }
 		.tabs button.active { color: var(--brand); border-bottom-color: var(--brand); }
+		.tabs button i { width: 18px; text-align: center; }
+		.app-main { padding-left: 12px; padding-right: 12px; max-width: 1600px; margin: 0 auto; }
+
+		/* Desktop: full-height sidebar on the left, content uses the rest of the screen */
+		@media (min-width: 992px) {
+			.topbar { position: fixed; top: 0; bottom: 0; left: 0; width: 232px; border-bottom: 0; border-right: 1px solid var(--line);
+				display: flex; flex-direction: column; padding: 18px 12px 14px; }
+			.tb-brand { flex-direction: column; align-items: flex-start; gap: 4px; padding: 0 8px 14px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+			.topbar img { height: 42px; }
+			.tb-nav { order: 2; flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+			.tabs { flex-direction: column; gap: 2px; overflow: visible; }
+			.tabs button { text-align: left; border-bottom: 0; border-radius: 8px; padding: 9px 12px; }
+			.tabs button:hover { background: #f3f6fb; color: #1d2433; }
+			.tabs button.active { background: #e8f0ff; color: var(--brand); }
+			.tb-user { order: 3; flex-direction: column; align-items: stretch; gap: 8px; border-top: 1px solid var(--line); padding: 12px 8px 0; margin-top: 10px; }
+			.tb-user .btn { width: 100%; }
+			.app-main { margin-left: 232px; max-width: none; padding: 24px 28px !important; min-height: 100vh; }
+			/* Dashboard panels stretch to the bottom of the window instead of leaving it blank */
+			[data-section="dashboard"]:not([hidden]) { display: flex; flex-direction: column; min-height: calc(100vh - 48px); }
+			[data-section="dashboard"] > .row.g-3 { flex: 1; }
+		}
 		.panel { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
 		.stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; height: 100%; }
 		.stat .n { font-size: 28px; font-weight: 700; line-height: 1.1; }
@@ -79,13 +105,15 @@
 	<!-- App -->
 	<div id="app" hidden>
 		<header class="topbar no-print">
-			<div class="container-xl d-flex align-items-center gap-3 pt-2">
+			<div class="tb-brand">
 				<img src="/assets/img/logo copy.png" alt="Nivya Hospitals">
 				<span class="brand d-none d-sm-inline">Reception</span>
-				<span class="ms-auto small muted text-truncate"><i class="fa-regular fa-user me-1"></i><span id="who"></span></span>
-				<button id="logout" class="btn btn-sm btn-outline-secondary text-nowrap">Sign out</button>
 			</div>
-			<div class="container-xl">
+			<div class="tb-user">
+				<span class="small muted text-truncate"><i class="fa-regular fa-user me-1"></i><span id="who"></span></span>
+				<button id="logout" class="btn btn-sm btn-outline-secondary text-nowrap"><i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Sign out</button>
+			</div>
+			<div class="tb-nav">
 				<nav class="tabs" id="tabs">
 					<button data-view="dashboard" class="active"><i class="fa-solid fa-gauge me-1"></i>Dashboard</button>
 					<button data-view="appointments"><i class="fa-regular fa-calendar-check me-1"></i>Appointments</button>
@@ -102,7 +130,7 @@
 			</div>
 		</header>
 
-		<main class="container-xl py-3">
+		<main class="app-main py-3">
 			<!-- Dashboard -->
 			<section data-section="dashboard">
 				<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
@@ -111,13 +139,42 @@
 				</div>
 				<div id="dash-leave"></div>
 				<div class="row g-2 mb-3" id="dash-stats"></div>
-				<div class="panel">
-					<h3 class="h6 mb-3">Doctors today</h3>
-					<div class="table-responsive">
-						<table class="table align-middle mb-0">
-							<thead><tr><th>Doctor</th><th>Now</th><th>Next</th><th>Waiting</th><th>Yet to arrive</th><th>Done</th><th></th></tr></thead>
-							<tbody id="dash-doctors"></tbody>
-						</table>
+				<div class="row g-3">
+					<div class="col-xl-8 d-flex flex-column gap-3">
+						<div class="panel">
+							<h3 class="h6 mb-3">Doctors today</h3>
+							<div class="table-responsive">
+								<table class="table align-middle mb-0">
+									<thead><tr><th>Doctor</th><th>Now</th><th>Next</th><th>Waiting</th><th>Yet to arrive</th><th>Done</th><th></th></tr></thead>
+									<tbody id="dash-doctors"></tbody>
+								</table>
+							</div>
+						</div>
+						<div class="panel flex-grow-1">
+							<div class="d-flex align-items-center mb-3"><h3 class="h6 mb-0 me-auto">Expected today (online bookings)</h3>
+								<button type="button" class="btn btn-xs btn-outline-primary" data-goto="appointments">All appointments</button></div>
+							<div id="dash-expected"></div>
+						</div>
+					</div>
+					<div class="col-xl-4 d-flex flex-column gap-3">
+						<div class="panel">
+							<h3 class="h6 mb-3">Quick actions</h3>
+							<div class="row g-2">
+								<div class="col-6"><button type="button" class="btn btn-primary w-100 py-3" data-goto="walkin"><i class="fa-solid fa-user-plus d-block fs-5 mb-1"></i>New walk-in</button></div>
+								<div class="col-6"><button type="button" class="btn btn-outline-primary w-100 py-3" data-goto="tokens"><i class="fa-solid fa-list-ol d-block fs-5 mb-1"></i>Token queue</button></div>
+								<div class="col-6"><button type="button" class="btn btn-outline-success w-100 py-3" data-goto="reminders"><i class="fa-brands fa-whatsapp d-block fs-5 mb-1"></i>Reminders</button></div>
+								<div class="col-6"><button type="button" class="btn btn-outline-secondary w-100 py-3" data-goto="patients"><i class="fa-solid fa-magnifying-glass d-block fs-5 mb-1"></i>Find patient</button></div>
+							</div>
+						</div>
+						<div class="panel">
+							<div class="d-flex align-items-center mb-3"><h3 class="h6 mb-0 me-auto">Tomorrow</h3><span class="small muted" id="dash-tomorrow-date"></span></div>
+							<div id="dash-tomorrow"></div>
+						</div>
+						<div class="panel flex-grow-1">
+							<div class="d-flex align-items-center mb-3"><h3 class="h6 mb-0 me-auto">Upcoming doctor leave</h3>
+								<button type="button" class="btn btn-xs btn-outline-secondary" data-goto="schedule">Manage</button></div>
+							<div id="dash-upleave"></div>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -467,6 +524,35 @@
 						'<td>' + p.waiting + '</td><td>' + p.expected + '</td><td>' + p.completed + '</td>' +
 						'<td class="text-end">' + (p.waiting ? '<button class="btn btn-xs btn-primary" data-callnext="' + esc(p.doctor) + '">Call next</button>' : '') + '</td></tr>';
 				}).join('');
+
+				var ex = d.expectedList || [];
+				$('dash-expected').innerHTML = ex.length ? ex.map(function (a) {
+					return '<div class="d-flex flex-wrap align-items-center gap-2 border-bottom py-2">' +
+						'<span class="fw-semibold text-nowrap" style="min-width:76px">' + esc(a.time || '-') + '</span>' +
+						'<span class="flex-grow-1">' + esc(a.name) + ' <span class="muted small">' + esc(a.phone) + '</span><br><span class="small muted">' + esc(a.doctor) + ' &middot; ' + esc(a.booking_id) + '</span></span>' +
+						badge(a.status) +
+						'<button class="btn btn-xs btn-primary" data-op="arrive" data-id="' + a.id + '"><i class="fa-solid fa-ticket me-1"></i>Check in</button></div>';
+				}).join('') : '<div class="text-center py-4 muted"><i class="fa-regular fa-calendar-check fs-3 d-block mb-2"></i>No online bookings waiting to arrive today.</div>';
+
+				var tm = d.tomorrow;
+				if (tm) {
+					$('dash-tomorrow-date').textContent = fmtDate(tm.date);
+					var total = tm.perDoctor.reduce(function (s, p) { return s + p.booked; }, 0);
+					$('dash-tomorrow').innerHTML = tm.perDoctor.map(function (p) {
+						var off = tm.leave.indexOf(p.doctor) >= 0;
+						return '<div class="d-flex align-items-center gap-2 py-1 small"><span class="flex-grow-1">' + esc(p.doctor) + '</span>' +
+							(off ? '<span class="badge bg-warning text-dark">On leave</span>' : '<span class="fw-semibold">' + p.booked + '</span>' +
+							(p.unconfirmed ? '<span class="badge-st st-booked">' + p.unconfirmed + ' to confirm</span>' : '')) + '</div>';
+					}).join('') +
+						(total ? '<button type="button" class="btn btn-sm btn-success w-100 mt-2" data-goto="reminders"><i class="fa-brands fa-whatsapp me-1"></i>Send reminders (' + total + ')</button>'
+							: '<p class="small muted mb-0 mt-2">No bookings yet for tomorrow.</p>');
+				}
+
+				var ul = d.upcomingLeave || [];
+				$('dash-upleave').innerHTML = ul.length ? ul.map(function (l) {
+					return '<div class="d-flex align-items-center gap-2 py-1 small"><i class="fa-solid fa-plane-departure muted"></i><span class="flex-grow-1">' + esc(l.doctor) +
+						(l.reason ? ' <span class="muted">(' + esc(l.reason) + ')</span>' : '') + '</span><span class="text-nowrap">' + fmtDate(l.date).replace(/ \d{4}$/, '') + '</span></div>';
+				}).join('') : '<p class="small muted mb-0">No leave in the next 30 days.</p>';
 			},
 
 			appointments: async function () {
@@ -820,8 +906,15 @@
 		/* ---------- Events ---------- */
 		$('tabs').addEventListener('click', function (e) { var b = e.target.closest('button[data-view]'); if (b) show(b.dataset.view); });
 		document.addEventListener('click', function (e) {
-			var t = e.target.closest('[data-op],[data-callnext],[data-refresh],[data-resched],[data-unleave],[data-leave],[data-editstaff],[data-togglestaff],[data-match],[data-patient],[data-patientnav],[data-remind],[data-rprange]');
+			var t = e.target.closest('[data-op],[data-callnext],[data-refresh],[data-resched],[data-unleave],[data-leave],[data-editstaff],[data-togglestaff],[data-match],[data-patient],[data-patientnav],[data-remind],[data-rprange],[data-goto]');
 			if (!t) return;
+			if (t.dataset.goto) {
+				show(t.dataset.goto);
+				if (t.dataset.goto === 'reminders') { $('rm-date').value = addDays(today, 1); run(loaders.reminders()); }
+				if (t.dataset.goto === 'walkin') setTimeout(function () { $('wk-phone').focus(); }, 50);
+				if (t.dataset.goto === 'patients') setTimeout(function () { $('pt-search').focus(); }, 50);
+				return window.scrollTo(0, 0);
+			}
 			if (t.dataset.patient) return run(showPatient(t.dataset.patient));
 			if (t.dataset.patientnav) {
 				show('patients');
