@@ -411,6 +411,20 @@ const actions = {
 		return actions.patient({ id });
 	},
 
+	// Admin only: removes a patient and every visit of theirs (test entries, duplicates,
+	// a patient's request to erase their data). Paid bookings are not refunded by this.
+	async deletePatient(b, user) {
+		need(user.role === 'admin', 'Only an admin can delete patients.');
+		const id = Number(b.id);
+		need(Number.isInteger(id), 'Invalid patient.');
+		const p = await one(`SELECT id FROM patients WHERE id = $1`, [id]);
+		need(p, 'Patient not found.');
+		const appts = await q(`DELETE FROM appointments WHERE patient_id = $1 RETURNING id`, [id]);
+		await q(`DELETE FROM patients WHERE id = $1`, [id]);
+		await audit(user, 'patient_delete', null, { patient: id, appointments: appts.length });
+		return { deleted: { patient: id, appointments: appts.length } };
+	},
+
 	/* ---------- Reports ---------- */
 	async reports(b) {
 		const from = dateOf(b.from);

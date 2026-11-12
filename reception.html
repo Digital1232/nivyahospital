@@ -691,7 +691,9 @@
 				'<div class="col-4 col-sm-2"><label class="form-label small">Age</label><input type="number" min="0" max="120" class="form-control form-control-sm" name="age" value="' + (p.age == null ? '' : p.age) + '"></div>' +
 				'<div class="col-8 col-sm-4"><label class="form-label small">Gender</label><select class="form-select form-select-sm" name="gender"><option value="">-</option>' + opt('Female') + opt('Male') + opt('Other') + '</select></div>' +
 				'<div class="col-12"><label class="form-label small">Notes (allergies, conditions, anything staff should know)</label><textarea class="form-control form-control-sm" name="notes" rows="2" maxlength="1000">' + esc(p.notes || '') + '</textarea></div>' +
-				'</div><button class="btn btn-sm btn-primary mt-2" type="submit">Save patient</button></form>' +
+				'</div><button class="btn btn-sm btn-primary mt-2" type="submit">Save patient</button>' +
+				(me && me.role === 'admin' ? '<button class="btn btn-sm btn-outline-danger mt-2 ms-2" type="button" data-delete-patient="' + p.id + '" data-name="' + esc(p.name) + '" data-visits="' + d.visits.length + '" data-paid="' + d.visits.filter(function (a) { return a.payment_id; }).length + '"><i class="fa-solid fa-trash me-1"></i>Delete patient</button>' : '') +
+				'</form>' +
 				'<hr><h3 class="h6 mb-2">Visit history (' + d.visits.length + ')</h3>' +
 				(d.visits.length ? d.visits.map(function (a) {
 					return '<div class="d-flex flex-wrap align-items-center gap-2 border-bottom py-2 small"><span class="text-nowrap fw-semibold" style="min-width:120px">' + fmtDate(a.date) + '</span>' +
@@ -1016,6 +1018,22 @@
 			rows.push(['Doctor'].concat(head.slice(1)));
 			report.byDoctor.forEach(function (r) { rows.push(row(r.doctor, r)); });
 			downloadCsv('nivya-report-' + report.from + '-to-' + report.to + '.csv', head, rows);
+		});
+
+		// Admin only: removes a patient and all their visits for good (test entries, duplicates, data-removal requests).
+		document.addEventListener('click', function (e) {
+			var btn = e.target.closest('[data-delete-patient]');
+			if (!btn) return;
+			var paid = Number(btn.dataset.paid);
+			var msg = 'Permanently delete ' + btn.dataset.name + ' and all ' + btn.dataset.visits + ' visit(s)? This cannot be undone.' +
+				(paid ? '\n\n' + paid + ' of these visits were paid online. Deleting does not refund the money; refund in the Razorpay Dashboard first if needed.' : '');
+			if (!window.confirm(msg)) return;
+			run(api('deletePatient', { id: Number(btn.dataset.deletePatient) }).then(function (d) {
+				toast('Deleted ' + d.deleted.appointments + ' visit(s) and the patient record.');
+				$('pt-detail').classList.add('muted');
+				$('pt-detail').textContent = 'Select a patient to see details and visit history.';
+				return loaders.patients();
+			}));
 		});
 
 		document.addEventListener('submit', function (e) {
