@@ -52,7 +52,7 @@
     // Appointment / Booking
     {
       patterns: ["appointment", "book", "booking", "schedule", "visit", "when", "slot"],
-      answer: "📅 <strong>Book an Appointment:</strong><br><br>Choose your doctor on our website:<br><a href='/search'>👉 Choose Doctor & Book</a><br><br>Bookings are confirmed by phone:<br>📞 <a href='tel:+919566443300'>+91 95664 43300</a><br><br>⏰ OPD Timings:<br>Mon–Sat: 9:00 AM – 7:00 PM<br>Sunday: Emergency Only"
+      answer: "📅 <strong>Book an Appointment:</strong><br><br>Choose your doctor on our website:<br><a href='/search'>👉 Choose Doctor & Book</a><br><br>Book and pay online, or call us:<br>📞 <a href='tel:+919566443300'>+91 95664 43300</a><br><br>⏰ OPD Timings:<br>Mon–Sat: 9:00 AM – 7:00 PM<br>Sunday: Emergency Only"
     },
 
     // Specialities
@@ -147,6 +147,33 @@
       answer: "😊 You're welcome! Feel free to ask anything else.<br><br>For appointments: <a href='/search'>📅 Book Now</a><br>For emergencies: <a href='tel:+919566443300'>📞 Call Us</a>"
     }
   ];
+
+  /* ── Live fees from the reception panel's Booking & Fees settings ──
+     The fee answer above is the fallback; it is replaced once the current fees load. */
+  (function liveFees() {
+    var feeEntry = KB.find(function (k) { return k.patterns.indexOf("fees") !== -1; });
+    if (!feeEntry || !window.fetch) return;
+    var base = /(^|\.)vercel\.app$|^localhost$/.test(window.location.hostname) ? '' : 'https://nivyahospital.vercel.app';
+    var rupees = function (n) { return '₹' + Number(n).toLocaleString('en-IN'); };
+    var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); };
+    fetch(base + '/api/availability?all=1', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !data.configured || !data.doctors) return;
+        var lines = Object.keys(data.doctors).map(function (name) {
+          var d = data.doctors[name];
+          var set = d.feeStatus !== 'pending' && d.fees && Number(d.fees.new) > 0 && Number(d.fees.old) > 0;
+          var fee = !set
+            ? "Contact the hospital for the consultation fee. Call <a href='tel:+919566443300'>+91 95664 43300</a>"
+            : d.fees.new === d.fees.old
+              ? '<strong>' + rupees(d.fees.new) + '</strong>'
+              : 'New Patient: <strong>' + rupees(d.fees.new) + '</strong> | Old Patient: <strong>' + rupees(d.fees.old) + '</strong>';
+          return '• <strong>' + esc(name) + ':</strong> ' + fee;
+        });
+        if (lines.length) feeEntry.answer = '💰 <strong>Consultation Fees:</strong><br><br>' + lines.join('<br>');
+      })
+      .catch(function () { /* keep the built-in answer */ });
+  })();
 
   /* ── Match user input to KB ──
      Whole-word matching (so "dr" doesn't fire inside "address", "hi" inside "which",

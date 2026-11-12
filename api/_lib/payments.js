@@ -72,7 +72,11 @@ const reconcilePending = async () => {
 				WHERE created_at < now() - interval '1 minute' AND (checked_at IS NULL OR checked_at < now() - interval '2 minutes')
 				ORDER BY created_at DESC LIMIT 5)
 			RETURNING order_id`);
-		await Promise.all(rows.map((r) => settleOrder(r.order_id, false).catch((e) => console.error('reconcile failed:', r.order_id, e.message))));
+		await Promise.all(rows.map((r) => settleOrder(r.order_id, false).catch(async (e) => {
+			// Unknown to Razorpay (e.g. a test-mode order after switching to live keys): stop asking.
+			if (e.status === 400 || e.status === 404) await db.q(`DELETE FROM pending_orders WHERE order_id = $1`, [r.order_id]).catch(() => {});
+			else console.error('reconcile failed:', r.order_id, e.message);
+		})));
 	} catch (err) {
 		console.error('reconcile pending failed:', err.message);
 	}

@@ -2,6 +2,18 @@
 Options -MultiViews
 RewriteEngine On
 
+# Not part of the public website: old backend code, build scripts, server API source, notes.
+# (The booking API runs on Vercel; these files are only in the folder for development.)
+RewriteRule ^(Backend|scripts|api|node_modules|\.vscode|\.claude)(/|$) - [F,L,NC]
+RewriteRule (^|/)(package(-lock)?\.json|generate_specialty_pages\.js|[^/]+\.md|\.env[^/]*)$ - [F,L,NC]
+
+# Basic browser security: no framing by other sites, no MIME sniffing, private referrers.
+<IfModule mod_headers.c>
+	Header always set X-Frame-Options "SAMEORIGIN"
+	Header always set X-Content-Type-Options "nosniff"
+	Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
 # One official address: nivyahospitals.com -> www.nivyahospitals.com
 RewriteCond %{HTTP_HOST} ^nivyahospitals\.com$ [NC]
 RewriteRule ^ https://www.nivyahospitals.com%{REQUEST_URI} [R=301,L,NE]
