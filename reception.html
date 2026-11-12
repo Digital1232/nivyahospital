@@ -690,7 +690,6 @@
 				'<div class="col-sm-6"><label class="form-label small">Mobile</label><input class="form-control form-control-sm" name="phone" value="' + esc(p.phone) + '" inputmode="numeric" maxlength="10" required></div>' +
 				'<div class="col-4 col-sm-2"><label class="form-label small">Age</label><input type="number" min="0" max="120" class="form-control form-control-sm" name="age" value="' + (p.age == null ? '' : p.age) + '"></div>' +
 				'<div class="col-8 col-sm-4"><label class="form-label small">Gender</label><select class="form-select form-select-sm" name="gender"><option value="">-</option>' + opt('Female') + opt('Male') + opt('Other') + '</select></div>' +
-				'<div class="col-sm-6"><label class="form-label small">Email</label><input type="email" class="form-control form-control-sm" name="email" value="' + esc(p.email || '') + '"></div>' +
 				'<div class="col-12"><label class="form-label small">Notes (allergies, conditions, anything staff should know)</label><textarea class="form-control form-control-sm" name="notes" rows="2" maxlength="1000">' + esc(p.notes || '') + '</textarea></div>' +
 				'</div><button class="btn btn-sm btn-primary mt-2" type="submit">Save patient</button></form>' +
 				'<hr><h3 class="h6 mb-2">Visit history (' + d.visits.length + ')</h3>' +
@@ -1024,7 +1023,7 @@
 			e.preventDefault();
 			var f = e.target;
 			run(api('savePatient', {
-				id: Number(f.dataset.id), name: f.name.value, phone: f.phone.value, age: f.age.value, gender: f.gender.value, email: f.email.value, notes: f.notes.value
+				id: Number(f.dataset.id), name: f.name.value, phone: f.phone.value, age: f.age.value, gender: f.gender.value, notes: f.notes.value
 			}).then(function () { toast('Patient saved.'); return Promise.all([showPatient(f.dataset.id), loaders.patients()]); }));
 		});
 

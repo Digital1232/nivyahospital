@@ -13,10 +13,10 @@ const recordBooking = async (order, paymentId) => {
 		const p = await db.one(`SELECT booking FROM pending_orders WHERE order_id = $1`, [order.id]);
 		if (!p) return; // already recorded (or created before the database was connected)
 		const b = typeof p.booking === 'string' ? JSON.parse(p.booking) : p.booking;
-		const patient = await db.one(`INSERT INTO patients (name, name_key, phone, email, age, gender) VALUES ($1, $2, $3, $4, $5, $6)
-			ON CONFLICT (phone, name_key) DO UPDATE SET email = COALESCE(EXCLUDED.email, patients.email),
+		const patient = await db.one(`INSERT INTO patients (name, name_key, phone, age, gender) VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT (phone, name_key) DO UPDATE SET
 				age = COALESCE(EXCLUDED.age, patients.age), gender = COALESCE(EXCLUDED.gender, patients.gender)
-			RETURNING id`, [b.name, String(b.name).toLowerCase(), b.phone, b.email || null, b.age, b.gender || null]);
+			RETURNING id`, [b.name, String(b.name).toLowerCase(), b.phone, b.age, b.gender || null]);
 		await db.q(`INSERT INTO appointments (booking_id, source, patient_id, doctor, date, time, time_min, visit_type, reason, services,
 				amount_paise, order_id, payment_id, status, created_by)
 			VALUES ($1, 'online', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'booked', 'website')

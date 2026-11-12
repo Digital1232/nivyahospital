@@ -82,13 +82,11 @@ const validateBooking = (b, catalog = CATALOG, { scheduled = false } = {}) => {
 	const type = p.type === 'old' ? 'old' : 'new';
 	const name = clean(p.name, 80);
 	const phone = clean(p.phone, 10);
-	const email = clean(p.email, 120);
 	// Age and gender are optional (collected at reception if skipped online).
 	const age = p.age === '' || p.age == null ? null : Number(p.age);
 	const gender = clean(p.gender, 10);
 	if (name.length < 3) return { error: 'Please enter the patient name.' };
 	if (!/^[6-9]\d{9}$/.test(phone)) return { error: 'Enter a valid 10-digit mobile number.' };
-	if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Enter a valid email address.' };
 	if (age !== null && (!Number.isInteger(age) || age < 0 || age > 120)) return { error: 'Enter a valid age.' };
 	if (gender && !['Female', 'Male', 'Other'].includes(gender)) return { error: 'Please select a gender.' };
 
@@ -129,7 +127,7 @@ const validateBooking = (b, catalog = CATALOG, { scheduled = false } = {}) => {
 		value: {
 			doctor: b.doctor,
 			specialty: clean(b.specialty, 60),
-			date, time, type, name, phone, email, age, gender,
+			date, time, type, name, phone, age, gender,
 			reason: clean(p.reason, 200),
 			addons
 		},

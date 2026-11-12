@@ -41,7 +41,6 @@ module.exports = async (req, res) => {
 				services: b.addons.map((a) => a.name).join(', '),
 				patient: b.name,
 				phone: b.phone,
-				email: b.email,
 				age_gender: (b.age == null ? 'Not provided' : b.age) + ' / ' + (b.gender || 'Not provided'),
 				reason: b.reason
 			}

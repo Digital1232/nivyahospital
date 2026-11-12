@@ -503,15 +503,10 @@
 																		<input type="text" class="form-control" id="pt-last" autocomplete="family-name" maxlength="40">
 																		<div class="field-error">Please enter the last name.</div>
 																	</div>
-																	<div class="col-md-6 field-wrap">
+																	<div class="col-12 field-wrap">
 																		<label class="form-label" for="pt-phone">Phone Number <span class="text-danger">*</span></label>
 																		<input type="tel" class="form-control" id="pt-phone" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10-digit mobile">
 																		<div class="field-error">Enter a valid 10-digit Indian mobile number.</div>
-																	</div>
-																	<div class="col-md-6 field-wrap">
-																		<label class="form-label" for="pt-email">Email <span class="text-muted">(optional)</span></label>
-																		<input type="email" class="form-control" id="pt-email" autocomplete="email" maxlength="120">
-																		<div class="field-error">Enter a valid email address.</div>
 																	</div>
 																	<div class="col-6 field-wrap">
 																		<label class="form-label" for="pt-age">Age <span class="text-muted">(optional)</span></label>
@@ -1212,7 +1207,6 @@
 				'pt-first': (v) => v.length >= 1,
 				'pt-last': (v) => v.length >= 1,
 				'pt-phone': (v) => /^[6-9]\d{9}$/.test(v),
-				'pt-email': (v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
 				'pt-age': (v) => !v || (/^\d{1,3}$/.test(v) && +v <= 120),
 				'pt-gender': () => true // optional: whatever is selected (or nothing) is fine
 			};
@@ -1238,7 +1232,6 @@
 			const collectPatient = () => ({
 				name: $('pt-first').value.trim() + ' ' + $('pt-last').value.trim(),
 				phone: $('pt-phone').value.trim(),
-				email: $('pt-email').value.trim(),
 				age: $('pt-age').value.trim() ? +$('pt-age').value : null,
 				gender: $('pt-gender').value,
 				type: state.consult,
@@ -1311,7 +1304,7 @@
 						currency: order.currency || 'INR',
 						name: 'Nivya Hospitals',
 						description: 'Consultation with ' + doctor,
-						prefill: { name: booking.patient.name, contact: booking.patient.phone, email: booking.patient.email },
+						prefill: { name: booking.patient.name, contact: booking.patient.phone },
 						theme: { color: '#0b56a0' },
 						handler: async (resp) => {
 							paidPending = true; // money has moved: never let the user pay twice

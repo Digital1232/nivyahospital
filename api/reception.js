@@ -25,7 +25,7 @@ const audit = (user, action, apptId, detail) =>
 	q(`INSERT INTO audit_log (actor, action, appointment_id, detail) VALUES ($1, $2, $3, $4)`,
 		[user.u, action, apptId || null, JSON.stringify(detail || {})]);
 
-const APPT_SELECT = `SELECT a.*, p.name, p.phone, p.age, p.gender, p.email
+const APPT_SELECT = `SELECT a.*, p.name, p.phone, p.age, p.gender
 	FROM appointments a LEFT JOIN patients p ON p.id = a.patient_id`;
 
 const patientFrom = async (b) => {
@@ -38,14 +38,13 @@ const patientFrom = async (b) => {
 	const gender = clean(b.gender, 10) || null;
 	need(!gender || ['Female', 'Male', 'Other'].includes(gender), 'Invalid gender.');
 	const row = await one(
-		`INSERT INTO patients (name, name_key, phone, email, age, gender) VALUES ($1, $2, $3, $4, $5, $6)
+		`INSERT INTO patients (name, name_key, phone, age, gender) VALUES ($1, $2, $3, $4, $5)
 		 ON CONFLICT (phone, name_key) DO UPDATE SET
 			name = EXCLUDED.name,
-			email = COALESCE(EXCLUDED.email, patients.email),
 			age = COALESCE(EXCLUDED.age, patients.age),
 			gender = COALESCE(EXCLUDED.gender, patients.gender)
 		 RETURNING id`,
-		[name, name.toLowerCase(), phone, clean(b.email, 120) || null, age, gender]);
+		[name, name.toLowerCase(), phone, age, gender]);
 	return row.id;
 };
 
@@ -375,7 +374,7 @@ const actions = {
 			where = `WHERE lower(p.name) LIKE $1`;
 			if (digits.length >= 3) { params.push(digits + '%'); where += ` OR p.phone LIKE $2`; }
 		}
-		const rows = await q(`SELECT p.id, p.name, p.phone, p.age, p.gender, p.email,
+		const rows = await q(`SELECT p.id, p.name, p.phone, p.age, p.gender,
 				(SELECT max(a.date) FROM appointments a WHERE a.patient_id = p.id) AS last_visit,
 				(SELECT count(*)::int FROM appointments a WHERE a.patient_id = p.id AND a.status = 'completed') AS visits,
 				(SELECT count(*)::int FROM appointments a WHERE a.patient_id = p.id) AS bookings
@@ -403,12 +402,10 @@ const actions = {
 		need(age === null || (Number.isInteger(age) && age >= 0 && age <= 120), 'Enter a valid age.');
 		const gender = clean(b.gender, 10) || null;
 		need(!gender || ['Female', 'Male', 'Other'].includes(gender), 'Invalid gender.');
-		const email = clean(b.email, 120) || null;
-		need(!email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), 'Enter a valid email or leave it empty.');
 		const clash = await one(`SELECT id FROM patients WHERE phone = $1 AND name_key = $2 AND id <> $3`, [phone, name.toLowerCase(), id]);
 		need(!clash, 'Another patient with this name and phone number already exists.');
-		const r = await q(`UPDATE patients SET name = $2, name_key = $3, phone = $4, age = $5, gender = $6, email = $7, notes = $8 WHERE id = $1 RETURNING id`,
-			[id, name, name.toLowerCase(), phone, age, gender, email, clean(b.notes, 1000) || null]);
+		const r = await q(`UPDATE patients SET name = $2, name_key = $3, phone = $4, age = $5, gender = $6, notes = $7 WHERE id = $1 RETURNING id`,
+			[id, name, name.toLowerCase(), phone, age, gender, clean(b.notes, 1000) || null]);
 		need(r.length, 'Patient not found.');
 		await audit(user, 'patient_edit', null, { patient: id });
 		return actions.patient({ id });
