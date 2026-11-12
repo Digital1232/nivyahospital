@@ -126,7 +126,7 @@
 					<button data-view="reports"><i class="fa-solid fa-chart-column me-1"></i>Reports</button>
 					<button data-view="staff" data-admin hidden><i class="fa-solid fa-users-gear me-1"></i>Staff</button>
 					<button data-view="activity" data-admin hidden><i class="fa-solid fa-clock-rotate-left me-1"></i>Activity log</button>
-					<button data-view="settings"><i class="fa-solid fa-gear me-1"></i>Settings</button>
+					<button data-view="settings" data-admin hidden><i class="fa-solid fa-gear me-1"></i>Settings</button>
 				</nav>
 			</div>
 		</header>
@@ -367,7 +367,7 @@
 							<h2 class="h5 mb-3">Add or update staff</h2>
 							<label class="form-label" for="sf-user">Username</label><input id="sf-user" class="form-control mb-2" required>
 							<label class="form-label" for="sf-name">Full name</label><input id="sf-name" class="form-control mb-2">
-							<label class="form-label" for="sf-pass">Password <span class="small muted">(min 8; leave empty to keep)</span></label>
+							<label class="form-label" for="sf-pass">Password <span class="small muted">(min 8; leave empty to keep. Staff forgot theirs? Type a new one here)</span></label>
 							<input id="sf-pass" type="password" class="form-control mb-2" autocomplete="new-password">
 							<label class="form-label" for="sf-role">Role</label>
 							<select id="sf-role" class="form-select mb-3"><option value="staff">Reception staff</option><option value="admin">Admin (can manage staff)</option></select>

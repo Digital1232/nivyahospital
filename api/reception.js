@@ -527,6 +527,8 @@ const actions = {
 
 	async changePassword(b, user) {
 		need(user.u !== 'admin', 'The admin password is set in Vercel (RECEPTION_ADMIN_PASSWORD).');
+		// Reception staff cannot change their own password; an admin sets or resets it in the Staff tab.
+		need(user.role === 'admin', 'Only an admin can change passwords. Please ask your admin.');
 		const row = await one(`SELECT pass_hash FROM staff WHERE username = $1 AND active`, [user.u]);
 		need(row && auth.checkPassword(b.current, row.pass_hash), 'Your current password is wrong.');
 		need(String(b.password || '').length >= 8, 'The new password must be at least 8 characters.');
