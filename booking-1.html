@@ -835,13 +835,15 @@
 			------------------------------------------------------------------ */
 			// The payment API runs on Vercel. When the page is served from another host
 			// (Hostinger: www.nivyahospitals.com) it calls the Vercel API directly.
-			const API_BASE = /(^|\.)vercel\.app$/.test(window.location.hostname) ? '' : 'https://nivyahospital.vercel.app';
+			const API_BASE = /(^|\.)vercel\.app$|^localhost$/.test(window.location.hostname) ? '' : 'https://nivyahospital.vercel.app';
 			const API = {
 				status: API_BASE + '/api/status',
 				createOrder: API_BASE + '/api/create-order',
 				verify: API_BASE + '/api/verify-payment'
 			};
 			let testMode = false;
+			// Reception's schedule for this doctor (OP days/hours, leave, full slots); null = no limits known.
+			let avail = null;
 			const CATALOG_URL = 'assets/js/booking-catalog.json';
 			const HOSPITAL_PHONE = '+91 95664 43300';
 			const BOOKING_DAYS = 14;
@@ -938,7 +940,16 @@
 				const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(t);
 				return ((+m[1] % 12) + (m[3] === 'PM' ? 12 : 0)) * 60 + +m[2];
 			};
-			const slotOpen = (iso, t, now) => iso !== now.format('YYYY-MM-DD') || slotMinutes(t) > now.hours() * 60 + now.minutes();
+			const closedDays = () => avail ? [0, 1, 2, 3, 4, 5, 6].filter((d) => !avail.days.includes(d)) : [0];
+			const slotAllowed = (iso, t) => {
+				if (!avail) return true;
+				const min = slotMinutes(t);
+				return avail.online && avail.days.includes(new Date(iso + 'T00:00:00').getDay()) &&
+					!avail.leave.includes(iso) && min >= avail.start_min && min < avail.end_min &&
+					!(avail.full[iso] || []).includes(t);
+			};
+			const slotOpen = (iso, t, now) => slotAllowed(iso, t) &&
+				(iso !== now.format('YYYY-MM-DD') || slotMinutes(t) > now.hours() * 60 + now.minutes());
 
 			const updateNext = () => {
 				toInfo.disabled = !(state.iso && state.time);
@@ -977,7 +988,11 @@
 				});
 				state.time = null;
 				updateNext();
-				if (!any) hint.textContent = 'No slots left on ' + dateLong(state.iso) + '. Please pick another day.';
+				if (!any) hint.textContent = avail && !avail.online
+					? 'Online booking is paused for this doctor. Please call ' + HOSPITAL_PHONE + '.'
+					: avail && avail.leave.includes(state.iso)
+						? 'The doctor is on leave on ' + dateLong(state.iso) + '. Please pick another day.'
+						: 'No slots left on ' + dateLong(state.iso) + '. Please pick another day.';
 			};
 
 			const firstAvailableDay = () => {
@@ -985,7 +1000,7 @@
 				const today = moment(now.format('YYYY-MM-DD'), 'YYYY-MM-DD');
 				for (let i = 0; i <= BOOKING_DAYS; i++) {
 					const d = today.clone().add(i, 'days');
-					if (d.day() === 0) continue; // Sunday: emergency only
+					if (closedDays().includes(d.day())) continue; // closed day (Sunday: emergency only)
 					const iso = d.format('YYYY-MM-DD');
 					if (sessions().some((s) => s.slots.some((t) => slotOpen(iso, t, now)))) return d;
 				}
@@ -1008,7 +1023,8 @@
 				const today = moment(bookingNow().format('YYYY-MM-DD'), 'YYYY-MM-DD');
 				dp.minDate(today.clone().startOf('day'));
 				dp.maxDate(today.clone().add(BOOKING_DAYS, 'days').endOf('day'));
-				dp.daysOfWeekDisabled([0]);
+				dp.daysOfWeekDisabled(closedDays());
+				if (avail && avail.leave.length) dp.disabledDates(avail.leave.map((d) => moment(d, 'YYYY-MM-DD')));
 				$dp.on('dp.change', (e) => {
 					if (!e.date) return;
 					state.iso = e.date.format('YYYY-MM-DD');
@@ -1090,6 +1106,11 @@
 					widget.classList.remove('is-loading');
 					return;
 				}
+				try {
+					const ar = await fetch(API_BASE + '/api/availability?doctor=' + encodeURIComponent(doctor), { cache: 'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined });
+					const a = ar.ok ? await ar.json() : null;
+					if (a && a.configured) avail = a;
+				} catch (e) { avail = null; }
 				let enabled = false;
 				if (!demo) {
 					const ctl = new AbortController();
@@ -1260,7 +1281,7 @@
 									razorpay_payment_id: resp.razorpay_payment_id,
 									razorpay_signature: resp.razorpay_signature
 								});
-								finish(out.bookingId || resp.razorpay_payment_id, false, out.receipt);
+							finish(out.bookingId || resp.razorpay_payment_id, false, out.receipt);
 								paidPending = false;
 							} catch (err) {
 								showMsg('Your payment went through, but we could not confirm the booking automatically. ' +

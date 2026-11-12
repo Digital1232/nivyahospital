@@ -1,0 +1,8 @@
+{
+	"name": "nivya-hospital-site",
+	"private": true,
+	"description": "Static site + Vercel functions (payments, reception panel). Database: Neon Postgres via DATABASE_URL.",
+	"dependencies": {
+		"@neondatabase/serverless": "1.0.0"
+	}
+}

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="robots" content="noindex, nofollow">
+	<title>Reception Panel | Nivya Hospitals</title>
+	<link rel="icon" href="/favicon.ico" sizes="any">
+	<script>
+		// The panel and its API run on Vercel; send other hosts (Hostinger) there.
+		if (!/(^|\.)vercel\.app$|^localhost$|^127\.0\.0\.1$/.test(window.location.hostname)) {
+			window.location.replace('https://nivyahospital.vercel.app/reception');
+		}
+	</script>
+	<link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<style>
+		:root { --brand: #0b56a0; --brand-2: #c518ca; --bg: #f3f6fb; --line: #e3e8f0; --muted: #5b6475; }
+		[hidden] { display: none !important; }
+		body { background: var(--bg); color: #1d2433; font-size: 15px; }
+		.topbar { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+		.topbar .brand { font-weight: 700; color: var(--brand); white-space: nowrap; }
+		.topbar img { height: 34px; }
+		.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+		.tabs::-webkit-scrollbar { display: none; }
+		.tabs button { border: 0; background: none; padding: 12px 14px; color: var(--muted); font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; }
+		.tabs button.active { color: var(--brand); border-bottom-color: var(--brand); }
+		.panel { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+		.stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; height: 100%; }
+		.stat .n { font-size: 28px; font-weight: 700; line-height: 1.1; }
+		.stat .l { color: var(--muted); font-size: 13px; }
+		.badge-st { font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 20px; white-space: nowrap; }
+		.st-booked { background: #e8f0ff; color: #1d4fb8; } .st-confirmed { background: #e3f6ec; color: #11743d; }
+		.st-arrived { background: #fff3d6; color: #8a5a00; } .st-in_consult { background: #f3e5ff; color: #7a1fb0; }
+		.st-completed { background: #e9ecef; color: #3b4250; } .st-cancelled { background: #fde8e8; color: #b42318; }
+		.st-no_show { background: #f1f1f1; color: #6b6b6b; }
+		.token { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 42px; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 700; font-size: 18px; padding: 0 8px; }
+		.token.big { min-width: 96px; height: 96px; font-size: 44px; border-radius: 18px; }
+		.appt { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: #fff; }
+		.appt + .appt { margin-top: 10px; }
+		.appt .meta { color: var(--muted); font-size: 13px; }
+		.btn-xs { padding: 4px 10px; font-size: 13px; border-radius: 8px; }
+		.queue-col { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; height: 100%; }
+		.now-serving { background: #f6f0ff; border-radius: 10px; padding: 12px; }
+		.muted { color: var(--muted); }
+		.toastbox { position: fixed; right: 16px; bottom: 16px; z-index: 50; max-width: calc(100% - 32px); }
+		.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+		.login-card { width: 100%; max-width: 380px; }
+		.day-pills label { border: 1px solid var(--line); border-radius: 20px; padding: 4px 10px; margin: 0 6px 6px 0; cursor: pointer; font-size: 13px; }
+		.day-pills input { margin-right: 4px; }
+		@media (max-width: 575px) { .container-xl { padding-left: 12px; padding-right: 12px; } .panel { padding: 14px; } }
+		@media print { .no-print { display: none !important; } }
+	</style>
+</head>
+<body>
+	<!-- Login -->
+	<div id="login-view" class="login-wrap" hidden>
+		<form id="login-form" class="panel login-card" autocomplete="on">
+			<div class="text-center mb-3"><img src="/assets/img/logo copy.png" alt="Nivya Hospitals" style="height:48px"></div>
+			<h1 class="h5 text-center mb-3">Reception Panel</h1>
+			<label class="form-label" for="lg-user">Username</label>
+			<input id="lg-user" class="form-control mb-3" autocomplete="username" required>
+			<label class="form-label" for="lg-pass">Password</label>
+			<input id="lg-pass" type="password" class="form-control mb-3" autocomplete="current-password" required>
+			<button class="btn btn-primary w-100" type="submit">Sign in</button>
+			<p id="lg-msg" class="text-danger small mt-3 mb-0" role="alert" hidden></p>
+		</form>
+	</div>
+
+	<!-- Not set up -->
+	<div id="setup-view" class="login-wrap" hidden>
+		<div class="panel" style="max-width:520px">
+			<h1 class="h5">Reception panel is not connected yet</h1>
+			<p id="setup-msg" class="mb-2"></p>
+			<p class="muted small mb-0">After connecting, redeploy the Vercel project and reload this page.</p>
+		</div>
+	</div>
+
+	<!-- App -->
+	<div id="app" hidden>
+		<header class="topbar no-print">
+			<div class="container-xl d-flex align-items-center gap-3 pt-2">
+				<img src="/assets/img/logo copy.png" alt="Nivya Hospitals">
+				<span class="brand d-none d-sm-inline">Reception</span>
+				<span class="ms-auto small muted text-truncate"><i class="fa-regular fa-user me-1"></i><span id="who"></span></span>
+				<button id="logout" class="btn btn-sm btn-outline-secondary text-nowrap">Sign out</button>
+			</div>
+			<div class="container-xl">
+				<nav class="tabs" id="tabs">
+					<button data-view="dashboard" class="active"><i class="fa-solid fa-gauge me-1"></i>Dashboard</button>
+					<button data-view="appointments"><i class="fa-regular fa-calendar-check me-1"></i>Appointments</button>
+					<button data-view="walkin"><i class="fa-solid fa-user-plus me-1"></i>Walk-in</button>
+					<button data-view="tokens"><i class="fa-solid fa-list-ol me-1"></i>Tokens</button>
+					<button data-view="schedule"><i class="fa-solid fa-user-doctor me-1"></i>Doctor Schedule</button>
+					<button data-view="staff" data-admin hidden><i class="fa-solid fa-users-gear me-1"></i>Staff</button>
+				</nav>
+			</div>
+		</header>
+
+		<main class="container-xl py-3">
+			<!-- Dashboard -->
+			<section data-section="dashboard">
+				<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+					<h2 class="h5 mb-0 me-auto">Today, <span id="dash-date"></span></h2>
+					<button class="btn btn-sm btn-outline-primary" data-refresh><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+				</div>
+				<div id="dash-leave"></div>
+				<div class="row g-2 mb-3" id="dash-stats"></div>
+				<div class="panel">
+					<h3 class="h6 mb-3">Doctors today</h3>
+					<div class="table-responsive">
+						<table class="table align-middle mb-0">
+							<thead><tr><th>Doctor</th><th>Now</th><th>Next</th><th>Waiting</th><th>Yet to arrive</th><th>Done</th><th></th></tr></thead>
+							<tbody id="dash-doctors"></tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+
+			<!-- Appointments -->
+			<section data-section="appointments" hidden>
+				<div class="panel mb-3">
+					<div class="row g-2 align-items-end">
+						<div class="col-6 col-md-2"><label class="form-label small" for="ap-date">Date</label><input type="date" id="ap-date" class="form-control form-control-sm"></div>
+						<div class="col-6 col-md-3"><label class="form-label small" for="ap-doctor">Doctor</label><select id="ap-doctor" class="form-select form-select-sm" data-doctors="all"></select></div>
+						<div class="col-6 col-md-2"><label class="form-label small" for="ap-status">Status</label>
+							<select id="ap-status" class="form-select form-select-sm">
+								<option value="">All</option><option value="booked">Booked</option><option value="confirmed">Confirmed</option>
+								<option value="arrived">Waiting</option><option value="in_consult">In consultation</option><option value="completed">Completed</option>
+								<option value="cancelled">Cancelled</option><option value="no_show">No-show</option>
+							</select></div>
+						<div class="col-6 col-md-2"><label class="form-label small" for="ap-source">Type</label>
+							<select id="ap-source" class="form-select form-select-sm"><option value="">All</option><option value="online">Online</option><option value="walkin">Walk-in</option></select></div>
+						<div class="col-12 col-md-3"><label class="form-label small" for="ap-search">Search</label><input id="ap-search" class="form-control form-control-sm" placeholder="Name, phone or booking ID"></div>
+					</div>
+					<div class="form-check mt-2 small">
+						<input class="form-check-input" type="checkbox" id="ap-upcoming"><label class="form-check-label" for="ap-upcoming">Show all upcoming (ignore date)</label>
+					</div>
+				</div>
+				<p id="ap-count" class="small muted"></p>
+				<div id="ap-list"></div>
+			</section>
+
+			<!-- Walk-in -->
+			<section data-section="walkin" hidden>
+				<div class="row g-3">
+					<div class="col-lg-7">
+						<form id="wk-form" class="panel" autocomplete="off">
+							<h2 class="h5 mb-3">Walk-in registration</h2>
+							<div class="row g-3">
+								<div class="col-sm-6"><label class="form-label" for="wk-phone">Mobile number *</label>
+									<input id="wk-phone" class="form-control" inputmode="numeric" maxlength="10" required>
+									<div id="wk-matches" class="mt-2"></div></div>
+								<div class="col-sm-6"><label class="form-label" for="wk-name">Patient name *</label><input id="wk-name" class="form-control" required></div>
+								<div class="col-6 col-sm-3"><label class="form-label" for="wk-age">Age</label><input id="wk-age" type="number" min="0" max="120" class="form-control"></div>
+								<div class="col-6 col-sm-3"><label class="form-label" for="wk-gender">Gender</label>
+									<select id="wk-gender" class="form-select"><option value="">-</option><option>Female</option><option>Male</option><option>Other</option></select></div>
+								<div class="col-sm-6"><label class="form-label" for="wk-doctor">Doctor *</label><select id="wk-doctor" class="form-select" data-doctors="pick" required></select></div>
+								<div class="col-sm-6"><label class="form-label" for="wk-type">Visit</label>
+									<select id="wk-type" class="form-select"><option value="new">New patient</option><option value="old">Follow-up</option></select></div>
+								<div class="col-sm-6"><label class="form-label" for="wk-reason">Reason</label><input id="wk-reason" class="form-control" maxlength="200"></div>
+							</div>
+							<button class="btn btn-primary mt-3" type="submit"><i class="fa-solid fa-ticket me-1"></i>Register &amp; give token</button>
+						</form>
+					</div>
+					<div class="col-lg-5">
+						<div id="wk-result" class="panel text-center" hidden></div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Tokens -->
+			<section data-section="tokens" hidden>
+				<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+					<h2 class="h5 mb-0 me-auto">Token queue, today</h2>
+					<span class="small muted">Updates every 20 seconds</span>
+					<button class="btn btn-sm btn-outline-primary" data-refresh><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+				</div>
+				<div class="row g-3" id="tk-cols"></div>
+			</section>
+
+			<!-- Doctor schedule -->
+			<section data-section="schedule" hidden>
+				<p class="muted small">OP timings, leave and online slot limits apply to the website booking page immediately. Walk-ins are always allowed.</p>
+				<div class="row g-3" id="sc-list"></div>
+			</section>
+
+			<!-- Staff -->
+			<section data-section="staff" hidden>
+				<div class="row g-3">
+					<div class="col-lg-5">
+						<form id="sf-form" class="panel" autocomplete="off">
+							<h2 class="h5 mb-3">Add or update staff</h2>
+							<label class="form-label" for="sf-user">Username</label><input id="sf-user" class="form-control mb-2" required>
+							<label class="form-label" for="sf-name">Full name</label><input id="sf-name" class="form-control mb-2">
+							<label class="form-label" for="sf-pass">Password <span class="small muted">(min 8; leave empty to keep)</span></label>
+							<input id="sf-pass" type="password" class="form-control mb-2" autocomplete="new-password">
+							<label class="form-label" for="sf-role">Role</label>
+							<select id="sf-role" class="form-select mb-3"><option value="staff">Reception staff</option><option value="admin">Admin (can manage staff)</option></select>
+							<button class="btn btn-primary" type="submit">Save</button>
+						</form>
+					</div>
+					<div class="col-lg-7"><div class="panel"><h2 class="h5 mb-3">Staff accounts</h2><div id="sf-list"></div></div></div>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<div class="toastbox" id="toast" role="status" aria-live="polite"></div>
+
+	<script>
+	(function () {
+		'use strict';
+		var HOSPITAL_PHONE = '+91 95664 43300';
+		var $ = function (id) { return document.getElementById(id); };
+		var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+		var me = null, doctors = [], today = '', current = 'dashboard', timer = null;
+		var STATUS_LABEL = { booked: 'Booked', confirmed: 'Confirmed', arrived: 'Waiting', in_consult: 'In consultation', completed: 'Completed', cancelled: 'Cancelled', no_show: 'No-show' };
+		var DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+		function toast(msg, kind) {
+			var el = document.createElement('div');
+			el.className = 'alert alert-' + (kind || 'success') + ' shadow-sm py-2 mb-2';
+			el.textContent = msg;
+			$('toast').appendChild(el);
+			setTimeout(function () { el.remove(); }, kind === 'danger' ? 6000 : 3000);
+		}
+
+		async function api(action, data) {
+			var res = await fetch('/api/reception', {
+				method: 'POST', credentials: 'same-origin',
+				headers: { 'Content-Type': 'application/json', 'X-Nivya': '1' },
+				body: JSON.stringify(Object.assign({ action: action }, data || {}))
+			});
+			var out = await res.json().catch(function () { return {}; });
+			if (res.status === 401 && action !== 'login') { showLogin(); throw new Error('Please sign in again.'); }
+			if (res.status === 503 && out.setup) { showSetup(out.error); throw new Error(out.error); }
+			if (!res.ok) throw new Error(out.error || 'Request failed (' + res.status + ').');
+			return out;
+		}
+		var run = function (p) { return p.catch(function (e) { toast(e.message, 'danger'); }); };
+
+		var fmtDate = function (iso) { return iso ? new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : ''; };
+		var minToTime = function (m) { var h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0'); return ((h % 12) || 12) + ':' + mm + ' ' + (h < 12 ? 'AM' : 'PM'); };
+		var badge = function (st) { return '<span class="badge-st st-' + st + '">' + esc(STATUS_LABEL[st] || st) + '</span>'; };
+		var money = function (p) { return p ? 'Rs ' + (p / 100).toLocaleString('en-IN') : ''; };
+
+		/* ---------- WhatsApp messages (reception presses Send) ---------- */
+		function waLink(a, kind, extra) {
+			var name = a.name || 'Patient', when = fmtDate(a.date) + (a.time ? ' at ' + a.time : '');
+			var text = {
+				confirm: 'Hello ' + name + ', your appointment with ' + a.doctor + ' at Nivya Hospitals is confirmed for ' + when + '. Booking ID: ' + a.booking_id + '. Please show this at the reception. For help call ' + HOSPITAL_PHONE + '.',
+				reminder: 'Hello ' + name + ', a reminder of your appointment with ' + a.doctor + ' at Nivya Hospitals on ' + when + '. Booking ID: ' + a.booking_id + '. Address: 110-F/5 Barani Nagar, Vannarpettai, Tirunelveli.',
+				reschedule: 'Hello ' + name + ', your appointment with ' + a.doctor + ' at Nivya Hospitals has been rescheduled to ' + when + '. Booking ID: ' + a.booking_id + '. For help call ' + HOSPITAL_PHONE + '.',
+				cancel: 'Hello ' + name + ', your appointment with ' + a.doctor + ' on ' + when + ' at Nivya Hospitals has been cancelled' + (extra ? ' (' + extra + ')' : '') + '. Please call ' + HOSPITAL_PHONE + ' to book again.',
+				token: 'Hello ' + name + ', your token number for ' + a.doctor + ' today at Nivya Hospitals is ' + a.token_no + '. Please wait for your turn.'
+			}[kind];
+			return 'https://wa.me/91' + String(a.phone || '').replace(/\D/g, '').slice(-10) + '?text=' + encodeURIComponent(text);
+		}
+		function waKindFor(a) {
+			if (a.status === 'cancelled') return ['cancel', 'Cancellation'];
+			if (a.status === 'arrived' || a.status === 'in_consult') return ['token', 'Token'];
+			if (a.date > today) return ['reminder', 'Reminder'];
+			return ['confirm', 'Confirmation'];
+		}
+
+		/* ---------- Views ---------- */
+		function showLogin() { stopTimer(); $('app').hidden = true; $('setup-view').hidden = true; $('login-view').hidden = false; $('lg-user').focus(); }
+		function showSetup(msg) { stopTimer(); $('app').hidden = true; $('login-view').hidden = true; $('setup-view').hidden = false; $('setup-msg').textContent = msg; }
+		function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+
+		function startApp(data) {
+			me = data.user; doctors = data.doctors; today = data.today;
+			$('who').textContent = me.name + (me.role === 'admin' ? ' (admin)' : '');
+			document.querySelectorAll('[data-admin]').forEach(function (el) { el.hidden = me.role !== 'admin'; });
+			document.querySelectorAll('select[data-doctors]').forEach(function (sel) {
+				var first = sel.dataset.doctors === 'all' ? '<option value="">All doctors</option>' : '<option value="">Select doctor</option>';
+				sel.innerHTML = first + doctors.map(function (d) { return '<option value="' + esc(d.name) + '">' + esc(d.name) + ' (' + esc(d.speciality) + ')</option>'; }).join('');
+			});
+			$('ap-date').value = today;
+			$('login-view').hidden = true; $('setup-view').hidden = true; $('app').hidden = false;
+			show(current);
+		}
+
+		function show(view) {
+			current = view;
+			document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('active', b.dataset.view === view); });
+			document.querySelectorAll('[data-section]').forEach(function (s) { s.hidden = s.dataset.section !== view; });
+			stopTimer();
+			var loader = loaders[view];
+			if (loader) {
+				run(loader());
+				if (view === 'dashboard' || view === 'tokens') timer = setInterval(function () { if (!document.hidden) loader().catch(function () {}); }, 20000);
+			}
+		}
+
+		var loaders = {
+			dashboard: async function () {
+				var d = await api('dashboard');
+				$('dash-date').textContent = fmtDate(d.date);
+				var t = d.totals;
+				var cards = [['Online bookings', t.online, 'fa-globe'], ['Walk-ins', t.walkin, 'fa-person-walking'], ['Yet to arrive', t.expected, 'fa-hourglass-half'],
+					['Waiting', t.waiting, 'fa-chair'], ['In consultation', t.inConsult, 'fa-stethoscope'], ['Completed', t.completed, 'fa-circle-check']];
+				$('dash-stats').innerHTML = cards.map(function (c) {
+					return '<div class="col-6 col-md-4 col-xl-2"><div class="stat"><div class="l"><i class="fa-solid ' + c[2] + ' me-1"></i>' + c[0] + '</div><div class="n">' + c[1] + '</div></div></div>';
+				}).join('');
+				$('dash-leave').innerHTML = d.leave.map(function (l) {
+					return '<div class="alert alert-warning py-2"><i class="fa-solid fa-plane-departure me-1"></i>' + esc(l.doctor) + ' is on leave today' + (l.reason ? ': ' + esc(l.reason) : '') + '.</div>';
+				}).join('');
+				$('dash-doctors').innerHTML = d.perDoctor.map(function (p) {
+					return '<tr><td class="fw-semibold">' + esc(p.doctor) + '</td>' +
+						'<td>' + (p.current ? '<span class="token">' + p.current + '</span>' : '<span class="muted">-</span>') + '</td>' +
+						'<td>' + (p.next ? '<span class="token" style="background:#8a5a00">' + p.next + '</span>' : '<span class="muted">-</span>') + '</td>' +
+						'<td>' + p.waiting + '</td><td>' + p.expected + '</td><td>' + p.completed + '</td>' +
+						'<td class="text-end">' + (p.waiting ? '<button class="btn btn-xs btn-primary" data-callnext="' + esc(p.doctor) + '">Call next</button>' : '') + '</td></tr>';
+				}).join('');
+			},
+
+			appointments: async function () {
+				var upcoming = $('ap-upcoming').checked;
+				var d = await api('appointments', {
+					date: upcoming ? '' : $('ap-date').value, from: upcoming ? today : '',
+					doctor: $('ap-doctor').value, status: $('ap-status').value, source: $('ap-source').value, search: $('ap-search').value
+				});
+				var list = d.appointments;
+				if (upcoming) list.sort(function (a, b) { return a.date === b.date ? (a.time_min || 0) - (b.time_min || 0) : a.date < b.date ? -1 : 1; });
+				$('ap-count').textContent = list.length + ' appointment' + (list.length === 1 ? '' : 's') + (list.length >= 300 ? ' (showing first 300)' : '');
+				$('ap-list').innerHTML = list.length ? list.map(apptCard).join('') : '<div class="panel muted">No appointments found.</div>';
+			},
+
+			walkin: async function () {},
+
+			tokens: async function () {
+				var d = await api('queue');
+				$('tk-cols').innerHTML = doctors.map(function (doc) {
+					var mine = d.queue.filter(function (a) { return a.doctor === doc.name; });
+					var now = mine.filter(function (a) { return a.status === 'in_consult'; });
+					var waiting = mine.filter(function (a) { return a.status === 'arrived'; });
+					var done = mine.filter(function (a) { return a.status === 'completed' || a.status === 'no_show'; });
+					return '<div class="col-md-6 col-xl-3"><div class="queue-col">' +
+						'<h3 class="h6 mb-1">' + esc(doc.name) + '</h3><p class="small muted mb-2">' + esc(doc.speciality) + '</p>' +
+						'<div class="now-serving mb-3"><div class="small muted mb-1">Now serving</div>' +
+						(now.length ? now.map(function (a) {
+							return '<div class="d-flex align-items-center gap-2 mb-1"><span class="token">' + a.token_no + '</span><span class="flex-grow-1">' + esc(a.name) + '</span>' +
+								'<button class="btn btn-xs btn-success" data-op="complete" data-id="' + a.id + '">Done</button>' +
+								'<button class="btn btn-xs btn-outline-secondary" data-op="requeue" data-id="' + a.id + '" title="Send back to waiting"><i class="fa-solid fa-rotate-left"></i></button></div>';
+						}).join('') : '<span class="muted">Nobody</span>') + '</div>' +
+						(waiting.length ? '<button class="btn btn-primary btn-sm w-100 mb-2" data-callnext="' + esc(doc.name) + '"><i class="fa-solid fa-bullhorn me-1"></i>Call next (' + waiting[0].token_no + ')</button>' : '') +
+						'<div class="small muted mb-1">Waiting (' + waiting.length + ')</div>' +
+						(waiting.map(function (a) {
+							return '<div class="d-flex align-items-center gap-2 border-bottom py-2"><span class="token" style="background:#8a5a00">' + a.token_no + '</span>' +
+								'<span class="flex-grow-1 small">' + esc(a.name) + '<br><span class="muted">' + (a.source === 'online' ? 'Online ' + esc(a.time || '') : 'Walk-in') + '</span></span>' +
+								'<button class="btn btn-xs btn-outline-primary" data-op="start" data-id="' + a.id + '">Call</button>' +
+								'<button class="btn btn-xs btn-outline-secondary" data-op="no_show" data-id="' + a.id + '" title="No-show"><i class="fa-solid fa-user-slash"></i></button></div>';
+						}).join('') || '<p class="small muted">No one waiting.</p>') +
+						(done.length ? '<div class="small muted mt-2">Finished: ' + done.map(function (a) { return a.token_no + (a.status === 'no_show' ? ' (absent)' : ''); }).join(', ') + '</div>' : '') +
+						'</div></div>';
+				}).join('');
+			},
+
+			schedule: async function () { renderSchedule((await api('schedule')).schedule); },
+
+			staff: async function () { renderStaff((await api('staff')).staff); }
+		};
+
+		function apptCard(a) {
+			var b = [];
+			var st = a.status;
+			if (st === 'booked') b.push('<button class="btn btn-xs btn-outline-success" data-op="confirm" data-id="' + a.id + '">Confirm</button>');
+			if ((st === 'booked' || st === 'confirmed') && a.date === today) b.push('<button class="btn btn-xs btn-primary" data-op="arrive" data-id="' + a.id + '"><i class="fa-solid fa-ticket me-1"></i>Check in</button>');
+			if (st === 'arrived') b.push('<button class="btn btn-xs btn-primary" data-op="start" data-id="' + a.id + '">Call in</button>');
+			if (st === 'in_consult' || st === 'arrived') b.push('<button class="btn btn-xs btn-success" data-op="complete" data-id="' + a.id + '">Done</button>');
+			if (st === 'booked' || st === 'confirmed') b.push('<button class="btn btn-xs btn-outline-primary" data-resched="' + a.id + '">Reschedule</button>');
+			if (st === 'booked' || st === 'confirmed' || st === 'arrived') {
+				b.push('<button class="btn btn-xs btn-outline-secondary" data-op="no_show" data-id="' + a.id + '">No-show</button>');
+				b.push('<button class="btn btn-xs btn-outline-danger" data-op="cancel" data-id="' + a.id + '">Cancel</button>');
+			}
+			var wa = waKindFor(a);
+			if (a.phone && st !== 'completed' && st !== 'no_show') {
+				b.push('<a class="btn btn-xs btn-outline-success" target="_blank" rel="noopener" href="' + esc(waLink(a, wa[0], a.notes)) + '"><i class="fa-brands fa-whatsapp me-1"></i>' + wa[1] + '</a>');
+			}
+			return '<div class="appt" id="appt-' + a.id + '">' +
+				'<div class="d-flex flex-wrap align-items-start gap-2">' +
+				(a.token_no ? '<span class="token">' + a.token_no + '</span>' : '') +
+				'<div class="flex-grow-1"><div class="fw-semibold">' + esc(a.name) + ' <span class="muted fw-normal">' + esc(a.phone) + '</span></div>' +
+				'<div class="meta">' + esc(a.doctor) + ' &middot; ' + fmtDate(a.date) + (a.time ? ' ' + esc(a.time) : '') + ' &middot; ' +
+				(a.source === 'online' ? '<i class="fa-solid fa-globe"></i> Online' : '<i class="fa-solid fa-person-walking"></i> Walk-in') +
+				' &middot; ' + (a.visit_type === 'old' ? 'Follow-up' : 'New') + (a.amount_paise ? ' &middot; Paid ' + money(a.amount_paise) : '') + '</div>' +
+				'<div class="meta">' + esc(a.booking_id) + (a.age ? ' &middot; ' + a.age + ' yrs' : '') + (a.gender ? ' ' + esc(a.gender) : '') +
+				(a.reason ? ' &middot; ' + esc(a.reason) : '') + (a.notes ? ' &middot; <em>' + esc(a.notes) + '</em>' : '') + '</div></div>' +
+				badge(st) + '</div>' +
+				(b.length ? '<div class="d-flex flex-wrap gap-1 mt-2">' + b.join('') + '</div>' : '') +
+				'<div data-resched-box="' + a.id + '"></div></div>';
+		}
+
+		async function doOp(id, op, extra) {
+			var data = Object.assign({ id: Number(id), op: op }, extra || {});
+			if (op === 'cancel') {
+				var reason = window.prompt('Reason for cancelling (shown in the WhatsApp message, optional):', '');
+				if (reason === null) return;
+				data.reason = reason;
+				if (!window.confirm('Cancel this appointment? If it was paid online, refund it from the Razorpay Dashboard if needed.')) return;
+			}
+			if (op === 'no_show' && !window.confirm('Mark as no-show?')) return;
+			var out = await api('update', data);
+			var a = out.appointment;
+			if (op === 'arrive') toast('Checked in. Token ' + a.token_no + ' for ' + a.doctor + '.');
+			else toast('Updated: ' + (STATUS_LABEL[a.status] || a.status) + '.');
+			if (op === 'cancel' || op === 'reschedule') {
+				var kind = op === 'cancel' ? 'cancel' : 'reschedule';
+				var box = document.createElement('div');
+				box.className = 'alert alert-info py-2 d-flex flex-wrap align-items-center gap-2';
+				box.innerHTML = '<span>Let the patient know:</span><a class="btn btn-xs btn-success" target="_blank" rel="noopener" href="' + esc(waLink(a, kind, data.reason)) + '"><i class="fa-brands fa-whatsapp me-1"></i>Send on WhatsApp</a>';
+				await loaders[current]();
+				var host = document.querySelector('#appt-' + a.id) || document.querySelector('main');
+				host.appendChild(box);
+				return;
+			}
+			await loaders[current]();
+		}
+
+		async function callNext(doctor) {
+			var q = (await api('queue')).queue.filter(function (a) { return a.doctor === doctor; });
+			var busy = q.filter(function (a) { return a.status === 'in_consult'; });
+			if (busy.length && !window.confirm('Token ' + busy[0].token_no + ' is still with the doctor. Mark it done and call the next patient?')) return;
+			for (var i = 0; i < busy.length; i++) await api('update', { id: busy[i].id, op: 'complete' });
+			var next = q.filter(function (a) { return a.status === 'arrived'; })[0];
+			if (!next) { toast('No one waiting.', 'warning'); return loaders[current](); }
+			await api('update', { id: next.id, op: 'start' });
+			toast('Calling token ' + next.token_no + ': ' + next.name);
+			await loaders[current]();
+		}
+
+		/* ---------- Schedule ---------- */
+		function timeOptions(sel) {
+			var o = '';
+			for (var m = 360; m <= 1380; m += 15) o += '<option value="' + m + '"' + (m === sel ? ' selected' : '') + '>' + minToTime(m) + '</option>';
+			return o;
+		}
+		function renderSchedule(list) {
+			$('sc-list').innerHTML = list.map(function (s, i) {
+				return '<div class="col-lg-6"><form class="panel h-100" data-sched="' + i + '">' +
+					'<h3 class="h6 mb-3">' + esc(s.doctor) + '</h3>' +
+					'<div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="sc-on-' + i + '" name="online"' + (s.online ? ' checked' : '') + '>' +
+					'<label class="form-check-label" for="sc-on-' + i + '">Accept online bookings</label></div>' +
+					'<div class="small muted mb-1">OP days</div><div class="day-pills d-flex flex-wrap mb-2">' +
+					DAY.map(function (d, n) { return '<label><input type="checkbox" name="day" value="' + n + '"' + (s.days.indexOf(n) >= 0 ? ' checked' : '') + '>' + d + '</label>'; }).join('') + '</div>' +
+					'<div class="row g-2 mb-2"><div class="col-6"><label class="form-label small">OP starts</label><select class="form-select form-select-sm" name="start">' + timeOptions(s.start_min) + '</select></div>' +
+					'<div class="col-6"><label class="form-label small">OP ends</label><select class="form-select form-select-sm" name="end">' + timeOptions(s.end_min) + '</select></div></div>' +
+					'<label class="form-label small">Online bookings per time slot <span class="muted">(empty = no limit)</span></label>' +
+					'<input type="number" min="1" max="200" class="form-control form-control-sm mb-2" name="capacity" value="' + (s.capacity == null ? '' : s.capacity) + '">' +
+					'<label class="form-label small">Note for staff</label><input class="form-control form-control-sm mb-3" name="note" maxlength="200" value="' + esc(s.note) + '">' +
+					'<button class="btn btn-sm btn-primary" type="submit">Save timings</button>' +
+					'<hr><div class="small fw-semibold mb-2">Leave</div>' +
+					(s.leave.length ? s.leave.map(function (l) {
+						return '<div class="d-flex align-items-center gap-2 mb-1 small"><i class="fa-solid fa-plane-departure muted"></i><span class="flex-grow-1">' + fmtDate(l.date) +
+							(l.reason ? ' &middot; ' + esc(l.reason) : '') + (l.affected ? ' <span class="badge bg-warning text-dark">' + l.affected + ' booking(s) to reschedule</span>' : '') + '</span>' +
+							'<button type="button" class="btn btn-xs btn-outline-danger" data-unleave="' + l.id + '">Remove</button></div>';
+					}).join('') : '<p class="small muted">No upcoming leave.</p>') +
+					'<div class="row g-2 mt-1"><div class="col-5"><input type="date" class="form-control form-control-sm" name="ldate" min="' + today + '"></div>' +
+					'<div class="col-4"><input class="form-control form-control-sm" name="lreason" placeholder="Reason" maxlength="120"></div>' +
+					'<div class="col-3"><button type="button" class="btn btn-sm btn-outline-primary w-100" data-leave="' + i + '">Add</button></div></div>' +
+					'</form></div>';
+			}).join('');
+			$('sc-list').dataset.doctors = JSON.stringify(list.map(function (s) { return s.doctor; }));
+		}
+
+		/* ---------- Staff ---------- */
+		function renderStaff(list) {
+			$('sf-list').innerHTML = (list.length ? list.map(function (s) {
+				return '<div class="d-flex align-items-center gap-2 border-bottom py-2"><div class="flex-grow-1"><div class="fw-semibold">' + esc(s.name) + '</div>' +
+					'<div class="small muted">' + esc(s.username) + ' &middot; ' + (s.role === 'admin' ? 'Admin' : 'Reception staff') + (s.active ? '' : ' &middot; <span class="text-danger">Disabled</span>') + '</div></div>' +
+					'<button class="btn btn-xs btn-outline-secondary" data-editstaff=\'' + esc(JSON.stringify(s)) + '\'>Edit</button>' +
+					'<button class="btn btn-xs ' + (s.active ? 'btn-outline-danger' : 'btn-outline-success') + '" data-togglestaff=\'' + esc(JSON.stringify(s)) + '\'>' + (s.active ? 'Disable' : 'Enable') + '</button></div>';
+			}).join('') : '<p class="muted">No staff accounts yet. Add one on the left.</p>') +
+				'<p class="small muted mt-3 mb-0">The "admin" login uses the password set in Vercel (RECEPTION_ADMIN_PASSWORD).</p>';
+		}
+
+		/* ---------- Events ---------- */
+		$('tabs').addEventListener('click', function (e) { var b = e.target.closest('button[data-view]'); if (b) show(b.dataset.view); });
+		document.addEventListener('click', function (e) {
+			var t = e.target.closest('[data-op],[data-callnext],[data-refresh],[data-resched],[data-unleave],[data-leave],[data-editstaff],[data-togglestaff],[data-match]');
+			if (!t) return;
+			if (t.dataset.op) return run(doOp(t.dataset.id, t.dataset.op));
+			if (t.dataset.callnext) return run(callNext(t.dataset.callnext));
+			if (t.hasAttribute('data-refresh')) return run(loaders[current]());
+			if (t.dataset.resched) {
+				var box = document.querySelector('[data-resched-box="' + t.dataset.resched + '"]');
+				box.innerHTML = '<form class="row g-2 mt-2 align-items-end" data-resched-form="' + t.dataset.resched + '">' +
+					'<div class="col-6 col-sm-4"><label class="form-label small">New date</label><input type="date" class="form-control form-control-sm" name="date" min="' + today + '" required></div>' +
+					'<div class="col-6 col-sm-4"><label class="form-label small">New time</label><select class="form-select form-select-sm" name="time">' +
+					(function () { var o = ''; for (var m = 360; m <= 1380; m += 15) o += '<option>' + minToTime(m) + '</option>'; return o; })() + '</select></div>' +
+					'<div class="col-12 col-sm-4"><button class="btn btn-sm btn-primary">Save new time</button></div></form>';
+				return;
+			}
+			if (t.dataset.unleave) return run(api('removeLeave', { id: Number(t.dataset.unleave) }).then(function (d) { renderSchedule(d.schedule); toast('Leave removed.'); }));
+			if (t.dataset.leave) {
+				var f = t.closest('form'), docs = JSON.parse($('sc-list').dataset.doctors);
+				if (!f.ldate.value) return toast('Pick the leave date.', 'warning');
+				return run(api('addLeave', { doctor: docs[Number(t.dataset.leave)], date: f.ldate.value, reason: f.lreason.value }).then(function (d) {
+					renderSchedule(d.schedule); toast('Leave added. Online booking is closed for that day.');
+				}));
+			}
+			if (t.dataset.editstaff) {
+				var s = JSON.parse(t.dataset.editstaff);
+				$('sf-user').value = s.username; $('sf-name').value = s.name; $('sf-role').value = s.role; $('sf-pass').value = ''; $('sf-pass').focus();
+				return;
+			}
+			if (t.dataset.togglestaff) {
+				var st = JSON.parse(t.dataset.togglestaff);
+				return run(api('saveStaff', { username: st.username, role: st.role, active: !st.active }).then(function (d) { renderStaff(d.staff); toast('Saved.'); }));
+			}
+			if (t.dataset.match) {
+				var p = JSON.parse(t.dataset.match);
+				$('wk-phone').value = p.phone; $('wk-name').value = p.name; $('wk-age').value = p.age == null ? '' : p.age; $('wk-gender').value = p.gender || '';
+				$('wk-type').value = p.visits ? 'old' : 'new'; $('wk-matches').innerHTML = '';
+			}
+		});
+
+		document.addEventListener('submit', function (e) {
+			var f = e.target;
+			if (f.dataset.reschedForm) {
+				e.preventDefault();
+				return run(doOp(f.dataset.reschedForm, 'reschedule', { date: f.date.value, time: f.time.value }));
+			}
+			if (f.dataset.sched != null) {
+				e.preventDefault();
+				var docs = JSON.parse($('sc-list').dataset.doctors);
+				var days = Array.prototype.map.call(f.querySelectorAll('input[name=day]:checked'), function (x) { return Number(x.value); });
+				return run(api('saveSchedule', {
+					doctor: docs[Number(f.dataset.sched)], days: days, start_min: Number(f.start.value), end_min: Number(f.end.value),
+					capacity: f.capacity.value, online: f.online.checked, note: f.note.value
+				}).then(function (d) { renderSchedule(d.schedule); toast('Timings saved.'); }));
+			}
+		});
+
+		$('login-form').addEventListener('submit', function (e) {
+			e.preventDefault();
+			$('lg-msg').hidden = true;
+			api('login', { username: $('lg-user').value, password: $('lg-pass').value }).then(function (d) {
+				$('lg-pass').value = ''; startApp(d);
+			}).catch(function (err) { $('lg-msg').textContent = err.message; $('lg-msg').hidden = false; });
+		});
+		$('logout').addEventListener('click', function () { api('logout').finally(function () { me = null; showLogin(); }); });
+
+		['ap-date', 'ap-doctor', 'ap-status', 'ap-source', 'ap-upcoming'].forEach(function (id) { $(id).addEventListener('change', function () { run(loaders.appointments()); }); });
+		var searchTimer;
+		$('ap-search').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(function () { run(loaders.appointments()); }, 350); });
+
+		var phoneTimer;
+		$('wk-phone').addEventListener('input', function () {
+			var v = this.value.replace(/\D/g, '');
+			this.value = v;
+			clearTimeout(phoneTimer);
+			if (v.length < 4) { $('wk-matches').innerHTML = ''; return; }
+			phoneTimer = setTimeout(function () {
+				api('patients', { phone: v }).then(function (d) {
+					$('wk-matches').innerHTML = d.patients.length ? '<div class="small muted mb-1">Existing patients:</div>' + d.patients.map(function (p) {
+						return '<button type="button" class="btn btn-xs btn-outline-secondary me-1 mb-1" data-match=\'' + esc(JSON.stringify(p)) + '\'>' + esc(p.name) + ' &middot; ' + esc(p.phone) +
+							(p.last_visit ? ' &middot; last ' + fmtDate(p.last_visit) : '') + '</button>';
+					}).join('') : '';
+				}).catch(function () {});
+			}, 300);
+		});
+
+		$('wk-form').addEventListener('submit', function (e) {
+			e.preventDefault();
+			run(api('walkin', {
+				phone: $('wk-phone').value, name: $('wk-name').value, age: $('wk-age').value, gender: $('wk-gender').value,
+				doctor: $('wk-doctor').value, visit_type: $('wk-type').value, reason: $('wk-reason').value
+			}).then(function (d) {
+				var a = d.appointment;
+				$('wk-result').hidden = false;
+				$('wk-result').innerHTML = '<div class="small muted mb-2">Token for ' + esc(a.doctor) + '</div><div class="token big mb-3">' + a.token_no + '</div>' +
+					'<div class="fw-semibold">' + esc(a.name) + '</div><div class="small muted mb-3">' + esc(a.phone) + ' &middot; ' + esc(a.booking_id) + '</div>' +
+					'<div class="d-flex justify-content-center flex-wrap gap-2 no-print">' +
+					'<a class="btn btn-sm btn-success" target="_blank" rel="noopener" href="' + esc(waLink(a, 'token')) + '"><i class="fa-brands fa-whatsapp me-1"></i>Send token</a>' +
+					'<button class="btn btn-sm btn-outline-primary" type="button" id="wk-print"><i class="fa-solid fa-print me-1"></i>Print token</button></div>';
+				$('wk-print').onclick = function () { printToken(a); };
+				$('wk-form').reset(); $('wk-matches').innerHTML = '';
+				toast('Registered. Token ' + a.token_no + '.');
+			}));
+		});
+
+		$('sf-form').addEventListener('submit', function (e) {
+			e.preventDefault();
+			run(api('saveStaff', { username: $('sf-user').value, name: $('sf-name').value, password: $('sf-pass').value, role: $('sf-role').value, active: true }).then(function (d) {
+				renderStaff(d.staff); $('sf-form').reset(); toast('Staff saved.');
+			}));
+		});
+
+		function printToken(a) {
+			var w = window.open('', '_blank', 'width=360,height=480');
+			if (!w) return toast('Allow pop-ups to print the token.', 'warning');
+			w.document.write('<!doctype html><meta charset="utf-8"><title>Token ' + a.token_no + '</title><body style="font-family:Arial;text-align:center;padding:20px">' +
+				'<div style="font-weight:700;color:#0b56a0">Nivya Hospitals</div><div style="font-size:13px;color:#555">' + esc(a.doctor) + '</div>' +
+				'<div style="font-size:84px;font-weight:700;margin:16px 0">' + a.token_no + '</div><div>' + esc(a.name) + '</div>' +
+				'<div style="font-size:12px;color:#555;margin-top:6px">' + fmtDate(a.date) + ' &middot; ' + esc(a.time || '') + '</div>' +
+				'<script>window.onload=function(){window.print()}<\/script></body>');
+			w.document.close();
+		}
+
+		/* ---------- Start ---------- */
+		api('me').then(startApp).catch(function () { /* login or setup view already shown */ });
+	})();
+	</script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 // POST booking details -> creates a Razorpay order. The fee is looked up here,
 // so the browser can never choose its own amount.
 const { cors, keys, razorpay, validateBooking, newBookingId } = require('./_lib/razorpay');
+const db = require('./_lib/db');
+const { checkOnlineSlot } = require('./_lib/schedule');
 
 module.exports = async (req, res) => {
 	if (cors(req, res)) return;
@@ -12,6 +14,15 @@ module.exports = async (req, res) => {
 	const checked = validateBooking(req.body);
 	if (checked.error) return res.status(400).json({ error: checked.error });
 	const b = checked.value;
+
+	// Reception's doctor schedule: leave, OP hours, slot capacity. Skipped if the database is down,
+	// so a database problem never stops patients from booking.
+	if (db.configured()) {
+		try {
+			const slotError = await checkOnlineSlot(b.doctor, b.date, b.time);
+			if (slotError) return res.status(400).json({ error: slotError });
+		} catch (err) { console.error('schedule check failed:', err.message); }
+	}
 
 	try {
 		// Booking details ride on the order's notes (max 256 chars each), so the hospital
@@ -33,6 +44,11 @@ module.exports = async (req, res) => {
 				reason: b.reason
 			}
 		});
+		if (db.configured()) {
+			// Kept until payment is verified, then copied into the reception panel's appointments.
+			await db.q(`INSERT INTO pending_orders (order_id, booking, amount_paise) VALUES ($1, $2, $3) ON CONFLICT (order_id) DO NOTHING`,
+				[order.id, JSON.stringify({ ...b, bookingId: order.receipt }), order.amount]).catch((e) => console.error('save booking failed:', e.message));
+		}
 		return res.status(200).json({ orderId: order.id, amount: order.amount, currency: order.currency, keyId: k.id });
 	} catch (err) {
 		console.error('create-order failed:', err.message);
