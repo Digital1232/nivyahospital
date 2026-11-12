@@ -3,6 +3,7 @@
 const { cors, keys, razorpay, validateBooking, newBookingId } = require('./_lib/razorpay');
 const db = require('./_lib/db');
 const { checkOnlineSlot } = require('./_lib/schedule');
+const { getCatalog } = require('./_lib/catalog');
 
 module.exports = async (req, res) => {
 	if (cors(req, res)) return;
@@ -11,7 +12,8 @@ module.exports = async (req, res) => {
 	const k = keys();
 	if (!k) return res.status(503).json({ error: 'Online payment is not available yet.' });
 
-	const checked = validateBooking(req.body);
+	// Fees and booking type come from the reception panel's Booking settings (or the catalog file).
+	const checked = validateBooking(req.body, await getCatalog(), { scheduled: db.configured() });
 	if (checked.error) return res.status(400).json({ error: checked.error });
 	const b = checked.value;
 

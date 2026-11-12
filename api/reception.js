@@ -5,6 +5,7 @@ const { CATALOG } = require('./_lib/razorpay');
 const { q, one, configured } = require('./_lib/db');
 const auth = require('./_lib/auth');
 const S = require('./_lib/schedule');
+const catalog = require('./_lib/catalog');
 
 const DOCTORS = Object.keys(CATALOG.doctors);
 const STATUSES = ['booked', 'confirmed', 'arrived', 'in_consult', 'completed', 'cancelled', 'no_show'];
@@ -269,6 +270,76 @@ const actions = {
 		const r = await q(`DELETE FROM doctor_leave WHERE id = $1 RETURNING doctor, date`, [Number(b.id)]);
 		if (r.length) await audit(user, 'leave_remove', null, r[0]);
 		return actions.schedule();
+	},
+
+	/* ---------- Booking settings (fees, booking type, slots, services) ---------- */
+	async booking() {
+		const merged = await catalog.getCatalog();
+		const overrides = await catalog.getOverrides();
+		const out = [];
+		for (const name of DOCTORS) {
+			const d = merged.doctors[name];
+			const s = await S.getSchedule(name);
+			out.push({
+				doctor: name,
+				speciality: d.speciality,
+				bookingMode: d.bookingMode === 'request' ? 'request' : 'online',
+				feeStatus: d.feeStatus === 'pending' ? 'pending' : 'set',
+				fees: d.fees || { new: null, old: null },
+				opHours: d.opHours || '',
+				bookingSessions: d.bookingSessions || [],
+				addons: d.addons || [],
+				customised: Object.prototype.hasOwnProperty.call(overrides, name),
+				schedule: { start_min: s.start_min, end_min: s.end_min, online: s.online }
+			});
+		}
+		return { booking: out };
+	},
+
+	async saveBooking(b, user) {
+		need(user.role === 'admin', 'Only an admin can change fees and booking settings.');
+		const doctor = doctorOf(b.doctor);
+		const overrides = await catalog.getOverrides();
+		if (b.reset) {
+			delete overrides[doctor];
+		} else {
+			const mode = b.bookingMode === 'request' ? 'request' : 'online';
+			const pending = b.feeStatus === 'pending';
+			const fee = (v, label) => {
+				if (v === '' || v == null) return null;
+				const n = Number(v);
+				need(Number.isInteger(n) && n >= 0 && n <= 100000, label + ' must be a whole number of rupees.');
+				return n;
+			};
+			const fees = { new: fee(b.fees && b.fees.new, 'New patient fee'), old: fee(b.fees && b.fees.old, 'Follow-up fee') };
+			if (mode === 'online' && !pending) need(fees.new > 0 && fees.old > 0, 'Enter both fees, or choose "Fee to be confirmed".');
+			const sessions = (Array.isArray(b.bookingSessions) ? b.bookingSessions : []).slice(0, 4).map((x) => {
+				const slots = [...new Set((Array.isArray(x.slots) ? x.slots : []).map((t) => {
+					const m = S.toMin(clean(t, 10).toUpperCase());
+					need(m != null, 'Invalid time "' + clean(t, 10) + '". Use a format like 10:30 AM.');
+					return m;
+				}))].sort((p, q2) => p - q2).slice(0, 24).map(S.toTime);
+				return { name: clean(x.name, 20) || 'Session', slots };
+			}).filter((x) => x.slots.length);
+			const ids = new Set();
+			const addons = (Array.isArray(b.addons) ? b.addons : []).slice(0, 10).map((a) => {
+				const name = clean(a.name, 60);
+				need(name.length >= 2, 'Enter a name for each paid service.');
+				const price = Number(a.price);
+				need(Number.isInteger(price) && price >= 1 && price <= 100000, 'Price for "' + name + '" must be a whole number of rupees.');
+				let id = clean(a.id, 40).replace(/[^a-z0-9-]/g, '') || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'service';
+				while (ids.has(id)) id += '-2';
+				ids.add(id);
+				return { id, name, price };
+			});
+			overrides[doctor] = {
+				bookingMode: mode, feeStatus: pending ? 'pending' : 'set', fees,
+				opHours: clean(b.opHours, 120), bookingSessions: sessions, addons
+			};
+		}
+		await catalog.saveOverrides(overrides);
+		await audit(user, b.reset ? 'booking_reset' : 'booking_save', null, { doctor });
+		return actions.booking();
 	},
 
 	/* ---------- Patients ---------- */

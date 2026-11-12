@@ -1062,7 +1062,16 @@
 						: 'Please choose a doctor first to start your booking.';
 				} else {
 					buildServices();
-					if (info.opHours) $('booking-op-hours').textContent = 'OPD: Monday to Saturday, ' + info.opHours + '. Sunday: emergency only.';
+					if (avail) {
+						// Days and hours as set by the reception (Doctor Schedule tab).
+						const NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+						const days = [1, 2, 3, 4, 5, 6, 0].filter((d) => avail.days.includes(d));
+						const contiguous = days.length > 2 && days.every((d, i) => i === 0 || d === (days[i - 1] + 1) % 7);
+						const daysText = days.length === 7 ? 'All days' : contiguous ? NAMES[days[0]] + ' to ' + NAMES[days[days.length - 1]] : days.map((d) => NAMES[d]).join(', ');
+						const fmt = (m) => moment().startOf('day').add(m, 'minutes').format('h:mm A');
+						$('booking-op-hours').textContent = 'OPD: ' + daysText + ', ' + (info.opHours || fmt(avail.start_min) + ' - ' + fmt(avail.end_min)) + '.' +
+							(avail.days.includes(0) ? '' : ' Sunday: emergency only.');
+					} else if (info.opHours) $('booking-op-hours').textContent = 'OPD: Monday to Saturday, ' + info.opHours + '. Sunday: emergency only.';
 					initCalendar();
 					notice.hidden = live;
 					$('test-mode-notice').hidden = !(live && testMode);
@@ -1084,6 +1093,17 @@
 					if (r.ok) catalog = await r.json();
 				} catch (e) { /* handled below */ }
 				info = catalog && Object.prototype.hasOwnProperty.call(catalog.doctors, doctor) ? catalog.doctors[doctor] : null;
+				// Reception panel settings (fees, booking type, slots, leave, OP hours) win over the file.
+				if (doctor) {
+					try {
+						const ar = await fetch(API_BASE + '/api/availability?doctor=' + encodeURIComponent(doctor), { cache: 'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined });
+						const a = ar.ok ? await ar.json() : null;
+						if (a && a.configured) {
+							avail = a;
+							if (a.info) info = Object.assign({}, info || {}, a.info);
+						}
+					} catch (e) { avail = null; }
+				}
 				if (!info) return applyMode(false, false);
 				if (info.avatar) { // face-centred crop instead of the full desk photo from the URL
 					const photo = $('booking-doctor-avatar');
@@ -1106,11 +1126,6 @@
 					widget.classList.remove('is-loading');
 					return;
 				}
-				try {
-					const ar = await fetch(API_BASE + '/api/availability?doctor=' + encodeURIComponent(doctor), { cache: 'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined });
-					const a = ar.ok ? await ar.json() : null;
-					if (a && a.configured) avail = a;
-				} catch (e) { avail = null; }
 				let enabled = false;
 				if (!demo) {
 					const ctl = new AbortController();

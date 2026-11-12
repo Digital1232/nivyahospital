@@ -94,6 +94,7 @@
 					<button data-view="patients"><i class="fa-solid fa-hospital-user me-1"></i>Patients</button>
 					<button data-view="reminders"><i class="fa-brands fa-whatsapp me-1"></i>Reminders</button>
 					<button data-view="schedule"><i class="fa-solid fa-user-doctor me-1"></i>Doctor Schedule</button>
+					<button data-view="booking" data-admin hidden><i class="fa-solid fa-indian-rupee-sign me-1"></i>Booking &amp; Fees</button>
 					<button data-view="reports"><i class="fa-solid fa-chart-column me-1"></i>Reports</button>
 					<button data-view="staff" data-admin hidden><i class="fa-solid fa-users-gear me-1"></i>Staff</button>
 					<button data-view="settings"><i class="fa-solid fa-gear me-1"></i>Settings</button>
@@ -227,6 +228,12 @@
 				</div>
 				<p id="rm-count" class="small muted"></p>
 				<div id="rm-list"></div>
+			</section>
+
+			<!-- Booking & fees (admin) -->
+			<section data-section="booking" hidden>
+				<p class="muted small">These settings control the website's booking page, the doctor cards and the online payment amount. Changes show on the website straight away. OP days, OP hours and leave are in the Doctor Schedule tab.</p>
+				<div class="row g-3" id="bk-list"></div>
 			</section>
 
 			<!-- Reports -->
@@ -567,6 +574,8 @@
 
 			schedule: async function () { renderSchedule((await api('schedule')).schedule); },
 
+			booking: async function () { renderBooking((await api('booking')).booking); },
+
 			staff: async function () { renderStaff((await api('staff')).staff); }
 		};
 
@@ -710,6 +719,92 @@
 			}).join('');
 			$('sc-list').dataset.doctors = JSON.stringify(list.map(function (s) { return s.doctor; }));
 		}
+
+		/* ---------- Booking & fees ---------- */
+		function sessionRow(s) {
+			return '<div class="row g-2 mb-2" data-session>' +
+				'<div class="col-4"><input class="form-control form-control-sm" name="sname" placeholder="Morning" maxlength="20" value="' + esc(s.name || '') + '" aria-label="Session name"></div>' +
+				'<div class="col-7"><input class="form-control form-control-sm" name="sslots" placeholder="10:30 AM, 11:15 AM, 12:00 PM" value="' + esc((s.slots || []).join(', ')) + '" aria-label="Times, separated by commas"></div>' +
+				'<div class="col-1"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-0" data-rmrow title="Remove"><i class="fa-solid fa-xmark"></i></button></div></div>';
+		}
+		function addonRow(a) {
+			return '<div class="row g-2 mb-2" data-addon data-id="' + esc(a.id || '') + '">' +
+				'<div class="col-7"><input class="form-control form-control-sm" name="aname" placeholder="Service name, e.g. ECG" maxlength="60" value="' + esc(a.name || '') + '" aria-label="Service name"></div>' +
+				'<div class="col-4"><div class="input-group input-group-sm"><span class="input-group-text">&#8377;</span><input type="number" min="1" max="100000" class="form-control" name="aprice" value="' + (a.price || '') + '" aria-label="Price"></div></div>' +
+				'<div class="col-1"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-0" data-rmrow title="Remove"><i class="fa-solid fa-xmark"></i></button></div></div>';
+		}
+		function bookingPreview(f) {
+			var mode = f.mode.value, pending = f.feestatus.value === 'pending';
+			var n = Number(f.feenew.value), o = Number(f.feeold.value);
+			var fee = pending || !(n > 0 && o > 0) ? 'Fee: "Contact for consultation fee"' : n === o ? 'Fee: &#8377;' + n : 'New &#8377;' + n + ' / Follow-up &#8377;' + o;
+			var how = mode === 'request' ? 'Patients send a request on WhatsApp; the hospital confirms the time.'
+				: pending || !(n > 0 && o > 0) ? 'No online payment: the button says "Call to Book".'
+				: 'Patients pick a time and pay online.';
+			f.querySelector('[data-preview]').innerHTML = '<i class="fa-regular fa-eye me-1"></i>Website shows: ' + fee + '. ' + how;
+			f.querySelector('[data-fees]').hidden = pending;
+		}
+		function renderBooking(list) {
+			$('bk-list').innerHTML = list.map(function (d, i) {
+				return '<div class="col-xl-6"><form class="panel h-100" data-booking="' + esc(d.doctor) + '" autocomplete="off">' +
+					'<div class="d-flex align-items-start gap-2 mb-3"><div class="me-auto"><h3 class="h6 mb-0">' + esc(d.doctor) + '</h3><span class="small muted">' + esc(d.speciality) + '</span></div>' +
+					(d.customised ? '<span class="badge bg-primary-subtle text-primary-emphasis">Changed in panel</span>' : '<span class="badge bg-light text-dark border">Website default</span>') + '</div>' +
+					'<label class="form-label small" for="bk-mode-' + i + '">Booking type</label>' +
+					'<select class="form-select form-select-sm mb-2" id="bk-mode-' + i + '" name="mode">' +
+					'<option value="online"' + (d.bookingMode === 'online' ? ' selected' : '') + '>Online booking: patient picks a time and pays</option>' +
+					'<option value="request"' + (d.bookingMode === 'request' ? ' selected' : '') + '>Request only: hospital confirms the time (WhatsApp)</option></select>' +
+					'<div class="d-flex flex-wrap gap-3 small mb-2">' +
+					'<label><input type="radio" name="feestatus" value="set"' + (d.feeStatus !== 'pending' ? ' checked' : '') + '> Fee is fixed</label>' +
+					'<label><input type="radio" name="feestatus" value="pending"' + (d.feeStatus === 'pending' ? ' checked' : '') + '> Fee to be confirmed (patients call)</label></div>' +
+					'<div class="row g-2 mb-2" data-fees>' +
+					'<div class="col-6"><label class="form-label small">New patient fee</label><div class="input-group input-group-sm"><span class="input-group-text">&#8377;</span><input type="number" min="0" max="100000" class="form-control" name="feenew" value="' + (d.fees.new == null ? '' : d.fees.new) + '"></div></div>' +
+					'<div class="col-6"><label class="form-label small">Follow-up (old patient) fee</label><div class="input-group input-group-sm"><span class="input-group-text">&#8377;</span><input type="number" min="0" max="100000" class="form-control" name="feeold" value="' + (d.fees.old == null ? '' : d.fees.old) + '"></div></div></div>' +
+					'<label class="form-label small" for="bk-hours-' + i + '">OP hours text on the website <span class="muted">(empty = ' + minToTime(d.schedule.start_min) + '&ndash;' + minToTime(d.schedule.end_min) + ' from Doctor Schedule)</span></label>' +
+					'<input class="form-control form-control-sm mb-3" id="bk-hours-' + i + '" name="ophours" maxlength="120" placeholder="10:30 AM-12:30 PM and 4:00 PM-5:00 PM" value="' + esc(d.opHours) + '">' +
+					'<div class="small fw-semibold mb-1">Appointment times</div>' +
+					'<p class="small muted mb-2">Leave empty to offer every hour within the OP hours. Otherwise list the exact times, separated by commas.</p>' +
+					'<div data-sessions>' + d.bookingSessions.map(sessionRow).join('') + '</div>' +
+					'<button type="button" class="btn btn-xs btn-outline-primary mb-3" data-addsession><i class="fa-solid fa-plus me-1"></i>Add session</button>' +
+					'<div class="small fw-semibold mb-1">Extra paid services (optional)</div>' +
+					'<div data-addons>' + d.addons.map(addonRow).join('') + '</div>' +
+					'<button type="button" class="btn btn-xs btn-outline-primary mb-3" data-addaddon><i class="fa-solid fa-plus me-1"></i>Add service</button>' +
+					'<div class="alert alert-light border small py-2 mb-3" data-preview></div>' +
+					'<div class="d-flex flex-wrap gap-2"><button class="btn btn-sm btn-primary" type="submit">Save</button>' +
+					(d.customised ? '<button class="btn btn-sm btn-outline-secondary" type="button" data-bkreset>Use website default</button>' : '') + '</div>' +
+					'</form></div>';
+			}).join('');
+			document.querySelectorAll('form[data-booking]').forEach(bookingPreview);
+		}
+		function bookingPayload(f) {
+			return {
+				doctor: f.dataset.booking, bookingMode: f.mode.value, feeStatus: f.feestatus.value,
+				fees: { new: f.feenew.value, old: f.feeold.value }, opHours: f.ophours.value,
+				bookingSessions: Array.prototype.map.call(f.querySelectorAll('[data-session]'), function (r) {
+					return { name: r.querySelector('[name=sname]').value, slots: r.querySelector('[name=sslots]').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean) };
+				}).filter(function (s) { return s.slots.length; }),
+				addons: Array.prototype.map.call(f.querySelectorAll('[data-addon]'), function (r) {
+					return { id: r.dataset.id, name: r.querySelector('[name=aname]').value, price: r.querySelector('[name=aprice]').value };
+				}).filter(function (a) { return a.name.trim() || a.price; })
+			};
+		}
+		document.addEventListener('input', function (e) { var f = e.target.closest('form[data-booking]'); if (f) bookingPreview(f); });
+		document.addEventListener('change', function (e) { var f = e.target.closest('form[data-booking]'); if (f) bookingPreview(f); });
+		document.addEventListener('click', function (e) {
+			var f = e.target.closest('form[data-booking]');
+			if (!f) return;
+			if (e.target.closest('[data-addsession]')) f.querySelector('[data-sessions]').insertAdjacentHTML('beforeend', sessionRow({}));
+			else if (e.target.closest('[data-addaddon]')) f.querySelector('[data-addons]').insertAdjacentHTML('beforeend', addonRow({}));
+			else if (e.target.closest('[data-rmrow]')) e.target.closest('[data-session],[data-addon]').remove();
+			else if (e.target.closest('[data-bkreset]')) {
+				if (!window.confirm('Go back to the website\'s original settings for ' + f.dataset.booking + '?')) return;
+				run(api('saveBooking', { doctor: f.dataset.booking, reset: true }).then(function (d) { renderBooking(d.booking); toast('Restored the website default.'); }));
+			}
+		});
+		document.addEventListener('submit', function (e) {
+			var f = e.target;
+			if (!f.dataset || !f.dataset.booking) return;
+			e.preventDefault();
+			run(api('saveBooking', bookingPayload(f)).then(function (d) { renderBooking(d.booking); toast('Saved. The website now shows the new settings.'); }));
+		});
 
 		/* ---------- Staff ---------- */
 		function renderStaff(list) {

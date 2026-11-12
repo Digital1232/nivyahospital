@@ -64,9 +64,11 @@ const istNow = () => new Date(Date.now() + 330 * 60 * 1000);
 const clean = (v, max) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, max);
 
 // Returns { error } or { value, amountPaise }.
-const validateBooking = (b) => {
+// catalog: merged booking settings (see _lib/catalog.js). scheduled: true when the reception
+// schedule (OP days and hours) is checked separately, so the fixed Mon-Sat 9-7 rule is skipped.
+const validateBooking = (b, catalog = CATALOG, { scheduled = false } = {}) => {
 	if (!b || typeof b !== 'object' || !b.patient || typeof b.patient !== 'object') return { error: 'Invalid booking details.' };
-	const doc = Object.prototype.hasOwnProperty.call(CATALOG.doctors, b.doctor) ? CATALOG.doctors[b.doctor] : null;
+	const doc = Object.prototype.hasOwnProperty.call(catalog.doctors, b.doctor) ? catalog.doctors[b.doctor] : null;
 	if (!doc) return { error: 'Unknown doctor.' };
 	if (doc.bookingMode === 'request') {
 		return { error: 'Please request an appointment with the hospital. Online payment is unavailable for this doctor.' };
@@ -111,12 +113,12 @@ const validateBooking = (b) => {
 	if (!m || +m[1] < 1 || +m[1] > 12) return { error: 'Please choose a valid time.' };
 	const time = m[1] + ':' + m[2] + ' ' + m[3];
 	const slotMin = ((+m[1] % 12) + (m[3] === 'PM' ? 12 : 0)) * 60 + +m[2];
-	if (new Date(date + 'T00:00:00Z').getUTCDay() === 0) return { error: 'OPD is closed on Sundays. Please pick another day.' };
+	if (!scheduled && new Date(date + 'T00:00:00Z').getUTCDay() === 0) return { error: 'OPD is closed on Sundays. Please pick another day.' };
 	if (doc.bookingSessions) {
 		if (!doc.bookingSessions.some((session) => session.slots.includes(time))) {
 			return { error: 'Please choose one of the doctor’s scheduled consultation times.' };
 		}
-	} else if (slotMin < 9 * 60 || slotMin >= 19 * 60) {
+	} else if (!scheduled && (slotMin < 9 * 60 || slotMin >= 19 * 60)) {
 		return { error: 'Please choose a time between 9 AM and 7 PM.' };
 	}
 	if (date === today && slotMin <= ist.getUTCHours() * 60 + ist.getUTCMinutes()) {
