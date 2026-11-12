@@ -306,7 +306,7 @@
 							<button type="button" class="btn btn-outline-secondary" data-rprange="month">This month</button>
 							<button type="button" class="btn btn-outline-secondary" data-rprange="30">30 days</button>
 						</div>
-						<button type="button" id="rp-export" class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-file-csv me-1"></i>Export CSV</button>
+						<button type="button" id="rp-export" data-admin hidden class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-file-csv me-1"></i>Export CSV</button>
 					</div>
 				</div>
 				<div class="row g-2 mb-3" id="rp-stats"></div>
@@ -1087,7 +1087,7 @@
 		$('ac-week').addEventListener('click', function () { $('ac-to').value = today; $('ac-from').value = addDays(today, -6); $('ac-actor').value = ''; run(loadActivity(false)); });
 		$('ac-more').addEventListener('click', function () { run(loadActivity(true)); });
 		$('rp-export').addEventListener('click', function () {
-			if (!report) return;
+			if (!report || !me || me.role !== 'admin') return;
 			var rev = !!report.showRevenue;
 			var head = ['Date', 'Total', 'Online', 'Walk-in', 'Completed', 'Cancelled', 'No-show', 'New', 'Follow-up'].concat(rev ? ['Paid online (Rs)'] : []);
 			var row = function (label, r) { return [label, r.total, r.online, r.walkin, r.completed, r.cancelled, r.noShow, r.newPatients, r.followUps].concat(rev ? [r.paidPaise / 100] : []); };
