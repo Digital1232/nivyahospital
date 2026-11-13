@@ -2,7 +2,7 @@
 // Every action except "login" needs a signed-in staff session.
 const crypto = require('crypto');
 const { CATALOG } = require('./_lib/razorpay');
-const { q, one, configured } = require('./_lib/db');
+const { q, one, configured, withSlot } = require('./_lib/db');
 const auth = require('./_lib/auth');
 const S = require('./_lib/schedule');
 const catalog = require('./_lib/catalog');
@@ -211,7 +211,18 @@ const actions = {
 				need(min != null, 'Invalid time.');
 				need(date >= S.todayIso(), 'Pick today or a later date.');
 				need(!(await S.onLeave(a.doctor, date)), 'The doctor is on leave that day.');
-				await set({ date, time: S.toTime(min), time_min: min });
+				const time = S.toTime(min);
+				if (a.source === 'online') {
+					const [rows] = await withSlot(a.doctor, date, time, [
+						`UPDATE appointments SET date = $2, time = $3, time_min = $6, updated_at = now()
+						 WHERE id = $5 AND status IN ('booked', 'confirmed') AND
+						 ((date = $2 AND ltrim(time, '0') = $3) OR ${S.slotHasSpace}) RETURNING id`,
+						[a.doctor, date, time, '', id, min]
+					]);
+					need(rows.length, 'The slot is full or the appointment changed. Please refresh.');
+				} else {
+					await set({ date, time, time_min: min }, `AND status IN ('booked', 'confirmed')`);
+				}
 				break;
 			}
 			case 'note': await set({ notes: clean(b.notes, 300) }); break;

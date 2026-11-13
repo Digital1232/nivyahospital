@@ -4,6 +4,7 @@
 const crypto = require('crypto');
 
 let client = null; // async (text, params) => rows
+let batch = null;
 let migrated = null;
 
 const url = () => process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
@@ -14,11 +15,13 @@ const getClient = () => {
 	const { neon } = require('@neondatabase/serverless');
 	const sql = neon(url());
 	client = (text, params) => sql.query(text, params);
+	batch = (statements) => sql.transaction((tx) => statements.map(([text, params]) => tx.query(text, params)),
+		{ isolationLevel: 'ReadCommitted' });
 	return client;
 };
 
 // Tests swap in another Postgres (same query interface).
-const setClient = (fn) => { client = fn; migrated = null; };
+const setClient = (fn, transaction) => { client = fn; batch = transaction; migrated = null; };
 
 const configured = () => !!getClient();
 
@@ -82,6 +85,9 @@ const SCHEMA = [
 	`CREATE TABLE IF NOT EXISTS doctor_leave (id serial PRIMARY KEY, doctor text NOT NULL, date text NOT NULL, reason text, UNIQUE (doctor, date))`,
 	`ALTER TABLE patients ADD COLUMN IF NOT EXISTS notes text`,
 	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS checked_at timestamptz`,
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS hold_until timestamptz`,
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS slot_rejected boolean NOT NULL DEFAULT false`,
+	`CREATE INDEX IF NOT EXISTS pending_orders_slot ON pending_orders ((booking->>'doctor'), (booking->>'date'))`,
 	`CREATE INDEX IF NOT EXISTS appointments_patient ON appointments (patient_id)`,
 	`CREATE TABLE IF NOT EXISTS audit_log (id serial PRIMARY KEY, actor text NOT NULL, action text NOT NULL, appointment_id int, detail jsonb, at timestamptz NOT NULL DEFAULT now())`,
 	`CREATE INDEX IF NOT EXISTS audit_log_at ON audit_log (at)`
@@ -108,4 +114,16 @@ const q = async (text, params = []) => {
 
 const one = async (text, params) => (await q(text, params))[0] || null;
 
-module.exports = { q, one, configured, setClient };
+const withSlot = async (doctor, date, time, ...statements) => {
+	const c = getClient();
+	if (!c || !batch) throw new Error('Database transactions are not available.');
+	await migrate(c);
+	// Acquire the lock in a separate statement so the next statement sees the prior holder's writes.
+	const [, ...results] = await batch([
+		[`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [JSON.stringify([doctor, date, time])]],
+		...statements
+	]);
+	return results;
+};
+
+module.exports = { q, one, configured, setClient, withSlot };

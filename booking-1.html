@@ -942,7 +942,7 @@
 				const min = slotMinutes(t);
 				return avail.online && avail.days.includes(new Date(iso + 'T00:00:00').getDay()) &&
 					!avail.leave.includes(iso) && min >= avail.start_min && min < avail.end_min &&
-					!(avail.full[iso] || []).includes(t);
+					!(avail.full[iso] || []).some((fullTime) => slotMinutes(fullTime) === min);
 			};
 			const slotOpen = (iso, t, now) => slotAllowed(iso, t) &&
 				(iso !== now.format('YYYY-MM-DD') || slotMinutes(t) > now.hours() * 60 + now.minutes());
@@ -1286,20 +1286,22 @@
 			};
 
 			const payLive = async (booking) => {
+				await loadRazorpay();
 				let order;
 				try {
 					order = await postJson(API.createOrder, booking);
 				} catch (err) {
-					// 400 carries a message the patient can act on (e.g. slot already passed).
-					throw new Error(err.status === 400
+					throw new Error([400, 409, 503].includes(err.status)
 						? err.message
 						: 'Could not start the payment. Please try again, or call us on ' + HOSPITAL_PHONE + '.');
 				}
-				await loadRazorpay();
+				const remaining = order.holdUntil ? Math.floor((Date.parse(order.holdUntil) - Date.now()) / 1000) : null;
+				if (remaining !== null && remaining < 1) throw new Error('The slot reservation expired. Please choose a time again.');
 				await new Promise((resolve) => {
 					const rzp = new window.Razorpay({
 						key: order.keyId,
 						order_id: order.orderId,
+						...(remaining !== null ? { timeout: remaining } : {}),
 						amount: order.amount,
 						currency: order.currency || 'INR',
 						name: 'Nivya Hospitals',
@@ -1318,7 +1320,7 @@
 								finish(out.bookingId || resp.razorpay_payment_id, false, out.receipt);
 								paidPending = false;
 							} catch (err) {
-								showMsg('Your payment went through, but we could not confirm the booking automatically. ' +
+								showMsg('We could not confirm this booking. ' +
 									'Please call ' + HOSPITAL_PHONE + ' and quote payment ID ' + resp.razorpay_payment_id + '.', 'warning');
 							}
 							resolve();

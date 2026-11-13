@@ -863,7 +863,7 @@
 					DAY.map(function (d, n) { return '<label><input type="checkbox" name="day" value="' + n + '"' + (s.days.indexOf(n) >= 0 ? ' checked' : '') + '>' + d + '</label>'; }).join('') + '</div>' +
 					'<div class="row g-2 mb-2"><div class="col-6"><label class="form-label small">OP starts</label><select class="form-select form-select-sm" name="start">' + timeOptions(s.start_min) + '</select></div>' +
 					'<div class="col-6"><label class="form-label small">OP ends</label><select class="form-select form-select-sm" name="end">' + timeOptions(s.end_min) + '</select></div></div>' +
-					'<label class="form-label small">Online bookings per time slot <span class="muted">(empty = no limit)</span></label>' +
+					'<label class="form-label small">Online bookings per time slot <span class="muted">(empty = 1)</span></label>' +
 					'<input type="number" min="1" max="200" class="form-control form-control-sm mb-2" name="capacity" value="' + (s.capacity == null ? '' : s.capacity) + '">' +
 					'<label class="form-label small">Note for staff</label><input class="form-control form-control-sm mb-3" name="note" maxlength="200" value="' + esc(s.note) + '">' +
 					'<button class="btn btn-sm btn-primary" type="submit">Save timings</button>' +

@@ -43,6 +43,7 @@ const razorpay = async (method, path, body) => {
 	const k = keys();
 	const res = await fetch('https://api.razorpay.com/v1' + path, {
 		method,
+		signal: AbortSignal.timeout(10000),
 		headers: {
 			Authorization: 'Basic ' + Buffer.from(k.id + ':' + k.secret).toString('base64'),
 			'Content-Type': 'application/json'
