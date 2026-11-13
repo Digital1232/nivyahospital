@@ -2,6 +2,9 @@
 Options -MultiViews
 RewriteEngine On
 
+# Send only the reception endpoint to the Hostinger gateway.
+RewriteRule ^api/reception$ reception-api.php [L]
+
 # Not part of the public website: old backend code, build scripts, server API source, notes.
 # (The booking API runs on Vercel; these files are only in the folder for development.)
 RewriteRule ^(Backend|admin|scripts|api|node_modules|\.vscode|\.claude)(/|$) - [F,L,NC]
