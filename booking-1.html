@@ -842,7 +842,8 @@
 			let avail = null;
 			const CATALOG_URL = 'assets/js/booking-catalog.json';
 			const HOSPITAL_PHONE = '+91 95664 43300';
-			const BOOKING_DAYS = 14;
+			// Online booking: tomorrow and the day after only (same as ONLINE_FIRST_DAY / ONLINE_LAST_DAY in api/_lib/schedule.js)
+			const BOOKING_FIRST_DAY = 1, BOOKING_LAST_DAY = 2;
 			// OPD: Monday-Saturday 9 AM-7 PM, Sunday emergency only. Hourly slots.
 			const SESSIONS = [
 				{ name: 'Morning', slots: ['9:00 AM', '10:00 AM', '11:00 AM'] },
@@ -994,13 +995,13 @@
 			const firstAvailableDay = () => {
 				const now = bookingNow();
 				const today = moment(now.format('YYYY-MM-DD'), 'YYYY-MM-DD');
-				for (let i = 0; i <= BOOKING_DAYS; i++) {
+				for (let i = BOOKING_FIRST_DAY; i <= BOOKING_LAST_DAY; i++) {
 					const d = today.clone().add(i, 'days');
 					if (closedDays().includes(d.day())) continue; // closed day (Sunday: emergency only)
 					const iso = d.format('YYYY-MM-DD');
 					if (sessions().some((s) => s.slots.some((t) => slotOpen(iso, t, now)))) return d;
 				}
-				return today;
+				return today.clone().add(BOOKING_FIRST_DAY, 'days');
 			};
 
 			const initCalendar = () => {
@@ -1017,8 +1018,8 @@
 				}
 				const dp = $dp.data('DateTimePicker');
 				const today = moment(bookingNow().format('YYYY-MM-DD'), 'YYYY-MM-DD');
-				dp.minDate(today.clone().startOf('day'));
-				dp.maxDate(today.clone().add(BOOKING_DAYS, 'days').endOf('day'));
+				dp.minDate(today.clone().add(BOOKING_FIRST_DAY, 'days').startOf('day'));
+				dp.maxDate(today.clone().add(BOOKING_LAST_DAY, 'days').endOf('day'));
 				dp.daysOfWeekDisabled(closedDays());
 				if (avail && avail.leave.length) dp.disabledDates(avail.leave.map((d) => moment(d, 'YYYY-MM-DD')));
 				$dp.on('dp.change', (e) => {
