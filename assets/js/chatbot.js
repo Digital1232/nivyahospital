@@ -16,7 +16,7 @@
     {
       weight: -4,
       patterns: ["doctor", "doctors", "physician", "specialist", "dr", "who are the doctors", "available doctors"],
-      answer: "👨‍⚕️ Our Doctors:<br><br><strong>1. Dr. P. Manimozhian</strong><br>MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Consultant Pulmonologist, Bronchoscopist, Allergy & Sleep Physician<br><br><strong>2. Dr. M. Nivya</strong><br>MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Consultant Diabetologist & General Physician<br><br><strong>3. Dr. M.A. Mathan</strong><br>MBBS, MEM (Emergency & Critical Care Medicine)<br>Emergency Physician & Intensivist<br><br><strong>4. Dr. Naveen Paul Singh</strong><br>BDS<br>Dental Surgeon & Consultant Dentist"
+      answer: "👨‍⚕️ Our Doctors:<br><br><strong>1. Dr. P. Manimozhian</strong><br>MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Consultant Pulmonologist, Bronchoscopist, Allergy & Sleep Physician<br><br><strong>2. Dr. M. Nivya</strong><br>MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Consultant Diabetologist & General Physician<br><br><strong>3. Dr. M.A. Mathan</strong><br>MBBS, MEM (Emergency & Critical Care Medicine)<br>Emergency Physician & Intensivist<br><br><strong>4. Dentist</strong><br>Dental care. Call to book: <a href='tel:+919566443300'>+91 95664 43300</a>"
     },
 
     // Manimozhian
@@ -37,16 +37,16 @@
       answer: "🚨 <strong>Dr. M.A. Mathan</strong><br>Specialisation: Emergency & Critical Care Medicine<br>Qualification: MBBS, MEM (Emergency & Critical Care Medicine)<br>Experience: 10+ Years<br><br>Handles: Emergency Cases, ICU Management, Trauma, Acute Medical Emergencies<br><br>🚑 <strong>24x7 Emergency &amp; Ambulance:</strong> <a href='tel:+919566443300'>📞 +91 95664 43300</a><br><br><a href='/doctor-mathan-profile'>View Full Profile →</a>"
     },
 
-    // Naveen Paul / Dentist
+    // Dentist
     {
-      patterns: ["naveen", "paul", "dentist", "dentistry", "dental", "teeth", "tooth", "root canal", "braces", "cavity"],
-      answer: "🦷 <strong>Dr. Naveen Paul Singh</strong><br>Specialisation: Dentistry & Dental Surgery<br>Qualification: BDS<br>Experience: 10+ Years<br><br>Treats: Root Canal, Tooth Extraction, Dental Implants, Cosmetic Dentistry, Gum Care<br><br><a href='/doctor-naveen-paul-profile'>View Full Profile →</a>"
+      patterns: ["dentist", "dentistry", "dental", "teeth", "tooth", "root canal", "braces", "cavity"],
+      answer: "🦷 <strong>Dentist</strong><br>Dental care at Nivya Hospitals.<br><br>📞 Call to book: <a href='tel:+919566443300'>+91 95664 43300</a><br><br><a href='/dentistry'>About Dental Care →</a>"
     },
 
     // Consultation Fees
     {
       patterns: ["fee", "fees", "cost", "charge", "price", "consultation fee", "how much", "rate", "new patient", "old patient"],
-      answer: "💰 <strong>Consultation Fees:</strong><br><br>• <strong>Dr. P. Manimozhian:</strong> New Patient: <strong>₹800</strong> | Old Patient: <strong>₹500</strong><br>• <strong>Dr. M. Nivya:</strong> <strong>₹200</strong><br>• <strong>Dr. M.A. Mathan:</strong> <strong>₹200</strong><br>• <strong>Dr. Naveen Paul Singh:</strong> Contact the hospital for the consultation fee. Call <a href='tel:+919566443300'>+91 95664 43300</a>"
+      answer: "💰 <strong>Consultation Fees:</strong><br><br>• <strong>Dr. P. Manimozhian:</strong> New Patient: <strong>₹800</strong> | Old Patient: <strong>₹500</strong><br>• <strong>Dr. M. Nivya:</strong> <strong>₹200</strong><br>• <strong>Dr. M.A. Mathan:</strong> <strong>₹200</strong><br>• <strong>Dentist:</strong> Contact the hospital for the consultation fee. Call <a href='tel:+919566443300'>+91 95664 43300</a>"
     },
 
     // Appointment / Booking

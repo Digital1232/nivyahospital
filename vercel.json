@@ -2,6 +2,9 @@
 	"cleanUrls": true,
 	"trailingSlash": false,
 	"regions": ["sin1"],
+	"redirects": [
+		{ "source": "/doctor-naveen-paul-profile", "destination": "/dentistry", "permanent": true }
+	],
 	"headers": [
 		{
 			"source": "/(.*)",
