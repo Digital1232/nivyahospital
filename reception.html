@@ -252,6 +252,7 @@
 			<!-- Doctor schedule -->
 			<section data-section="schedule" hidden>
 				<p class="muted small">OP timings, leave and online slot limits apply to the website booking page immediately. Walk-ins are always allowed.</p>
+				<p class="small mb-3"><i class="fa-solid fa-circle-info text-primary me-1"></i>Patients can book online only for <strong>today, tomorrow and the day after</strong> (this moves forward every day). Mark a leave as early as you know it; if patients have already booked that day, you will see how many so you can call them.</p>
 				<div class="row g-3" id="sc-list"></div>
 			</section>
 
@@ -326,6 +327,7 @@
 							<div class="row g-2 mb-3">
 								<div class="col-sm-5"><label class="form-label small" for="st-phone">Hospital phone</label><input id="st-phone" class="form-control form-control-sm" required></div>
 								<div class="col-sm-7"><label class="form-label small" for="st-address">Address</label><input id="st-address" class="form-control form-control-sm" required></div>
+								<div class="col-12"><p class="small muted mb-0"><i class="fa-solid fa-circle-info me-1"></i>Phone and address here are used in the WhatsApp messages only. The phone number and address shown on the website do not change from here; ask your web developer to change those.</p></div>
 							</div>
 							<p class="small muted mb-2">You can use: {name} {doctor} {when} {id} {token} {reason} {phone} {address}</p>
 							<div id="st-templates"></div>
@@ -411,7 +413,7 @@
 			el.className = 'alert alert-' + (kind || 'success') + ' shadow-sm py-2 mb-2';
 			el.textContent = msg;
 			$('toast').appendChild(el);
-			setTimeout(function () { el.remove(); }, kind === 'danger' ? 6000 : 3000);
+			setTimeout(function () { el.remove(); }, kind === 'warning' ? 9000 : kind === 'danger' ? 6000 : 3000);
 		}
 
 		async function api(action, data) {
@@ -857,6 +859,8 @@
 					DAY.map(function (d, n) { return '<label><input type="checkbox" name="day" value="' + n + '"' + (s.days.indexOf(n) >= 0 ? ' checked' : '') + '>' + d + '</label>'; }).join('') + '</div>' +
 					'<div class="row g-2 mb-2"><div class="col-6"><label class="form-label small">OP starts</label><select class="form-select form-select-sm" name="start">' + timeOptions(s.start_min) + '</select></div>' +
 					'<div class="col-6"><label class="form-label small">OP ends</label><select class="form-select form-select-sm" name="end">' + timeOptions(s.end_min) + '</select></div></div>' +
+					(s.fixedSlots ? '<p class="small muted mb-2"><i class="fa-solid fa-circle-info me-1"></i>Website shows: ' + esc(s.opHours || 'fixed time slots') +
+						'. Patients book the exact slots set in <strong>Booking &amp; Fees</strong>; these timings are the overall OP hours.</p>' : '') +
 					'<label class="form-label small">Online bookings per time slot <span class="muted">(empty = 1)</span></label>' +
 					'<input type="number" min="1" max="200" class="form-control form-control-sm mb-2" name="capacity" value="' + (s.capacity == null ? '' : s.capacity) + '">' +
 					'<label class="form-label small">Note for staff</label><input class="form-control form-control-sm mb-3" name="note" maxlength="200" value="' + esc(s.note) + '">' +
@@ -913,7 +917,7 @@
 					'<div class="row g-2 mb-2" data-fees>' +
 					'<div class="col-6"><label class="form-label small">New patient fee</label><div class="input-group input-group-sm"><span class="input-group-text">&#8377;</span><input type="number" min="0" max="100000" class="form-control" name="feenew" value="' + (d.fees.new == null ? '' : d.fees.new) + '"></div></div>' +
 					'<div class="col-6"><label class="form-label small">Follow-up (old patient) fee</label><div class="input-group input-group-sm"><span class="input-group-text">&#8377;</span><input type="number" min="0" max="100000" class="form-control" name="feeold" value="' + (d.fees.old == null ? '' : d.fees.old) + '"></div></div></div>' +
-					'<label class="form-label small" for="bk-hours-' + i + '">OP hours text on the website <span class="muted">(empty = ' + minToTime(d.schedule.start_min) + '&ndash;' + minToTime(d.schedule.end_min) + ' from Doctor Schedule)</span></label>' +
+					'<label class="form-label small" for="bk-hours-' + i + '">OP hours text on the website <span class="muted">(same as Doctor Schedule = ' + minToTime(d.schedule.start_min) + '&ndash;' + minToTime(d.schedule.end_min) + ', follows it automatically)</span></label>' +
 					'<input class="form-control form-control-sm mb-3" id="bk-hours-' + i + '" name="ophours" maxlength="120" placeholder="10:30 AM-12:30 PM and 4:00 PM-5:00 PM" value="' + esc(d.opHours) + '">' +
 					'<div class="small fw-semibold mb-1">Appointment times</div>' +
 					'<p class="small muted mb-2">Leave empty to offer every hour within the OP hours. Otherwise list the exact times, separated by commas.</p>' +
@@ -1016,7 +1020,11 @@
 				var f = t.closest('form'), docs = JSON.parse($('sc-list').dataset.doctors);
 				if (!f.ldate.value) return toast('Pick the leave date.', 'warning');
 				return run(api('addLeave', { doctor: docs[Number(t.dataset.leave)], date: f.ldate.value, reason: f.lreason.value }).then(function (d) {
-					renderSchedule(d.schedule); toast('Leave added. Online booking is closed for that day.');
+					renderSchedule(d.schedule);
+					if (d.booked) {
+						toast('Leave added. ' + d.booked + ' patient' + (d.booked === 1 ? ' is' : 's are') + ' already booked that day' +
+							(d.bookedPaid ? ' (' + d.bookedPaid + ' paid online)' : '') + '. Open Appointments for ' + d.leaveDate + ' and call them to reschedule.', 'warning');
+					} else toast('Leave added. Online booking is closed for that day. No patients were booked.');
 				}));
 			}
 			if (t.dataset.editstaff) {

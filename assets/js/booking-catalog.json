@@ -26,6 +26,7 @@
 			"speciality": "Diabetology",
 			"avatar": "assets/img/doctors/dr-nivya-avatar.jpg",
 			"opHours": "10:30 AM–12:30 PM and 4:00 PM–5:00 PM",
+			"opRange": { "start": "10:30 AM", "end": "5:00 PM" },
 			"calendarMinutes": 30,
 			"bookingSessions": [
 				{ "name": "Morning", "slots": ["10:30 AM", "11:15 AM", "12:00 PM"] },
@@ -45,6 +46,7 @@
 			"speciality": "Dentistry",
 			"avatar": "assets/img/specialities/dentist-illustration.svg",
 			"opHours": "9:00 AM–5:00 PM",
+			"opRange": { "start": "9:00 AM", "end": "5:00 PM" },
 			"feeStatus": "pending",
 			"fees": { "new": null, "old": null },
 			"addons": []

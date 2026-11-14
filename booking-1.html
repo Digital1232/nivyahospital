@@ -301,6 +301,36 @@
 			}
 		}
 
+		/* Booking calendar colours (legend below the calendar explains them) */
+		:root {
+			--cal-open-bg: #e3f7ec; --cal-open-fg: #157347;
+			--cal-sun-bg: #fde8e8; --cal-sun-fg: #d63939;
+			--cal-leave-bg: #fff1dc; --cal-leave-fg: #c25e00;
+			--cal-off-fg: #b8bfcc;
+		}
+		#datetimepickershow table { border-collapse: separate; border-spacing: 3px; }
+		#datetimepickershow td.day { border-radius: 8px; font-weight: 600; }
+		#datetimepickershow td.day:not(.disabled) { background: var(--cal-open-bg); color: var(--cal-open-fg); }
+		#datetimepickershow td.day:not(.disabled):hover { background: #c9efd9; }
+		#datetimepickershow td.day.disabled,
+		#datetimepickershow td.day.disabled:hover { background: transparent; color: var(--cal-off-fg); font-weight: 400; }
+		#datetimepickershow td.day.disabled:first-child,
+		#datetimepickershow td.day.disabled:first-child:hover { background: var(--cal-sun-bg); color: var(--cal-sun-fg); font-weight: 600; }
+		#datetimepickershow td.day.disabled.old:first-child,
+		#datetimepickershow td.day.disabled.new:first-child { background: transparent; color: #f0a8a8; font-weight: 400; }
+		#datetimepickershow td.day.leave-day,
+		#datetimepickershow td.day.leave-day:hover { background: var(--cal-leave-bg); color: var(--cal-leave-fg); font-weight: 600; }
+		#datetimepickershow td.day.active,
+		#datetimepickershow td.day.active:hover { background: var(--primary); color: #fff; }
+		.cal-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 4px 2px; padding: 0; list-style: none; font-size: 12px; color: var(--gray-600, #555); }
+		.cal-legend li { display: inline-flex; align-items: center; gap: 6px; }
+		.cal-legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; flex: none; }
+		.cal-legend .k-selected { background: var(--primary); }
+		.cal-legend .k-open { background: var(--cal-open-bg); border: 1px solid #9fdcb9; }
+		.cal-legend .k-sun { background: var(--cal-sun-bg); border: 1px solid #f3b4b4; }
+		.cal-legend .k-leave { background: var(--cal-leave-bg); border: 1px solid #f5c98e; }
+		.cal-legend .k-off { background: #fff; border: 1px solid #d5dae3; }
+
 		@media print {
 
 			header,
@@ -421,7 +451,7 @@
 
 									<section id="appointment-request" class="card-body booking-body" aria-labelledby="appointment-request-title" hidden>
 										<h5 id="appointment-request-title">Request Appointment</h5>
-										<p>Choose a preferred date and send your request on WhatsApp. The hospital will confirm your appointment time.</p>
+										<p>Choose a preferred date (today, tomorrow or the day after) and send your request on WhatsApp. The hospital will confirm your appointment time.</p>
 										<form id="appointment-request-form">
 											<label class="form-label" for="request-date">Preferred date</label>
 											<input id="request-date" class="form-control mb-3" style="max-width: 16rem" type="date" required>
@@ -460,6 +490,13 @@
 																<div class="card">
 																	<div class="card-body p-2 pt-3">
 																		<div id="datetimepickershow"></div>
+																		<ul class="cal-legend" aria-label="What the calendar colours mean">
+																			<li><i class="k-selected"></i>Your selected date</li>
+																			<li><i class="k-open"></i>Open for booking</li>
+																			<li><i class="k-sun"></i>Sunday: OPD closed (emergency only)</li>
+																			<li><i class="k-leave"></i>Doctor on leave</li>
+																			<li><i class="k-off"></i>Not open for online booking</li>
+																		</ul>
 																	</div>
 																</div>
 															</div>
@@ -842,8 +879,8 @@
 			let avail = null;
 			const CATALOG_URL = 'assets/js/booking-catalog.json';
 			const HOSPITAL_PHONE = '+91 95664 43300';
-			// Online booking: tomorrow and the day after only (same as ONLINE_FIRST_DAY / ONLINE_LAST_DAY in api/_lib/schedule.js)
-			const BOOKING_FIRST_DAY = 1, BOOKING_LAST_DAY = 2;
+			// Online booking: today, tomorrow and the day after only, counted from the current day (same as ONLINE_FIRST_DAY / ONLINE_LAST_DAY in api/_lib/schedule.js)
+			const BOOKING_FIRST_DAY = 0, BOOKING_LAST_DAY = 2;
 			// OPD: Monday-Saturday 9 AM-7 PM, Sunday emergency only. Hourly slots.
 			const SESSIONS = [
 				{ name: 'Morning', slots: ['9:00 AM', '10:00 AM', '11:00 AM'] },
@@ -1022,6 +1059,18 @@
 				dp.maxDate(today.clone().add(BOOKING_LAST_DAY, 'days').endOf('day'));
 				dp.daysOfWeekDisabled(closedDays());
 				if (avail && avail.leave.length) dp.disabledDates(avail.leave.map((d) => moment(d, 'YYYY-MM-DD')));
+				// Colour leave days orange (see the legend); re-applied whenever the calendar redraws.
+				const leaveDays = new Set(((avail && avail.leave) || []).map((d) => moment(d, 'YYYY-MM-DD').format('MM/DD/YYYY')));
+				const markLeave = () => $dp[0].querySelectorAll('td.day[data-day]').forEach((td) => {
+					const on = leaveDays.has(td.getAttribute('data-day'));
+					if (td.classList.contains('leave-day') !== on) td.classList.toggle('leave-day', on);
+				});
+				if (leaveDays.size && !$dp.data('leaveObserver')) {
+					const mo = new MutationObserver(markLeave);
+					mo.observe($dp[0], { childList: true, subtree: true });
+					$dp.data('leaveObserver', mo);
+				}
+				markLeave();
 				$dp.on('dp.change', (e) => {
 					if (!e.date) return;
 					state.iso = e.date.format('YYYY-MM-DD');
@@ -1036,11 +1085,25 @@
 			/* ---------- Mode ---------- */
 			const initAppointmentRequest = () => {
 				const preferredDate = $('request-date');
-				preferredDate.min = hospitalNow().format('YYYY-MM-DD');
+				// Same window as online booking: today, tomorrow and the day after (moves forward daily).
+				const setRange = () => {
+					const today = hospitalNow().startOf('day');
+					preferredDate.min = today.clone().add(BOOKING_FIRST_DAY, 'days').format('YYYY-MM-DD');
+					preferredDate.max = today.clone().add(BOOKING_LAST_DAY, 'days').format('YYYY-MM-DD');
+				};
+				setRange();
+				preferredDate.addEventListener('input', () => preferredDate.setCustomValidity(''));
 				$('appointment-request-form').addEventListener('submit', (event) => {
 					event.preventDefault();
-					preferredDate.min = hospitalNow().format('YYYY-MM-DD');
+					setRange();
+					preferredDate.setCustomValidity('');
 					if (!preferredDate.reportValidity()) return;
+					const picked = moment(preferredDate.value, 'YYYY-MM-DD');
+					if (closedDays().includes(picked.day()) || (avail && avail.leave.includes(preferredDate.value))) {
+						preferredDate.setCustomValidity('The doctor is not available on ' + dateLong(preferredDate.value) + '. Please pick another day, or call ' + HOSPITAL_PHONE + '.');
+						preferredDate.reportValidity();
+						return;
+					}
 					const message = 'Hello Nivya Hospital, I would like to request an appointment with ' +
 						doctor + '. My preferred date is ' + dateLong(preferredDate.value) + '. Please confirm a time.';
 					window.open('https://wa.me/919566443300?text=' + encodeURIComponent(message), '_blank', 'noopener');

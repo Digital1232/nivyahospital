@@ -265,12 +265,15 @@ const actions = {
 
 	async schedule() {
 		const out = [];
+		const merged = await catalog.getCatalog();
 		for (const d of DOCTORS) {
 			const s = await S.getSchedule(d);
 			const leave = await q(`SELECT l.id, l.date, l.reason,
 					(SELECT count(*)::int FROM appointments a WHERE a.doctor = l.doctor AND a.date = l.date AND a.status IN ('booked', 'confirmed')) AS affected
 				FROM doctor_leave l WHERE l.doctor = $1 AND l.date >= $2 ORDER BY l.date`, [d, S.todayIso()]);
-			out.push({ doctor: d, days: s.days, start_min: s.start_min, end_min: s.end_min, capacity: s.capacity, online: s.online, note: s.note || '', leave });
+			const info = (merged.doctors && merged.doctors[d]) || {};
+			out.push({ doctor: d, days: s.days, start_min: s.start_min, end_min: s.end_min, capacity: s.capacity, online: s.online, note: s.note || '', leave,
+				opHours: info.opHours || '', fixedSlots: Array.isArray(info.bookingSessions) && info.bookingSessions.length > 0 });
 		}
 		return { schedule: out };
 	},
@@ -297,7 +300,10 @@ const actions = {
 		await q(`INSERT INTO doctor_leave (doctor, date, reason) VALUES ($1, $2, $3) ON CONFLICT (doctor, date) DO UPDATE SET reason = $3`,
 			[doctor, date, clean(b.reason, 120) || null]);
 		await audit(user, 'leave_add', null, { doctor, date });
-		return actions.schedule();
+		// Patients already booked with this doctor that day (they need a call to move or refund).
+		const booked = await one(`SELECT count(*)::int AS n, count(*) FILTER (WHERE payment_id IS NOT NULL)::int AS paid
+			FROM appointments WHERE doctor = $1 AND date = $2 AND status NOT IN ('cancelled', 'no_show', 'completed')`, [doctor, date]);
+		return { ...(await actions.schedule()), booked: booked.n, bookedPaid: booked.paid, leaveDate: date };
 	},
 
 	async removeLeave(b, user) {
@@ -320,7 +326,8 @@ const actions = {
 				bookingMode: d.bookingMode === 'request' ? 'request' : 'online',
 				feeStatus: d.feeStatus === 'pending' ? 'pending' : 'set',
 				fees: d.fees || { new: null, old: null },
-				opHours: d.opHours || '',
+				// Show exactly what the website shows: its own text, or the Doctor Schedule hours.
+				opHours: d.opHours || (S.toTime(s.start_min) + '–' + S.toTime(s.end_min)),
 				bookingSessions: d.bookingSessions || [],
 				addons: d.addons || [],
 				customised: Object.prototype.hasOwnProperty.call(overrides, name),
@@ -366,9 +373,15 @@ const actions = {
 				ids.add(id);
 				return { id, name, price };
 			});
+			// If the hours text is just the Doctor Schedule hours, keep following the schedule
+			// (so a later timing change in Doctor Schedule still updates the website).
+			const s = await S.getSchedule(doctor);
+			const norm = (t) => String(t || '').replace(/[‒-―-]/g, '-').replace(/\s+/g, ' ').trim().toUpperCase();
+			let opHours = clean(b.opHours, 120);
+			if (norm(opHours) === norm(S.toTime(s.start_min) + '-' + S.toTime(s.end_min))) opHours = '';
 			overrides[doctor] = {
 				bookingMode: mode, feeStatus: pending ? 'pending' : 'set', fees,
-				opHours: clean(b.opHours, 120), bookingSessions: sessions, addons
+				opHours, bookingSessions: sessions, addons
 			};
 		}
 		await catalog.saveOverrides(overrides);

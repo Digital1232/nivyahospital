@@ -11,10 +11,10 @@ const nowMin = () => { const n = istNow(); return n.getUTCHours() * 60 + n.getUT
 const weekday = (iso) => new Date(iso + 'T00:00:00Z').getUTCDay();
 const isIso = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) && !isNaN(new Date(s + 'T00:00:00Z'));
 
-// Online booking is open for tomorrow and the day after only (no same-day bookings), so a
+// Online booking is open for today, tomorrow and the day after only (it rolls forward daily), so a
 // sudden doctor leave affects as few paid bookings as possible.
 // Keep in step with BOOKING_FIRST_DAY / BOOKING_LAST_DAY in booking-1.html.
-const ONLINE_FIRST_DAY = 1, ONLINE_LAST_DAY = 2;
+const ONLINE_FIRST_DAY = 0, ONLINE_LAST_DAY = 2;
 const isoPlus = (n) => new Date(Date.parse(todayIso() + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const firstOnlineDay = () => isoPlus(ONLINE_FIRST_DAY);
 const lastOnlineDay = () => isoPlus(ONLINE_LAST_DAY);
@@ -30,9 +30,18 @@ const toTime = (min) => {
 	return ((h % 12) || 12) + ':' + mm + ' ' + (h < 12 ? 'AM' : 'PM');
 };
 
+// Until reception saves timings for a doctor, use the OP hours the website shows for them
+// ("opRange" in booking-catalog.json), so the Doctor Schedule form opens with the same hours.
+const CATALOG = require('../../assets/js/booking-catalog.json');
+const defaultFor = (doctor) => {
+	const r = (CATALOG.doctors[doctor] || {}).opRange;
+	const start = r && toMin(r.start), end = r && toMin(r.end);
+	return start != null && end != null && start < end ? { ...DEFAULT, start_min: start, end_min: end } : DEFAULT;
+};
+
 const getSchedule = async (doctor) => {
 	const row = await one(`SELECT * FROM doctor_schedule WHERE doctor = $1`, [doctor]);
-	return row ? { ...DEFAULT, ...row, days: (row.days || []).map(Number) } : { ...DEFAULT, doctor };
+	return row ? { ...defaultFor(doctor), ...row, days: (row.days || []).map(Number) } : { ...defaultFor(doctor), doctor };
 };
 
 const onLeave = async (doctor, date) =>
@@ -55,7 +64,7 @@ const checkOnlineSlot = async (doctor, date, time) => {
 	const s = await getSchedule(doctor);
 	const min = toMin(time);
 	if (!s.online) return 'Online booking is paused for this doctor. Please call +91 95664 43300.';
-	if (date < firstOnlineDay() || date > lastOnlineDay()) return 'Online booking is open for tomorrow and the day after only. For other dates, please call +91 95664 43300.';
+	if (date < firstOnlineDay() || date > lastOnlineDay()) return 'Online booking is open for today, tomorrow and the day after only. For later dates, please call +91 95664 43300.';
 	if (!s.days.includes(weekday(date))) return 'The doctor is not available on this day. Please pick another day.';
 	if (await onLeave(doctor, date)) return 'The doctor is on leave that day. Please pick another day.';
 	if (min == null || min < s.start_min || min >= s.end_min) {
