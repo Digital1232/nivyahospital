@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="1200" height="1200" role="img" aria-labelledby="t">
+	<title id="t">Dental care illustration</title>
+	<defs>
+		<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#e8f1ff"/>
+			<stop offset="1" stop-color="#f6e8fb"/>
+		</linearGradient>
+		<linearGradient id="disc" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#1e4fd8"/>
+			<stop offset="1" stop-color="#b324c9"/>
+		</linearGradient>
+		<linearGradient id="tooth" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#ffffff"/>
+			<stop offset="1" stop-color="#e9eef8"/>
+		</linearGradient>
+		<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+			<feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#1b2a6b" flood-opacity="0.25"/>
+		</filter>
+	</defs>
+
+	<rect width="1200" height="1200" fill="url(#bg)"/>
+	<circle cx="140" cy="190" r="90" fill="#1e4fd8" opacity="0.08"/>
+	<circle cx="1080" cy="1040" r="130" fill="#b324c9" opacity="0.08"/>
+	<circle cx="1060" cy="170" r="40" fill="#1e4fd8" opacity="0.12"/>
+	<circle cx="170" cy="1010" r="55" fill="#b324c9" opacity="0.12"/>
+
+	<!-- Gradient disc -->
+	<circle cx="600" cy="610" r="400" fill="url(#disc)"/>
+	<circle cx="600" cy="610" r="400" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="10"/>
+	<circle cx="600" cy="610" r="330" fill="#ffffff" opacity="0.07"/>
+
+	<!-- Toothbrush behind the tooth -->
+	<g transform="rotate(-38 600 610)">
+		<rect x="560" y="140" width="80" height="560" rx="40" fill="#ffffff" opacity="0.95"/>
+		<rect x="585" y="230" width="30" height="380" rx="15" fill="#7fd4f5"/>
+		<rect x="548" y="690" width="104" height="70" rx="18" fill="#ffffff"/>
+		<g fill="#7fd4f5">
+			<rect x="556" y="760" width="16" height="70" rx="8"/>
+			<rect x="580" y="760" width="16" height="78" rx="8"/>
+			<rect x="604" y="760" width="16" height="78" rx="8"/>
+			<rect x="628" y="760" width="16" height="70" rx="8"/>
+		</g>
+	</g>
+
+	<!-- Tooth -->
+	<g filter="url(#shadow)">
+		<path fill="url(#tooth)" d="M600 395
+			C 548 365, 465 352, 425 410
+			C 382 472, 405 570, 432 625
+			C 460 690, 462 772, 480 838
+			C 494 886, 534 890, 548 848
+			C 566 792, 570 735, 600 735
+			C 630 735, 634 792, 652 848
+			C 666 890, 706 886, 720 838
+			C 738 772, 740 690, 768 625
+			C 795 570, 818 472, 775 410
+			C 735 352, 652 365, 600 395 Z"/>
+	</g>
+	<!-- Shine -->
+	<path d="M470 450 C 450 490, 455 545, 475 590" fill="none" stroke="#c9dcff" stroke-width="22" stroke-linecap="round"/>
+	<circle cx="492" cy="425" r="12" fill="#c9dcff"/>
+
+	<!-- Medical cross badge -->
+	<circle cx="790" cy="410" r="72" fill="#ffffff" filter="url(#shadow)"/>
+	<path d="M776 372 h28 v24 h24 v28 h-24 v24 h-28 v-24 h-24 v-28 h24 z" fill="#1e4fd8"/>
+
+	<!-- Sparkles -->
+	<g fill="#ffffff">
+		<path d="M385 300 l14 36 l36 14 l-36 14 l-14 36 l-14 -36 l-36 -14 l36 -14 z"/>
+		<path d="M860 760 l10 26 l26 10 l-26 10 l-10 26 l-10 -26 l-26 -10 l26 -10 z"/>
+		<path d="M330 760 l8 20 l20 8 l-20 8 l-8 20 l-8 -20 l-20 -8 l20 -8 z" opacity="0.85"/>
+	</g>
+</svg>

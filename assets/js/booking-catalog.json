@@ -43,7 +43,7 @@
 		},
 		"Dentist": {
 			"speciality": "Dentistry",
-			"avatar": "assets/img/specialities/dentistry-care.jpg",
+			"avatar": "assets/img/specialities/dentist-illustration.svg",
 			"opHours": "9:00 AM–5:00 PM",
 			"feeStatus": "pending",
 			"fees": { "new": null, "old": null },
