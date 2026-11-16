@@ -117,7 +117,7 @@
 					<button data-view="reminders"><i class="fa-brands fa-whatsapp me-1"></i>Reminders</button>
 					<button data-view="schedule"><i class="fa-solid fa-user-doctor me-1"></i>Doctor Schedule</button>
 					<button data-view="booking" data-admin hidden><i class="fa-solid fa-indian-rupee-sign me-1"></i>Booking &amp; Fees</button>
-					<button data-view="reports"><i class="fa-solid fa-chart-column me-1"></i>Reports</button>
+					<button data-view="reports" data-admin hidden><i class="fa-solid fa-chart-column me-1"></i>Reports</button>
 					<button data-view="staff" data-admin hidden><i class="fa-solid fa-users-gear me-1"></i>Staff</button>
 					<button data-view="activity" data-admin hidden><i class="fa-solid fa-clock-rotate-left me-1"></i>Activity log</button>
 					<button data-view="settings" data-admin hidden><i class="fa-solid fa-gear me-1"></i>Settings</button>
@@ -510,6 +510,7 @@
 		}
 
 		function show(view) {
+			if (view === 'reports' && me?.role !== 'admin') view = 'dashboard';
 			current = view;
 			document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('active', b.dataset.view === view); });
 			document.querySelectorAll('[data-section]').forEach(function (s) { s.hidden = s.dataset.section !== view; });

@@ -480,6 +480,7 @@ const actions = {
 
 	/* ---------- Reports ---------- */
 	async reports(b, user) {
+		if (user.role !== 'admin') throw new Bad('Only an admin can view reports.', 403);
 		const from = dateOf(b.from);
 		const to = dateOf(b.to);
 		need(from <= to, 'The start date must be before the end date.');
@@ -511,15 +512,12 @@ const actions = {
 			}
 		}
 		const newRegs = await one(`SELECT count(*)::int AS n FROM patients WHERE (created_at + interval '330 minutes')::date BETWEEN $1::date AND $2::date`, [from, to]);
-		// Revenue (online collections) is for admins only; staff get the counts.
-		const admin = user.role === 'admin';
-		const shown = (t) => { if (!admin) delete t.paidPaise; return t; };
 		return {
-			from, to, totals: shown(totals), showRevenue: admin,
+			from, to, totals, showRevenue: true,
 			avgWaitMin: waits.length ? Math.round(waits.reduce((s, x) => s + x, 0) / waits.length) : null,
 			newRegistrations: newRegs.n,
-			byDoctor: DOCTORS.map((d) => shown({ doctor: d, ...byDoctor[d] })),
-			byDay: Object.keys(byDay).sort().map((d) => shown({ date: d, ...byDay[d] }))
+			byDoctor: DOCTORS.map((d) => ({ doctor: d, ...byDoctor[d] })),
+			byDay: Object.keys(byDay).sort().map((d) => ({ date: d, ...byDay[d] }))
 		};
 	},
 
