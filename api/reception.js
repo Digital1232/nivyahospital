@@ -272,7 +272,13 @@ const actions = {
 					(SELECT count(*)::int FROM appointments a WHERE a.doctor = l.doctor AND a.date = l.date AND a.status IN ('booked', 'confirmed')) AS affected
 				FROM doctor_leave l WHERE l.doctor = $1 AND l.date >= $2 ORDER BY l.date`, [d, S.todayIso()]);
 			const info = (merged.doctors && merged.doctors[d]) || {};
-			out.push({ doctor: d, days: s.days, start_min: s.start_min, end_min: s.end_min, capacity: s.capacity, online: s.online, note: s.note || '', leave,
+			// The online-booking days, each with its timing for that day and how many patients are booked.
+			const next = await S.onlineDays(d);
+			for (const day of next) {
+				day.booked = (await one(`SELECT count(*)::int AS n FROM appointments WHERE doctor = $1 AND date = $2
+					AND status NOT IN ('cancelled', 'no_show', 'completed')`, [d, day.date])).n;
+			}
+			out.push({ doctor: d, days: s.days, start_min: s.start_min, end_min: s.end_min, capacity: s.capacity, online: s.online, note: s.note || '', leave, next,
 				opHours: info.opHours || '', fixedSlots: Array.isArray(info.bookingSessions) && info.bookingSessions.length > 0 });
 		}
 		return { schedule: out };
@@ -304,6 +310,39 @@ const actions = {
 		const booked = await one(`SELECT count(*)::int AS n, count(*) FILTER (WHERE payment_id IS NOT NULL)::int AS paid
 			FROM appointments WHERE doctor = $1 AND date = $2 AND status NOT IN ('cancelled', 'no_show', 'completed')`, [doctor, date]);
 		return { ...(await actions.schedule()), booked: booked.n, bookedPaid: booked.paid, leaveDate: date };
+	},
+
+	// Change one day only: back to the usual timing, a different timing, or off (leave).
+	async setDay(b, user) {
+		const doctor = doctorOf(b.doctor);
+		const date = dateOf(b.date);
+		need(date >= S.todayIso(), 'Pick today or a later date.');
+		const mode = String(b.mode || '');
+		need(['normal', 'custom', 'off'].includes(mode), 'Choose usual timing, a different timing, or off.');
+		let start = null, end = null;
+		if (mode === 'custom') {
+			start = Number(b.start_min); end = Number(b.end_min);
+			need([start, end].every((m) => Number.isInteger(m) && m >= 0 && m <= 1440 && m % 15 === 0), 'Invalid timing.');
+			need(start < end, 'The end time must be after the start time.');
+		}
+		await q(`DELETE FROM doctor_day_hours WHERE doctor = $1 AND date = $2`, [doctor, date]);
+		if (mode === 'off') {
+			await q(`INSERT INTO doctor_leave (doctor, date, reason) VALUES ($1, $2, $3) ON CONFLICT (doctor, date) DO UPDATE SET reason = $3`,
+				[doctor, date, clean(b.reason, 120) || null]);
+		} else {
+			await q(`DELETE FROM doctor_leave WHERE doctor = $1 AND date = $2`, [doctor, date]);
+			if (mode === 'custom') {
+				await q(`INSERT INTO doctor_day_hours (doctor, date, start_min, end_min) VALUES ($1, $2, $3, $4)`, [doctor, date, start, end]);
+			}
+		}
+		await audit(user, 'day_set', null, { doctor, date, mode, start, end });
+		// Patients already booked that day who no longer fit (all of them when off; outside the hours otherwise).
+		const s = await S.getSchedule(doctor);
+		const day = mode === 'off' ? null : S.dayPlan(s, date, start != null ? { [date]: { start_min: start, end_min: end } } : {}, []);
+		const rows = await q(`SELECT time_min, payment_id FROM appointments WHERE doctor = $1 AND date = $2
+			AND status NOT IN ('cancelled', 'no_show', 'completed')`, [doctor, date]);
+		const clash = rows.filter((r) => !day || !day.open || (r.time_min != null && (r.time_min < day.start_min || r.time_min >= day.end_min)));
+		return { ...(await actions.schedule()), clash: clash.length, clashPaid: clash.filter((r) => r.payment_id).length, dayDate: date, mode };
 	},
 
 	async removeLeave(b, user) {

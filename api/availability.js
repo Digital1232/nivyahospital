@@ -31,7 +31,9 @@ module.exports = async (req, res) => {
 			const doctors = {};
 			for (const name of DOCTORS) {
 				const s = await S.getSchedule(name);
-				doctors[name] = { ...publicInfo(catalog.doctors[name]), schedule: { days: s.days, start_min: s.start_min, end_min: s.end_min, online: s.online } };
+				doctors[name] = { ...publicInfo(catalog.doctors[name]), schedule: { days: s.days, start_min: s.start_min, end_min: s.end_min, online: s.online },
+					// Today, tomorrow and the day after, with any one-day timing change or leave (used by the chatbot).
+					next: (await S.onlineDays(name)).map(({ date, open, leave, custom, start_min, end_min }) => ({ date, open, leave, custom, start_min, end_min })) };
 			}
 			return res.status(200).json({ configured: true, doctors });
 		}

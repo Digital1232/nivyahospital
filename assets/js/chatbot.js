@@ -52,7 +52,7 @@
     // Appointment / Booking
     {
       patterns: ["appointment", "book", "booking", "schedule", "visit", "when", "slot"],
-      answer: "📅 <strong>Book an Appointment:</strong><br><br>Choose your doctor on our website:<br><a href='/search'>👉 Choose Doctor & Book</a><br><br>Book and pay online, or call us:<br>📞 <a href='tel:+919566443300'>+91 95664 43300</a><br><br>⏰ OPD Timings:<br>Mon–Sat: 9:00 AM – 7:00 PM<br>Sunday: Emergency Only"
+      answer: "📅 <strong>Book an Appointment:</strong><br><br>Choose your doctor on our website:<br><a href='/search'>👉 Choose Doctor & Book</a><br><br>• Online booking is open for <strong>today, tomorrow and the day after</strong>. For later dates, please call.<br>• Dr. M.A. Mathan: send an appointment request on WhatsApp from his booking page.<br>• Dentist: call to book.<br><br>📞 <a href='tel:+919566443300'>+91 95664 43300</a><br><br>⏰ Hospital timings: Mon–Sat 9:00 AM – 7:00 PM, Sunday: Emergency Only. Ask me “timings” for each doctor's OP hours."
     },
 
     // Specialities
@@ -113,12 +113,12 @@
     // Contact
     {
       patterns: ["contact", "phone", "call", "number", "email", "reach", "whatsapp"],
-      answer: "📞 <strong>Contact Us:</strong><br><br>Phone: <a href='tel:+919566443300'>+91 95664 43300</a><br>Email: <a href='mailto:info@nivyahospitals.com'>info@nivyahospitals.com</a><br><br>Or visit us at:<br>📍 Vannarpettai, Tirunelveli<br><br><a href='/contact-us'>Contact Page →</a>"
+      answer: "📞 <strong>Contact Us:</strong><br><br>Phone: <a href='tel:+919566443300'>+91 95664 43300</a><br>Email: <a href='mailto:nivyahospitalstvl@gmail.com'>nivyahospitalstvl@gmail.com</a><br><br>Or visit us at:<br>📍 Vannarpettai, Tirunelveli<br><br><a href='/contact-us'>Contact Page →</a>"
     },
 
     // Timings
     {
-      patterns: ["timing", "timings", "hours", "open", "time", "opd", "working hours", "sunday", "weekend"],
+      patterns: ["timing", "timings", "hours", "open", "time", "opd", "working hours", "sunday", "weekend", "today", "tomorrow", "leave", "available today", "available tomorrow", "op time", "op timing"],
       answer: "⏰ <strong>Hospital Timings:</strong><br><br>🗓️ Monday – Saturday: <strong>9:00 AM – 7:00 PM</strong><br>🚨 Sunday: <strong>Emergency Services Only</strong><br><br>For appointments: <a href='/search'>Book Here →</a>"
     },
 
@@ -148,11 +148,45 @@
     }
   ];
 
-  /* ── Live fees from the reception panel's Booking & Fees settings ──
-     The fee answer above is the fallback; it is replaced once the current fees load. */
-  (function liveFees() {
+  /* ── Live data from the reception panel ──
+     Fees (Booking & Fees) and doctor OP timings, leave and one-day timing changes (Doctor Schedule).
+     The answers above are the fallback; they are replaced once the current data loads. */
+  (function liveData() {
     var feeEntry = KB.find(function (k) { return k.patterns.indexOf("fees") !== -1; });
-    if (!feeEntry || !window.fetch) return;
+    var timeEntry = KB.find(function (k) { return k.patterns.indexOf("timings") !== -1; });
+    if (!feeEntry || !timeEntry || !window.fetch) return;
+    var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var hhmm = function (m) { var h = Math.floor(m / 60), mm = m % 60; return ((h % 12) || 12) + ':' + (mm < 10 ? '0' : '') + mm + ' ' + (h < 12 ? 'AM' : 'PM'); };
+    var daysText = function (days) {
+      var d = [1, 2, 3, 4, 5, 6, 0].filter(function (x) { return days.indexOf(x) >= 0; });
+      if (d.length === 7) return 'All days';
+      var run = d.length > 2 && d.every(function (x, i) { return i === 0 || x === (d[i - 1] + 1) % 7; });
+      return run ? DAYS[d[0]] + '–' + DAYS[d[d.length - 1]] : d.map(function (x) { return DAYS[x]; }).join(', ');
+    };
+    var dayName = function (iso, i) {
+      var label = new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+      return (['Today', 'Tomorrow'][i] ? ['Today', 'Tomorrow'][i] + ' (' + label + ')' : label);
+    };
+    var timings = function (data) {
+      var lines = [], changes = [];
+      Object.keys(data.doctors).forEach(function (name) {
+        var d = data.doctors[name], s = d.schedule;
+        if (!s) return;
+        var hours = d.opHours || (hhmm(s.start_min) + ' – ' + hhmm(s.end_min));
+        var how = d.feeStatus === 'pending' ? ' (call to book)' : d.bookingMode === 'request' ? ' (WhatsApp request)' : '';
+        lines.push('• <strong>' + esc(name) + ':</strong> ' + daysText(s.days) + ', ' + esc(hours) + how);
+        (d.next || []).forEach(function (n, i) {
+          var usual = s.days.indexOf(new Date(n.date + 'T00:00:00').getDay()) >= 0;
+          if (n.leave) changes.push('• ' + dayName(n.date, i) + ': <strong>' + esc(name) + '</strong> is on leave');
+          else if (n.custom) changes.push('• ' + dayName(n.date, i) + ': <strong>' + esc(name) + '</strong> ' + hhmm(n.start_min) + ' – ' + hhmm(n.end_min) + (usual ? ' (changed timing)' : ' (special OP)'));
+        });
+      });
+      if (!lines.length) return;
+      timeEntry.answer = '⏰ <strong>Hospital Timings:</strong><br>🗓️ Monday – Saturday: <strong>9:00 AM – 7:00 PM</strong><br>🚨 Sunday: <strong>Emergency Services Only</strong> (24x7 emergency: <a href=\'tel:+919566443300\'>+91 95664 43300</a>)' +
+        '<br><br>👨‍⚕️ <strong>Doctor OP timings:</strong><br>' + lines.join('<br>') +
+        '<br><br>📅 <strong>Next 3 days:</strong><br>' + (changes.length ? changes.join('<br>') : 'All doctors are on their usual timings.') +
+        '<br><br>For appointments: <a href=\'/search\'>Book Here →</a>';
+    };
     var base = /(^|\.)vercel\.app$|^localhost$/.test(window.location.hostname) ? '' : 'https://nivyahospital.vercel.app';
     var rupees = function (n) { return '₹' + Number(n).toLocaleString('en-IN'); };
     var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); };
@@ -171,6 +205,7 @@
           return '• <strong>' + esc(name) + ':</strong> ' + fee;
         });
         if (lines.length) feeEntry.answer = '💰 <strong>Consultation Fees:</strong><br><br>' + lines.join('<br>');
+        timings(data);
       })
       .catch(function () { /* keep the built-in answer */ });
   })();
@@ -213,12 +248,25 @@
   /* ── Build UI ── */
   const style = document.createElement("style");
   style.textContent = `
+    :root {
+      --ncm-right: 28px;
+      --ncm-bottom: 28px;
+      --ncm-launcher-size: 60px;
+      --ncm-control-gap: 12px;
+      --ncm-top-size: 35px;
+      --ncm-panel-bottom: calc(var(--ncm-bottom) + var(--ncm-launcher-size) + var(--ncm-top-size) + 2 * var(--ncm-control-gap));
+    }
+    .progress-wrap:not(.progress-four) {
+      right: calc(var(--ncm-right) + (var(--ncm-launcher-size) - var(--ncm-top-size)) / 2);
+      bottom: calc(var(--ncm-bottom) + var(--ncm-launcher-size) + var(--ncm-control-gap));
+      background: #fff;
+    }
     #nivya-chat-btn {
       position: fixed;
-      bottom: 28px;
-      right: 28px;
-      width: 60px;
-      height: 60px;
+      bottom: var(--ncm-bottom);
+      right: var(--ncm-right);
+      width: var(--ncm-launcher-size);
+      height: var(--ncm-launcher-size);
       border-radius: 50%;
       background: linear-gradient(135deg, #0d6efd, #0a58ca);
       color: #fff;
@@ -233,6 +281,10 @@
       transition: transform 0.2s, box-shadow 0.2s;
     }
     #nivya-chat-btn:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(13,110,253,0.55); }
+    #nivya-chat-btn[aria-expanded="false"] { background: #fff; }
+    #nivya-chat-btn[aria-expanded="true"] .ncm-launcher-logo,
+    #nivya-chat-btn[aria-expanded="false"] .ncm-launcher-close { display: none; }
+    .ncm-launcher-logo { width: 48px; height: 48px; object-fit: contain; }
 
     #nivya-chat-badge {
       position: absolute;
@@ -253,13 +305,13 @@
 
     #nivya-chat-window {
       position: fixed;
-      bottom: 100px;
-      right: 28px;
+      bottom: var(--ncm-panel-bottom);
+      right: var(--ncm-right);
       width: 360px;
       max-width: calc(100vw - 24px);
       max-height: 520px;
-      max-height: min(520px, calc(100vh - 120px));
-      max-height: min(520px, calc(100dvh - 120px));
+      max-height: min(520px, calc(100vh - var(--ncm-panel-bottom) - 20px));
+      max-height: min(520px, calc(100dvh - var(--ncm-panel-bottom) - 20px));
       border-radius: 16px;
       background: #fff;
       box-shadow: 0 8px 40px rgba(0,0,0,0.18);
@@ -290,12 +342,12 @@
       gap: 10px;
       flex-shrink: 0;
     }
-    #nivya-chat-header .avatar {
+    #nivya-chat-header .ncm-header-logo {
       width: 38px; height: 38px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.25);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; flex-shrink: 0;
+      background: #fff;
+      object-fit: contain;
+      flex-shrink: 0;
     }
     #nivya-chat-header .info { flex: 1; }
     #nivya-chat-header .info strong { display: block; font-size: 14px; }
@@ -403,27 +455,27 @@
     #nivya-chat-send:hover { transform: scale(1.08); }
 
     @media (max-width: 420px) {
+      :root { --ncm-right: 16px; --ncm-bottom: 20px; }
       #nivya-chat-window {
-        width: calc(100vw - 24px); right: 12px; bottom: 88px;
-        max-height: calc(100vh - 108px);
-        max-height: calc(100dvh - 108px);
+        width: calc(100vw - 24px); right: 12px;
       }
-      #nivya-chat-btn { right: 16px; bottom: 20px; }
     }
   `;
   document.head.appendChild(style);
 
   /* ── HTML ── */
+  const brandMark = "/assets/img/apple-touch-icon.png";
   const wrap = document.createElement("div");
   wrap.innerHTML = `
     <button id="nivya-chat-btn" type="button" title="Chat with us" aria-label="Open chat" aria-expanded="false" aria-controls="nivya-chat-window">
-      <span id="nivya-chat-icon" aria-hidden="true">💬</span>
+      <img class="ncm-launcher-logo" src="${brandMark}" alt="">
+      <span class="ncm-launcher-close" aria-hidden="true">✕</span>
       <span id="nivya-chat-badge" aria-hidden="true">1</span>
     </button>
 
     <div id="nivya-chat-window" role="dialog" aria-label="Nivya Hospital Assistant">
       <div id="nivya-chat-header">
-        <div class="avatar">🏥</div>
+        <img class="ncm-header-logo" src="${brandMark}" alt="">
         <div class="info">
           <strong>Nivya Hospital Assistant</strong>
           <span>🟢 Online – Here to help</span>
@@ -458,7 +510,6 @@
   const input    = document.getElementById("nivya-chat-input");
   const sendBtn  = document.getElementById("nivya-chat-send");
   const badge    = document.getElementById("nivya-chat-badge");
-  const icon     = document.getElementById("nivya-chat-icon");
   const quickBar = document.getElementById("nivya-chat-quick");
 
   let isOpen = false;
@@ -467,7 +518,6 @@
   function toggleChat() {
     isOpen = !isOpen;
     win.classList.toggle("open", isOpen);
-    icon.textContent = isOpen ? "✕" : "💬";
     btn.setAttribute("aria-expanded", String(isOpen));
     btn.setAttribute("aria-label", isOpen ? "Close chat" : "Open chat");
     if (isOpen) {

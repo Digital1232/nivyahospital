@@ -696,7 +696,7 @@
 			start: 'Called in to doctor', requeue: 'Sent back to queue', complete: 'Marked consultation done',
 			cancel: 'Cancelled appointment', no_show: 'Marked no-show', reschedule: 'Rescheduled appointment', note: 'Edited appointment note',
 			patient_edit: 'Edited patient', patient_delete: 'Deleted patient', schedule: 'Changed doctor timings',
-			leave_add: 'Added doctor leave', leave_remove: 'Removed doctor leave', booking_save: 'Changed fees / booking settings',
+			leave_add: 'Added doctor leave', day_set: 'Changed one day timing', leave_remove: 'Removed doctor leave', booking_save: 'Changed fees / booking settings',
 			booking_reset: 'Reset fees / booking settings', settings: 'Changed hospital details / messages',
 			settings_reset: 'Reset hospital details / messages', staff_add: 'Added staff account', staff_update: 'Updated staff account',
 			password_change: 'Changed own password'
@@ -709,6 +709,7 @@
 				case 'schedule': return d.doctor + ': ' + (d.days || []).map(function (x) { return DAY[x]; }).join(', ') + ', ' + mins(d.start) + '–' + mins(d.end) +
 					(d.cap ? ', limit ' + d.cap + '/slot' : '') + (d.online === false ? ', online booking paused' : '');
 				case 'leave_add': case 'leave_remove': return d.doctor + ' on ' + fmtDate(d.date);
+				case 'day_set': return d.doctor + ' on ' + fmtDate(d.date) + ': ' + (d.mode === 'off' ? 'off' : d.mode === 'custom' ? mins(d.start) + '–' + mins(d.end) : 'usual timing');
 				case 'booking_save': case 'booking_reset': case 'walkin': return d.doctor || '';
 				case 'staff_add': case 'staff_update': return d.username + ' (' + (d.role === 'admin' ? 'admin' : 'staff') + (d.active === false ? ', disabled' : '') + ')';
 				case 'patient_delete': return d.appointments + ' visit(s) removed';
@@ -850,6 +851,35 @@
 			for (var m = 360; m <= 1380; m += 15) o += '<option value="' + m + '"' + (m === sel ? ' selected' : '') + '>' + minToTime(m) + '</option>';
 			return o;
 		}
+		// One row per online-booking day: usual timing / a different timing / off.
+		function dayRow(s, i, d) {
+			var usualOpen = s.days.indexOf(new Date(d.date + 'T00:00:00').getDay()) >= 0;
+			var mode = d.leave ? 'off' : d.custom ? 'custom' : 'normal';
+			var usual = usualOpen ? minToTime(s.start_min) + '–' + minToTime(s.end_min) : 'closed, not an OP day';
+			var status = d.leave ? '<span class="badge bg-warning text-dark">Off</span>'
+				: !d.open ? '<span class="badge bg-secondary">Closed</span>'
+				: '<span class="badge ' + (d.custom ? 'bg-info text-dark' : 'bg-success') + '">' + minToTime(d.start_min) + '–' + minToTime(d.end_min) + (d.custom ? ' (changed)' : '') + '</span>';
+			var day = new Date(d.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+			var label = d.date === today ? 'Today' : '';
+			var k = i + '-' + d.date;
+			return '<div class="border rounded p-2 mb-2" data-dayrow="' + k + '">' +
+				'<div class="d-flex flex-wrap align-items-center gap-2 mb-2 small"><strong>' + (label ? label + ', ' : '') + esc(day) + '</strong>' + status +
+				(d.booked ? '<span class="muted">' + d.booked + ' booked</span>' : '') + '</div>' +
+				'<div class="row g-2 align-items-end">' +
+				'<div class="col-12"><select class="form-select form-select-sm" name="dmode" aria-label="Timing for ' + esc(day) + '">' +
+				'<option value="normal"' + (mode === 'normal' ? ' selected' : '') + '>Usual timing (' + usual + ')</option>' +
+				'<option value="custom"' + (mode === 'custom' ? ' selected' : '') + '>Different timing this day</option>' +
+				'<option value="off"' + (mode === 'off' ? ' selected' : '') + '>Off / leave this day</option></select></div>' +
+				'<div class="col-4" data-dtime' + (mode === 'custom' ? '' : ' hidden') + '><select class="form-select form-select-sm" name="dstart" aria-label="Starts">' + timeOptions(d.start_min) + '</select></div>' +
+				'<div class="col-4" data-dtime' + (mode === 'custom' ? '' : ' hidden') + '><select class="form-select form-select-sm" name="dend" aria-label="Ends">' + timeOptions(d.end_min) + '</select></div>' +
+				'<div class="col-4 ms-auto"><button type="button" class="btn btn-sm btn-outline-primary w-100" data-setday="' + i + '|' + d.date + '">Save day</button></div>' +
+				'</div></div>';
+		}
+		document.addEventListener('change', function (e) {
+			if (e.target.name !== 'dmode') return;
+			var row = e.target.closest('[data-dayrow]');
+			row.querySelectorAll('[data-dtime]').forEach(function (el) { el.hidden = e.target.value !== 'custom'; });
+		});
 		function renderSchedule(list) {
 			$('sc-list').innerHTML = list.map(function (s, i) {
 				return '<div class="col-lg-6"><form class="panel h-100" data-sched="' + i + '">' +
@@ -866,6 +896,9 @@
 					'<input type="number" min="1" max="200" class="form-control form-control-sm mb-2" name="capacity" value="' + (s.capacity == null ? '' : s.capacity) + '">' +
 					'<label class="form-label small">Note for staff</label><input class="form-control form-control-sm mb-3" name="note" maxlength="200" value="' + esc(s.note) + '">' +
 					'<button class="btn btn-sm btn-primary" type="submit">Save timings</button>' +
+					'<hr><div class="small fw-semibold mb-1">Next 3 days (online booking)</div>' +
+					'<p class="small muted mb-2">Change one day only, e.g. the doctor comes late, leaves early, takes the day off, or sees patients on a Sunday. The other days keep the usual timing.</p>' +
+					(s.next || []).map(function (d) { return dayRow(s, i, d); }).join('') +
 					'<hr><div class="small fw-semibold mb-2">Leave</div>' +
 					(s.leave.length ? s.leave.map(function (l) {
 						return '<div class="d-flex align-items-center gap-2 mb-1 small"><i class="fa-solid fa-plane-departure muted"></i><span class="flex-grow-1">' + fmtDate(l.date) +
@@ -980,7 +1013,7 @@
 		/* ---------- Events ---------- */
 		$('tabs').addEventListener('click', function (e) { var b = e.target.closest('button[data-view]'); if (b) show(b.dataset.view); });
 		document.addEventListener('click', function (e) {
-			var t = e.target.closest('[data-op],[data-callnext],[data-refresh],[data-resched],[data-unleave],[data-leave],[data-editstaff],[data-togglestaff],[data-match],[data-patient],[data-patientnav],[data-remind],[data-rprange],[data-goto]');
+			var t = e.target.closest('[data-op],[data-callnext],[data-refresh],[data-resched],[data-unleave],[data-setday],[data-leave],[data-editstaff],[data-togglestaff],[data-match],[data-patient],[data-patientnav],[data-remind],[data-rprange],[data-goto]');
 			if (!t) return;
 			if (t.dataset.goto) {
 				show(t.dataset.goto);
@@ -1015,6 +1048,22 @@
 					(function () { var o = ''; for (var m = 360; m <= 1380; m += 15) o += '<option>' + minToTime(m) + '</option>'; return o; })() + '</select></div>' +
 					'<div class="col-12 col-sm-4"><button class="btn btn-sm btn-primary">Save new time</button></div></form>';
 				return;
+			}
+			if (t.dataset.setday) {
+				var parts = t.dataset.setday.split('|'), docList = JSON.parse($('sc-list').dataset.doctors);
+				var row = t.closest('[data-dayrow]'), dmode = row.querySelector('[name=dmode]').value;
+				var body = { doctor: docList[Number(parts[0])], date: parts[1], mode: dmode };
+				if (dmode === 'custom') { body.start_min = Number(row.querySelector('[name=dstart]').value); body.end_min = Number(row.querySelector('[name=dend]').value); }
+				return run(api('setDay', body).then(function (d) {
+					renderSchedule(d.schedule);
+					var msg = d.mode === 'off' ? 'Saved: off on ' + fmtDate(d.dayDate) + '. Online booking is closed that day.'
+						: d.mode === 'custom' ? 'Saved: special timing on ' + fmtDate(d.dayDate) + '. The booking page shows only these times that day.'
+						: 'Saved: usual timing on ' + fmtDate(d.dayDate) + '.';
+					if (d.clash) {
+						toast(msg + ' ' + d.clash + ' booked patient' + (d.clash === 1 ? ' does' : 's do') + ' not fit' + (d.clashPaid ? ' (' + d.clashPaid + ' paid online)' : '') +
+							'. Open Appointments for ' + d.dayDate + ' and call them to reschedule.', 'warning');
+					} else toast(msg);
+				}));
 			}
 			if (t.dataset.unleave) return run(api('removeLeave', { id: Number(t.dataset.unleave) }).then(function (d) { renderSchedule(d.schedule); toast('Leave removed.'); }));
 			if (t.dataset.leave) {

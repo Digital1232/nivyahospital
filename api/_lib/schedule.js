@@ -47,6 +47,31 @@ const getSchedule = async (doctor) => {
 const onLeave = async (doctor, date) =>
 	!!(await one(`SELECT 1 AS x FROM doctor_leave WHERE doctor = $1 AND date = $2`, [doctor, date]));
 
+// One-day timing changes between two dates: { 'YYYY-MM-DD': { start_min, end_min } }.
+const dayHours = async (doctor, from, to) => {
+	const rows = await q(`SELECT date, start_min, end_min FROM doctor_day_hours WHERE doctor = $1 AND date BETWEEN $2 AND $3`, [doctor, from, to]);
+	return rows.reduce((o, r) => (o[r.date] = { start_min: Number(r.start_min), end_min: Number(r.end_min) }, o), {});
+};
+
+// What a doctor's OP looks like on one date: weekly timing, unless that day has its own timing or leave.
+const dayPlan = (s, date, hours, leaveDates) => {
+	const custom = hours[date] || null;
+	const leave = leaveDates.includes(date);
+	const open = !leave && (custom ? true : s.days.includes(weekday(date)));
+	return { date, open, leave, custom: !!custom, start_min: custom ? custom.start_min : s.start_min, end_min: custom ? custom.end_min : s.end_min };
+};
+
+// The online-booking window (today, tomorrow, the day after) for one doctor.
+const onlineDays = async (doctor) => {
+	const s = await getSchedule(doctor);
+	const from = firstOnlineDay(), to = lastOnlineDay();
+	const hours = await dayHours(doctor, from, to);
+	const leave = (await q(`SELECT date FROM doctor_leave WHERE doctor = $1 AND date BETWEEN $2 AND $3`, [doctor, from, to])).map((r) => r.date);
+	const out = [];
+	for (let i = ONLINE_FIRST_DAY; i <= ONLINE_LAST_DAY; i++) out.push(dayPlan(s, isoPlus(i), hours, leave));
+	return out;
+};
+
 // Also count older checkout orders during the rollout, and normalize times such as 09:00 AM.
 const activeHolds = `NOT slot_rejected AND COALESCE(hold_until, created_at + interval '15 minutes') > statement_timestamp()`;
 const slotUsage = `SELECT count(*) FROM (
@@ -65,10 +90,11 @@ const checkOnlineSlot = async (doctor, date, time) => {
 	const min = toMin(time);
 	if (!s.online) return 'Online booking is paused for this doctor. Please call +91 95664 43300.';
 	if (date < firstOnlineDay() || date > lastOnlineDay()) return 'Online booking is open for today, tomorrow and the day after only. For later dates, please call +91 95664 43300.';
-	if (!s.days.includes(weekday(date))) return 'The doctor is not available on this day. Please pick another day.';
 	if (await onLeave(doctor, date)) return 'The doctor is on leave that day. Please pick another day.';
-	if (min == null || min < s.start_min || min >= s.end_min) {
-		return 'Please choose a time between ' + toTime(s.start_min) + ' and ' + toTime(s.end_min) + '.';
+	const day = dayPlan(s, date, await dayHours(doctor, date, date), []);
+	if (!day.open) return 'The doctor is not available on this day. Please pick another day.';
+	if (min == null || min < day.start_min || min >= day.end_min) {
+		return 'Please choose a time between ' + toTime(day.start_min) + ' and ' + toTime(day.end_min) + (day.custom ? ' on that day (special timing).' : '.');
 	}
 	return null;
 };
@@ -101,7 +127,8 @@ const availability = async (doctor, from, to) => {
 			WHERE booking->>'doctor' = $1 AND booking->>'date' BETWEEN $2 AND $3 AND ${activeHolds}
 	) AS slots GROUP BY date, ltrim(time, '0')`, [doctor, from, to]);
 	rows.filter((r) => r.n >= (s.capacity ?? 1)).forEach((r) => { (full[r.date] = full[r.date] || []).push(r.time); });
-	return { days: s.days, start_min: s.start_min, end_min: s.end_min, online: s.online, leave, full };
+	// hours: dates with their own timing (they are open even on a normally closed weekday).
+	return { days: s.days, start_min: s.start_min, end_min: s.end_min, online: s.online, leave, full, hours: await dayHours(doctor, from, to) };
 };
 
-module.exports = { DEFAULT, ONLINE_FIRST_DAY, ONLINE_LAST_DAY, firstOnlineDay, lastOnlineDay, istNow, todayIso, nowMin, weekday, isIso, toMin, toTime, getSchedule, onLeave, checkOnlineSlot, availability, reserveOnlineSlot, slotHasSpace, SLOT_FULL };
+module.exports = { DEFAULT, ONLINE_FIRST_DAY, ONLINE_LAST_DAY, firstOnlineDay, lastOnlineDay, isoPlus, istNow, todayIso, nowMin, weekday, isIso, toMin, toTime, getSchedule, onLeave, dayHours, dayPlan, onlineDays, checkOnlineSlot, availability, reserveOnlineSlot, slotHasSpace, SLOT_FULL };

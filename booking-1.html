@@ -47,7 +47,6 @@
 	<link rel="stylesheet" href="assets/css/bootstrap-datetimepicker.min.css">
 
 	<!-- Fancybox CSS -->
-	<link rel="stylesheet" href="assets/plugins/fancybox/jquery.fancybox.min.css">
 
 	<!-- Main CSS -->
 	<link rel="stylesheet" href="assets/css/style.css">
@@ -974,14 +973,22 @@
 				const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(t);
 				return ((+m[1] % 12) + (m[3] === 'PM' ? 12 : 0)) * 60 + +m[2];
 			};
-			const closedDays = () => avail ? [0, 1, 2, 3, 4, 5, 6].filter((d) => !avail.days.includes(d)) : [0];
+			// A date can have its own timing set by reception (late start, early finish, extra Sunday OP).
+			const dayHours = (iso) => (avail && avail.hours && avail.hours[iso]) || null;
+			const isOpenDay = (iso) => {
+				const wd = new Date(iso + 'T00:00:00').getDay();
+				if (!avail) return wd !== 0;
+				if (avail.leave.includes(iso)) return false;
+				return !!dayHours(iso) || avail.days.includes(wd);
+			};
 			const slotAllowed = (iso, t) => {
 				if (!avail) return true;
 				const min = slotMinutes(t);
-				return avail.online && avail.days.includes(new Date(iso + 'T00:00:00').getDay()) &&
-					!avail.leave.includes(iso) && min >= avail.start_min && min < avail.end_min &&
+				const h = dayHours(iso) || avail;
+				return avail.online && isOpenDay(iso) && min >= h.start_min && min < h.end_min &&
 					!(avail.full[iso] || []).some((fullTime) => slotMinutes(fullTime) === min);
 			};
+			const fmtMin = (m) => moment().startOf('day').add(m, 'minutes').format('h:mm A');
 			const slotOpen = (iso, t, now) => slotAllowed(iso, t) &&
 				(iso !== now.format('YYYY-MM-DD') || slotMinutes(t) > now.hours() * 60 + now.minutes());
 
@@ -990,6 +997,8 @@
 				if (state.time) hint.textContent = dateLong(state.iso) + ' at ' + state.time;
 				else if (!state.iso) hint.textContent = 'Select a date.';
 				else hint.textContent = 'Select a time for ' + dateLong(state.iso) + '.';
+				const h = state.iso && dayHours(state.iso);
+				if (h && !state.time) hint.textContent += ' Special timing that day: ' + fmtMin(h.start_min) + ' - ' + fmtMin(h.end_min) + '.';
 			};
 
 			const renderSlots = () => {
@@ -1026,6 +1035,8 @@
 					? 'Online booking is paused for this doctor. Please call ' + HOSPITAL_PHONE + '.'
 					: avail && avail.leave.includes(state.iso)
 						? 'The doctor is on leave on ' + dateLong(state.iso) + '. Please pick another day.'
+					: !isOpenDay(state.iso)
+						? 'The doctor is not available on ' + dateLong(state.iso) + '. Please pick another day.'
 						: 'No slots left on ' + dateLong(state.iso) + '. Please pick another day.';
 			};
 
@@ -1034,8 +1045,8 @@
 				const today = moment(now.format('YYYY-MM-DD'), 'YYYY-MM-DD');
 				for (let i = BOOKING_FIRST_DAY; i <= BOOKING_LAST_DAY; i++) {
 					const d = today.clone().add(i, 'days');
-					if (closedDays().includes(d.day())) continue; // closed day (Sunday: emergency only)
 					const iso = d.format('YYYY-MM-DD');
+					if (!isOpenDay(iso)) continue; // closed day (Sunday: emergency only) or leave
 					if (sessions().some((s) => s.slots.some((t) => slotOpen(iso, t, now)))) return d;
 				}
 				return today.clone().add(BOOKING_FIRST_DAY, 'days');
@@ -1057,8 +1068,13 @@
 				const today = moment(bookingNow().format('YYYY-MM-DD'), 'YYYY-MM-DD');
 				dp.minDate(today.clone().add(BOOKING_FIRST_DAY, 'days').startOf('day'));
 				dp.maxDate(today.clone().add(BOOKING_LAST_DAY, 'days').endOf('day'));
-				dp.daysOfWeekDisabled(closedDays());
-				if (avail && avail.leave.length) dp.disabledDates(avail.leave.map((d) => moment(d, 'YYYY-MM-DD')));
+				// Close each day of the window on its own (weekly OP days, leave and one-day changes).
+				const closed = [];
+				for (let i = BOOKING_FIRST_DAY; i <= BOOKING_LAST_DAY; i++) {
+					const d = today.clone().add(i, 'days');
+					if (!isOpenDay(d.format('YYYY-MM-DD'))) closed.push(d);
+				}
+				if (closed.length) dp.disabledDates(closed);
 				// Colour leave days orange (see the legend); re-applied whenever the calendar redraws.
 				const leaveDays = new Set(((avail && avail.leave) || []).map((d) => moment(d, 'YYYY-MM-DD').format('MM/DD/YYYY')));
 				const markLeave = () => $dp[0].querySelectorAll('td.day[data-day]').forEach((td) => {
@@ -1098,8 +1114,7 @@
 					setRange();
 					preferredDate.setCustomValidity('');
 					if (!preferredDate.reportValidity()) return;
-					const picked = moment(preferredDate.value, 'YYYY-MM-DD');
-					if (closedDays().includes(picked.day()) || (avail && avail.leave.includes(preferredDate.value))) {
+					if (!isOpenDay(preferredDate.value)) {
 						preferredDate.setCustomValidity('The doctor is not available on ' + dateLong(preferredDate.value) + '. Please pick another day, or call ' + HOSPITAL_PHONE + '.');
 						preferredDate.reportValidity();
 						return;
@@ -1486,7 +1501,7 @@
 	</script>
 
 	<!-- Nivya Hospital Chatbot -->
-	<script src="assets/js/chatbot.js"></script>
+	<script src="assets/js/chatbot.js?v=293f8ffc93"></script>
 </body>
 
 

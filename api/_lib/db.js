@@ -83,6 +83,8 @@ const SCHEMA = [
 		online boolean NOT NULL DEFAULT true,
 		note text)`,
 	`CREATE TABLE IF NOT EXISTS doctor_leave (id serial PRIMARY KEY, doctor text NOT NULL, date text NOT NULL, reason text, UNIQUE (doctor, date))`,
+	// One-day timing change (e.g. late start tomorrow, or an extra Sunday OP); overrides the weekly timing for that date.
+	`CREATE TABLE IF NOT EXISTS doctor_day_hours (doctor text NOT NULL, date text NOT NULL, start_min int NOT NULL, end_min int NOT NULL, PRIMARY KEY (doctor, date))`,
 	`ALTER TABLE patients ADD COLUMN IF NOT EXISTS notes text`,
 	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS checked_at timestamptz`,
 	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS hold_until timestamptz`,
