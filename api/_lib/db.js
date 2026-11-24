@@ -89,6 +89,15 @@ const SCHEMA = [
 	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS checked_at timestamptz`,
 	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS hold_until timestamptz`,
 	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS slot_rejected boolean NOT NULL DEFAULT false`,
+	// A paid order that could not take its slot waits here for reception (see resolvePayment).
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS payment_id text`,
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS review_reason text`,
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS resolved_at timestamptz`,
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS resolved_by text`,
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS resolution text`,
+	// Hashed client address, used only to limit how many slots one connection can hold unpaid.
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS client_key text`,
+	`CREATE INDEX IF NOT EXISTS pending_orders_client ON pending_orders (client_key, created_at)`,
 	`CREATE INDEX IF NOT EXISTS pending_orders_slot ON pending_orders ((booking->>'doctor'), (booking->>'date'))`,
 	`CREATE INDEX IF NOT EXISTS appointments_patient ON appointments (patient_id)`,
 	`CREATE TABLE IF NOT EXISTS audit_log (id serial PRIMARY KEY, actor text NOT NULL, action text NOT NULL, appointment_id int, detail jsonb, at timestamptz NOT NULL DEFAULT now())`,

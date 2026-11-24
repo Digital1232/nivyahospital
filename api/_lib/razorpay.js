@@ -136,6 +136,14 @@ const validateBooking = (b, catalog = CATALOG, { scheduled = false } = {}) => {
 	};
 };
 
+// A keyed hash of the visitor's address (set by Vercel, not by the browser); the address itself is not stored.
+const clientKey = (req, secret) => {
+	const h = req.headers || {};
+	const ip = String(h['x-vercel-forwarded-for'] || h['x-real-ip'] || h['x-forwarded-for'] ||
+		(req.socket && req.socket.remoteAddress) || 'unknown').split(',')[0].trim();
+	return crypto.createHmac('sha256', secret).update('client:' + ip).digest('hex').slice(0, 24);
+};
+
 const newBookingId = () => {
 	const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 	return 'NVY-' + Array.from(crypto.randomBytes(8), (x) => A[x % A.length]).join('');
@@ -148,4 +156,4 @@ const signatureOk = (orderId, paymentId, signature, secret) => {
 	return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
 
-module.exports = { CATALOG, keys, mode, cors, razorpay, validateBooking, newBookingId, signatureOk };
+module.exports = { CATALOG, keys, mode, cors, razorpay, validateBooking, clientKey, newBookingId, signatureOk };

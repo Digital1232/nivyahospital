@@ -1234,10 +1234,24 @@
 					const out = res.ok ? await res.json() : null;
 					if (!out) { if (res.status === 404 || res.status === 400) pendingStore.clear(); return; }
 					if (!out.paid) return; // not paid (yet): leave the normal booking form
-					Object.assign(state, { consult: p.consult || state.consult, addons: new Set(p.addons || []), iso: p.iso, time: p.time, patient: p.patient });
 					pendingStore.clear();
+					if (out.review) {
+						const note = document.createElement('div');
+						note.className = 'alert alert-warning';
+						note.setAttribute('role', 'alert');
+						note.textContent = paidNoSlotText(out.receipt);
+						$('pane-1').prepend(note);
+						return;
+					}
+					// Reception may have moved the visit: show the time actually booked.
+					const at = out.appointment || {};
+					Object.assign(state, { consult: p.consult || state.consult, addons: new Set(p.addons || []), iso: at.date || p.iso, time: at.time || p.time, patient: p.patient });
 					finish(out.bookingId, false, out.receipt);
 				} catch (e) { /* offline: try again next visit */ }
+			}
+			function paidNoSlotText(r) {
+				return 'Your payment of Rs ' + (r.amountPaise / 100).toLocaleString('en-IN') + ' was received (payment ID ' + r.paymentId +
+					'), but that time slot is no longer available. The hospital will call you to fix a new time or refund you. You can also call ' + HOSPITAL_PHONE + '.';
 			}
 
 			/* ---------- Navigation ---------- */
@@ -1370,7 +1384,7 @@
 				try {
 					order = await postJson(API.createOrder, booking);
 				} catch (err) {
-					throw new Error([400, 409, 503].includes(err.status)
+					throw new Error([400, 409, 429, 503].includes(err.status)
 						? err.message
 						: 'Could not start the payment. Please try again, or call us on ' + HOSPITAL_PHONE + '.');
 				}
@@ -1396,11 +1410,23 @@
 									razorpay_signature: resp.razorpay_signature
 								});
 								pendingStore.clear();
-								finish(out.bookingId || resp.razorpay_payment_id, false, out.receipt);
-								paidPending = false;
+								if (out.review) {
+									// Money received but the slot is gone: keep the Pay button locked so they cannot pay twice.
+									showMsg(paidNoSlotText(out.receipt), 'warning');
+								} else {
+									finish(out.bookingId || resp.razorpay_payment_id, false, out.receipt);
+									paidPending = false;
+								}
 							} catch (err) {
-								showMsg('We could not confirm this booking. ' +
-									'Please call ' + HOSPITAL_PHONE + ' and quote payment ID ' + resp.razorpay_payment_id + '.', 'warning');
+								if (err.status === 409) {
+									// Not charged: the patient can pick another time.
+									pendingStore.clear();
+									paidPending = false;
+									showMsg(err.message, 'warning');
+								} else {
+									showMsg('We could not confirm this booking. ' +
+										'Please call ' + HOSPITAL_PHONE + ' and quote payment ID ' + resp.razorpay_payment_id + '.', 'warning');
+								}
 							}
 							resolve();
 						},

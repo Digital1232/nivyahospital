@@ -34,12 +34,18 @@ if ($body === false || strlen($body) > $bodyLimit) {
 }
 
 $requestHeaders = ['Content-Type: application/json', 'X-Nivya: 1'];
-$session = $_COOKIE['nv_rs'] ?? '';
-if (is_string($session) && $session !== '') {
-    $requestHeaders[] = 'Cookie: nv_rs=' . rawurlencode($session);
+$cookies = [];
+foreach (['nv_rs', 'nv_dv'] as $cookieName) {
+    $cookieValue = $_COOKIE[$cookieName] ?? '';
+    if (is_string($cookieValue) && $cookieValue !== '') {
+        $cookies[] = $cookieName . '=' . rawurlencode($cookieValue);
+    }
+}
+if ($cookies !== []) {
+    $requestHeaders[] = 'Cookie: ' . implode('; ', $cookies);
 }
 
-$sessionCookie = null;
+$sessionCookies = [];
 $request = curl_init('https://nivyahospital.vercel.app/api/reception');
 curl_setopt_array($request, [
     CURLOPT_POST => true,
@@ -49,9 +55,9 @@ curl_setopt_array($request, [
     CURLOPT_CONNECTTIMEOUT => 5,
     CURLOPT_TIMEOUT => 30,
     CURLOPT_FOLLOWLOCATION => false,
-    CURLOPT_HEADERFUNCTION => static function ($request, string $line) use (&$sessionCookie): int {
-        if (stripos($line, 'Set-Cookie: nv_rs=') === 0) {
-            $sessionCookie = trim($line);
+    CURLOPT_HEADERFUNCTION => static function ($request, string $line) use (&$sessionCookies): int {
+        if (preg_match('/^Set-Cookie:\s*nv_(?:rs|dv)=/i', $line)) {
+            $sessionCookies[] = trim($line);
         }
         return strlen($line);
     },
@@ -66,7 +72,7 @@ if ($response === false || $status < 200 || ($status >= 300 && $status < 400)
     failRequest(502, 'Reception service is temporarily unavailable.');
 }
 
-if ($sessionCookie !== null) {
+foreach ($sessionCookies as $sessionCookie) {
     header($sessionCookie, false);
 }
 http_response_code($status);

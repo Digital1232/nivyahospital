@@ -26,10 +26,15 @@ module.exports = async (req, res) => {
 		if (payment.order_id !== order.id || payment.amount !== order.amount) {
 			return res.status(400).json({ error: 'Payment does not match the booking.' });
 		}
-		if (!(await settlePayment(order, payment))) {
-			return res.status(400).json({ error: 'Payment was not completed.' });
+		const outcome = await settlePayment(order, payment);
+		const receipt = receiptOf(order, payment, mode() === 'test');
+		// Money received but the slot is gone: the patient must not be told the payment failed.
+		if (outcome === 'review') return res.status(200).json({ review: true, ...receipt });
+		if (outcome === 'slot_gone') {
+			return res.status(409).json({ error: 'This time slot is no longer available, so you have not been charged. If your bank shows a hold, it is released automatically. Please pick another time.' });
 		}
-		return res.status(200).json(receiptOf(order, payment, mode() === 'test'));
+		if (outcome !== 'booked') return res.status(400).json({ error: 'Payment was not completed.' });
+		return res.status(200).json(receipt);
 	} catch (err) {
 		console.error('verify-payment failed:', err.message);
 		return res.status(502).json({ error: 'Could not confirm the payment. Please contact the hospital.' });

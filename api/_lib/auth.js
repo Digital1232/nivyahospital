@@ -6,7 +6,9 @@ const crypto = require('crypto');
 const { q, one } = require('./db');
 
 const COOKIE = 'nv_rs';
+const DEVICE_COOKIE = 'nv_dv'; // marks a browser that has signed in before; it does not log anyone in
 const SESSION_HOURS = 12;
+const DEVICE_DAYS = 90;
 const MAX_FAILS = 5;
 const LOCK_MINUTES = 15;
 
@@ -34,39 +36,55 @@ const adminVersion = () => crypto.createHash('sha256').update('v:' + adminEnv())
 
 const secret = async () => (await one(`SELECT value FROM settings WHERE key = 'session_secret'`)).value;
 const b64 = (s) => Buffer.from(s).toString('base64url');
-const sign = async (payload) => {
+// `purpose` keeps a device token from ever being accepted as a session token, and the reverse.
+const sign = async (payload, purpose = '') => {
 	const body = b64(JSON.stringify(payload));
-	const mac = crypto.createHmac('sha256', await secret()).update(body).digest('base64url');
+	const mac = crypto.createHmac('sha256', await secret()).update(purpose + body).digest('base64url');
 	return body + '.' + mac;
 };
-const verify = async (token) => {
+const verify = async (token, purpose = '') => {
 	const [body, mac] = String(token || '').split('.');
 	if (!body || !mac) return null;
-	const want = crypto.createHmac('sha256', await secret()).update(body).digest('base64url');
+	const want = crypto.createHmac('sha256', await secret()).update(purpose + body).digest('base64url');
 	if (want.length !== mac.length || !crypto.timingSafeEqual(Buffer.from(want), Buffer.from(mac))) return null;
 	let p;
 	try { p = JSON.parse(Buffer.from(body, 'base64url').toString()); } catch (e) { return null; }
 	return p && p.exp > Date.now() ? p : null;
 };
 
-const readCookie = (req) => {
-	const raw = String((req.headers && req.headers.cookie) || '');
-	const m = raw.split(/;\s*/).find((c) => c.startsWith(COOKIE + '='));
-	return m ? decodeURIComponent(m.slice(COOKIE.length + 1)) : '';
+const readCookie = (req, name = COOKIE) => {
+	const raw = String((req && req.headers && req.headers.cookie) || '');
+	const m = raw.split(/;\s*/).find((c) => c.startsWith(name + '='));
+	if (!m) return '';
+	try { return decodeURIComponent(m.slice(name.length + 1)); } catch (e) { return ''; }
 };
-const setCookie = (res, value, maxAge) => {
-	res.setHeader('Set-Cookie', `${COOKIE}=${encodeURIComponent(value)}; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`);
+const cookieLine = (name, value, maxAge) =>
+	`${name}=${encodeURIComponent(value)}; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
+
+const readDevice = async (req) => {
+	const p = await verify(readCookie(req, DEVICE_COOKIE), 'device:');
+	return p && p.id && Array.isArray(p.users) ? p : null;
 };
 
-// Returns { user } or { error, status }.
-const login = async (username, password) => {
+// Counts one use of `key` in a fixed time window and returns the count so far. The count is taken
+// before the work is done, so requests sent at the same moment cannot all slip under a limit.
+const hitLimit = async (key, minutes) => (await one(`INSERT INTO login_fail (key, count, first_at) VALUES ($1, 1, now())
+	ON CONFLICT (key) DO UPDATE SET
+		count = CASE WHEN login_fail.first_at < now() - make_interval(mins => $2::int) THEN 1 ELSE login_fail.count + 1 END,
+		first_at = CASE WHEN login_fail.first_at < now() - make_interval(mins => $2::int) THEN now() ELSE login_fail.first_at END
+	RETURNING count`, [key, minutes])).count;
+
+// Returns { user, device } or { error, status }.
+const login = async (username, password, req) => {
 	username = String(username || '').trim().toLowerCase();
 	password = String(password || '');
 	if (!username || !password) return { error: 'Enter username and password.', status: 400 };
-	const key = 'u:' + username;
-	const fail = await one(`SELECT count, first_at FROM login_fail WHERE key = $1`, [key]);
-	const lockedUntil = fail ? new Date(fail.first_at).getTime() + LOCK_MINUTES * 60000 : 0;
-	if (fail && fail.count >= MAX_FAILS && Date.now() < lockedUntil) {
+	// A browser that has signed in to this account before has its own counter, so wrong guesses
+	// from anywhere else cannot lock the real person out.
+	const device = await readDevice(req);
+	const known = !!device && device.users.includes(username);
+	const key = known ? 'd:' + device.id + ':' + username : 'u:' + username;
+	if ((await hitLimit(key, LOCK_MINUTES)) > MAX_FAILS) {
 		return { error: 'Too many wrong attempts. Try again in ' + LOCK_MINUTES + ' minutes.', status: 429 };
 	}
 	let user = null;
@@ -77,22 +95,27 @@ const login = async (username, password) => {
 		if (row && checkPassword(password, row.pass_hash)) user = { u: row.username, name: row.name, role: row.role, v: row.token_version };
 	}
 	if (!user) {
-		await q(`INSERT INTO login_fail (key, count, first_at) VALUES ($1, 1, now())
-			ON CONFLICT (key) DO UPDATE SET
-				count = CASE WHEN login_fail.first_at < now() - interval '${LOCK_MINUTES} minutes' THEN 1 ELSE login_fail.count + 1 END,
-				first_at = CASE WHEN login_fail.first_at < now() - interval '${LOCK_MINUTES} minutes' THEN now() ELSE login_fail.first_at END`, [key]);
 		if (!adminEnv() && username === 'admin') return { error: 'Admin password is not set up yet (RECEPTION_ADMIN_PASSWORD in Vercel).', status: 401 };
 		return { error: 'Wrong username or password.', status: 401 };
 	}
-	await q(`DELETE FROM login_fail WHERE key = $1`, [key]);
-	return { user };
+	// Give back this attempt. The shared counter is not wiped, so a real sign-in does not hand
+	// someone guessing at the same time a fresh set of tries.
+	if (known) await q(`DELETE FROM login_fail WHERE key = $1`, [key]);
+	else await q(`UPDATE login_fail SET count = GREATEST(count - 1, 0) WHERE key = $1`, [key]);
+	const users = [...new Set([username, ...(device ? device.users : [])])].slice(0, 8);
+	return { user, device: { id: device ? device.id : crypto.randomBytes(9).toString('base64url'), users } };
 };
 
-const startSession = async (res, user) => {
+const startSession = async (res, user, device) => {
 	const token = await sign({ ...user, exp: Date.now() + SESSION_HOURS * 3600000 });
-	setCookie(res, token, SESSION_HOURS * 3600);
+	const lines = [cookieLine(COOKIE, token, SESSION_HOURS * 3600)];
+	if (device) {
+		const deviceToken = await sign({ ...device, exp: Date.now() + DEVICE_DAYS * 86400000 }, 'device:');
+		lines.push(cookieLine(DEVICE_COOKIE, deviceToken, DEVICE_DAYS * 86400));
+	}
+	res.setHeader('Set-Cookie', lines);
 };
-const endSession = (res) => setCookie(res, '', 0);
+const endSession = (res) => res.setHeader('Set-Cookie', cookieLine(COOKIE, '', 0));
 
 // Current user from the cookie, re-checked against the database (disabled staff are signed out).
 const currentUser = async (req) => {
@@ -103,4 +126,4 @@ const currentUser = async (req) => {
 	return row && row.token_version === p.v ? { u: row.username, name: row.name, role: row.role, v: row.token_version } : null;
 };
 
-module.exports = { hashPassword, checkPassword, login, startSession, endSession, currentUser };
+module.exports = { hashPassword, checkPassword, login, startSession, endSession, currentUser, hitLimit };

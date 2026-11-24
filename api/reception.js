@@ -6,7 +6,7 @@ const { q, one, configured, withSlot } = require('./_lib/db');
 const auth = require('./_lib/auth');
 const S = require('./_lib/schedule');
 const catalog = require('./_lib/catalog');
-const { reconcilePending } = require('./_lib/payments');
+const { reconcilePending, bookReviewedPayment } = require('./_lib/payments');
 
 const DOCTORS = Object.keys(CATALOG.doctors);
 const STATUSES = ['booked', 'confirmed', 'arrived', 'in_consult', 'completed', 'cancelled', 'no_show'];
@@ -16,9 +16,11 @@ const clean = (v, max) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim()
 const need = (ok, msg) => { if (!ok) throw new Bad(msg); };
 const doctorOf = (d) => { need(DOCTORS.includes(d), 'Unknown doctor.'); return d; };
 const dateOf = (d) => { need(S.isIso(d), 'Invalid date.'); return d; };
-const newId = (prefix) => {
+// With a seed, the same seed always gives the same id (used to spot a repeated request).
+const newId = (prefix, seed) => {
 	const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-	return prefix + '-' + Array.from(crypto.randomBytes(8), (x) => A[x % A.length]).join('');
+	const bytes = seed ? crypto.createHash('sha256').update(seed).digest().subarray(0, 8) : crypto.randomBytes(8);
+	return prefix + '-' + Array.from(bytes, (x) => A[x % A.length]).join('');
 };
 
 const audit = (user, action, apptId, detail) =>
@@ -80,6 +82,41 @@ const panelSettings = async () => {
 
 const daysBetween = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000);
 
+// Reception accounts work with the days around today. Older history is reached one patient at a
+// time, and every record opened is logged, so a staff login cannot quietly copy the patient list.
+const STAFF_DAYS_BACK = 7, STAFF_DAYS_AHEAD = 30, STAFF_LOOKUPS_PER_HOUR = 300, STAFF_SEARCH_ROWS = 20;
+const isAdmin = (user) => user.role === 'admin';
+const staffWindow = () => ({ from: S.isoPlus(-STAFF_DAYS_BACK), to: S.isoPlus(STAFF_DAYS_AHEAD) });
+const checkDayAccess = (user, date) => {
+	if (isAdmin(user)) return;
+	const w = staffWindow();
+	need(date >= w.from && date <= w.to, 'Reception accounts can see the last ' + STAFF_DAYS_BACK + ' days and upcoming dates. For an older visit, find the patient in Patients.');
+};
+const countLookup = async (user) => {
+	if (isAdmin(user)) return;
+	const n = await auth.hitLimit('read:' + user.u, 60);
+	if (n === STAFF_LOOKUPS_PER_HOUR + 1) await audit(user, 'bulk_blocked', null, { limit: STAFF_LOOKUPS_PER_HOUR }).catch(() => {});
+	if (n > STAFF_LOOKUPS_PER_HOUR) throw new Bad('Too many patient look-ups in the last hour. Please wait a few minutes or ask an admin.', 429);
+};
+// One log row per person per patient every 10 minutes, so saving a record does not flood the log.
+const logPatientView = (user, id) => q(`INSERT INTO audit_log (actor, action, detail)
+	SELECT $1::text, 'patient_view', $2::jsonb WHERE NOT EXISTS (SELECT 1 FROM audit_log
+		WHERE actor = $1::text AND action = 'patient_view' AND detail->>'patient' = $3::text AND at > now() - interval '10 minutes')`,
+	[user.u, JSON.stringify({ patient: id }), String(id)]);
+const likeText = (s) => s.replace(/[\\%_]/g, '\\$&');
+
+// Patients who paid but could not be given their slot; reception books a new time or refunds them.
+const paymentIssues = async () => (await q(`SELECT order_id, payment_id, amount_paise, review_reason, booking, created_at
+	FROM pending_orders WHERE slot_rejected AND resolved_at IS NULL ORDER BY created_at LIMIT 30`)).map((r) => {
+	const b = typeof r.booking === 'string' ? JSON.parse(r.booking) : r.booking;
+	return { order_id: r.order_id, payment_id: r.payment_id, amount_paise: r.amount_paise, reason: r.review_reason || 'slot_full',
+		booking_id: b.bookingId || '', doctor: b.doctor, date: b.date, time: b.time, name: b.name, phone: b.phone, created_at: r.created_at };
+});
+// Patients on the payment screen right now for this doctor and day.
+const payingNow = async (doctor, date) => (await one(`SELECT count(*)::int AS n FROM pending_orders
+	WHERE booking->>'doctor' = $1 AND booking->>'date' = $2 AND NOT slot_rejected
+		AND COALESCE(hold_until, created_at + interval '15 minutes') > now()`, [doctor, date])).n;
+
 const actions = {
 	async me(b, user) {
 		return {
@@ -90,9 +127,10 @@ const actions = {
 		};
 	},
 
-	async dashboard(b) {
+	async dashboard(b, user) {
 		await reconcilePending(); // paid website bookings whose browser never reported back
 		const date = b.date ? dateOf(b.date) : S.todayIso();
+		checkDayAccess(user, date);
 		const rows = await q(`SELECT doctor, source, status, token_no FROM appointments WHERE date = $1`, [date]);
 		const count = (f) => rows.filter(f).length;
 		const live = (r) => !['cancelled', 'no_show'].includes(r.status);
@@ -119,6 +157,7 @@ const actions = {
 		const upcomingLeave = await q(`SELECT id, doctor, date, reason FROM doctor_leave WHERE date > $1 AND date <= $2 ORDER BY date, doctor LIMIT 20`,
 			[date, new Date(Date.parse(date + 'T00:00:00Z') + 30 * 86400000).toISOString().slice(0, 10)]);
 		return {
+			paymentIssues: await paymentIssues(),
 			expectedList,
 			tomorrow: {
 				date: tomorrow,
@@ -148,21 +187,29 @@ const actions = {
 
 	async appointments(b, user) {
 		// Bulk download of patient details is for admins only; staff work with the on-screen list.
-		need(!b.export || user.role === 'admin', 'Only an admin can export appointments.');
+		need(!b.export || isAdmin(user), 'Only an admin can export appointments.');
 		await reconcilePending();
 		const where = [];
 		const params = [];
 		const add = (sql, v) => { params.push(v); where.push(sql.replace('?', '$' + params.length)); };
+		let from = b.from ? dateOf(b.from) : '', to = b.to ? dateOf(b.to) : '';
+		const staffRange = isAdmin(user) ? null : staffWindow();
+		if (staffRange) {
+			need(!b.patient_id, 'Only an admin can list a patient this way.');
+			if (b.date) checkDayAccess(user, dateOf(b.date));
+			if (!from || from < staffRange.from) from = staffRange.from;
+			if (!to || to > staffRange.to) to = staffRange.to;
+		}
 		if (b.date) add('a.date = ?', dateOf(b.date));
-		if (b.from) add('a.date >= ?', dateOf(b.from));
-		if (b.to) add('a.date <= ?', dateOf(b.to));
+		if (from) add('a.date >= ?', from);
+		if (to) add('a.date <= ?', to);
 		if (b.doctor) add('a.doctor = ?', doctorOf(b.doctor));
 		if (b.patient_id) add('a.patient_id = ?', Number(b.patient_id));
 		if (b.source) { need(['online', 'walkin'].includes(b.source), 'Invalid source.'); add('a.source = ?', b.source); }
 		if (b.status) { need(STATUSES.includes(b.status), 'Invalid status.'); add('a.status = ?', b.status); }
 		const term = clean(b.search, 60);
 		if (term) {
-			params.push('%' + term.toLowerCase() + '%');
+			params.push('%' + likeText(term.toLowerCase()) + '%');
 			const n = '$' + params.length;
 			where.push(`(lower(p.name) LIKE ${n} OR p.phone LIKE ${n} OR lower(a.booking_id) LIKE ${n})`);
 		}
@@ -170,7 +217,8 @@ const actions = {
 		const limit = b.export ? 5000 : 300;
 		const rows = await q(`${APPT_SELECT} ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
 			ORDER BY a.date DESC, a.token_no NULLS LAST, a.time_min NULLS LAST, a.id DESC LIMIT ${limit}`, params);
-		return { appointments: rows, limit };
+		if (b.export) await audit(user, 'export', null, { rows: rows.length, from: from || null, to: to || null });
+		return { appointments: rows, limit, staffRange };
 	},
 
 	async update(b, user) {
@@ -209,8 +257,8 @@ const actions = {
 				const date = dateOf(b.date);
 				const min = S.toMin(b.time);
 				need(min != null, 'Invalid time.');
-				need(date >= S.todayIso(), 'Pick today or a later date.');
-				need(!(await S.onLeave(a.doctor, date)), 'The doctor is on leave that day.');
+				const problem = await S.visitCheck(a.doctor, date, min);
+				need(!problem, problem && problem.message);
 				const time = S.toTime(min);
 				if (a.source === 'online') {
 					const [rows] = await withSlot(a.doctor, date, time, [
@@ -238,26 +286,40 @@ const actions = {
 		const date = S.todayIso();
 		const min = S.nowMin();
 		const type = b.visit_type === 'old' ? 'old' : 'new';
-		const row = await one(`${TOKEN_CTE}
-			INSERT INTO appointments (booking_id, source, patient_id, doctor, date, time, time_min, visit_type, reason, status, token_no, arrived_at, created_by)
-			VALUES ($3, 'walkin', $4, $2, $1, $5, $6, $7, $8, 'arrived', (SELECT last FROM t), now(), $9)
-			RETURNING id`,
-			[date, doctor, newId('WLK'), patientId, S.toTime(min), min, type, clean(b.reason, 200) || null, user.u]);
+		// The page sends one id per registration: a double-click or a network retry gets the same token.
+		const requestId = clean(b.request_id, 64);
+		const bookingId = newId('WLK', requestId ? 'walkin:' + user.u + ':' + requestId : null);
+		const repeat = async () => ({ appointment: await one(`${APPT_SELECT} WHERE a.booking_id = $1`, [bookingId]), repeated: true });
+		if (requestId && await one(`SELECT 1 AS x FROM appointments WHERE booking_id = $1`, [bookingId])) return repeat();
+		let row;
+		try {
+			row = await one(`${TOKEN_CTE}
+				INSERT INTO appointments (booking_id, source, patient_id, doctor, date, time, time_min, visit_type, reason, status, token_no, arrived_at, created_by)
+				VALUES ($3, 'walkin', $4, $2, $1, $5, $6, $7, $8, 'arrived', (SELECT last FROM t), now(), $9)
+				RETURNING id`,
+				[date, doctor, bookingId, patientId, S.toTime(min), min, type, clean(b.reason, 200) || null, user.u]);
+		} catch (err) {
+			// Two copies arrived together: the loser's whole statement rolls back, so no token is used up.
+			if (requestId && err.code === '23505') return repeat();
+			throw err;
+		}
 		await audit(user, 'walkin', row.id, { doctor });
 		return { appointment: await one(`${APPT_SELECT} WHERE a.id = $1`, [row.id]) };
 	},
 
-	async patients(b) {
+	async patients(b, user) {
 		const phone = clean(b.phone, 10).replace(/\D/g, '');
 		need(phone.length >= 4, 'Type at least 4 digits of the phone number.');
+		await countLookup(user);
 		const rows = await q(`SELECT p.*, (SELECT max(date) FROM appointments a WHERE a.patient_id = p.id) AS last_visit,
 				(SELECT count(*)::int FROM appointments a WHERE a.patient_id = p.id AND a.status = 'completed') AS visits
 			FROM patients p WHERE p.phone LIKE $1 ORDER BY p.name LIMIT 20`, [phone + '%']);
 		return { patients: rows };
 	},
 
-	async queue(b) {
+	async queue(b, user) {
 		const date = b.date ? dateOf(b.date) : S.todayIso();
+		checkDayAccess(user, date);
 		const rows = await q(`${APPT_SELECT} WHERE a.date = $1 AND a.status IN ('arrived', 'in_consult', 'completed', 'no_show') AND a.token_no IS NOT NULL
 			ORDER BY a.doctor, a.token_no`, [date]);
 		return { date, queue: rows };
@@ -309,7 +371,7 @@ const actions = {
 		// Patients already booked with this doctor that day (they need a call to move or refund).
 		const booked = await one(`SELECT count(*)::int AS n, count(*) FILTER (WHERE payment_id IS NOT NULL)::int AS paid
 			FROM appointments WHERE doctor = $1 AND date = $2 AND status NOT IN ('cancelled', 'no_show', 'completed')`, [doctor, date]);
-		return { ...(await actions.schedule()), booked: booked.n, bookedPaid: booked.paid, leaveDate: date };
+		return { ...(await actions.schedule()), booked: booked.n, bookedPaid: booked.paid, paying: await payingNow(doctor, date), leaveDate: date };
 	},
 
 	// Change one day only: back to the usual timing, a different timing, or off (leave).
@@ -342,7 +404,55 @@ const actions = {
 		const rows = await q(`SELECT time_min, payment_id FROM appointments WHERE doctor = $1 AND date = $2
 			AND status NOT IN ('cancelled', 'no_show', 'completed')`, [doctor, date]);
 		const clash = rows.filter((r) => !day || !day.open || (r.time_min != null && (r.time_min < day.start_min || r.time_min >= day.end_min)));
-		return { ...(await actions.schedule()), clash: clash.length, clashPaid: clash.filter((r) => r.payment_id).length, dayDate: date, mode };
+		return { ...(await actions.schedule()), clash: clash.length, clashPaid: clash.filter((r) => r.payment_id).length,
+			paying: mode === 'off' ? await payingNow(doctor, date) : 0, dayDate: date, mode };
+	},
+
+	// Valid times for moving a patient to this doctor and date (OP hours, leave, full slots).
+	async dayOptions(b) {
+		const doctor = clean(b.doctor, 80);
+		need(doctor, 'Unknown doctor.');
+		const date = dateOf(b.date);
+		need(date >= S.todayIso(), 'Pick today or a later date.');
+		if (await S.onLeave(doctor, date)) return { open: false, message: 'The doctor is on leave that day.' };
+		const day = S.dayPlan(await S.getSchedule(doctor), date, await S.dayHours(doctor, date, date), []);
+		if (!day.open) return { open: false, message: 'The doctor has no OP that day. If the doctor agreed to come, set a special timing for it in Doctor Schedule first.' };
+		const info = ((await catalog.getCatalog()).doctors || {})[doctor] || {};
+		const fixed = (info.bookingSessions || []).flatMap((x) => x.slots || []).map(S.toMin)
+			.filter((m) => m != null && m >= day.start_min && m < day.end_min);
+		let mins = [...new Set(fixed)].sort((x, y) => x - y);
+		if (!mins.length) for (let m = day.start_min; m < day.end_min; m += 15) mins.push(m);
+		if (date === S.todayIso()) { const now = S.nowMin(); mins = mins.filter((m) => m > now); }
+		const full = (await S.availability(doctor, date, date)).full[date] || [];
+		return { open: true, slots: mins.map(S.toTime), full };
+	},
+
+	// A patient paid but lost their slot: put them on a new time, or (admin) record the refund.
+	async resolvePayment(b, user) {
+		const orderId = clean(b.order_id, 60);
+		const row = await one(`SELECT * FROM pending_orders WHERE order_id = $1 AND slot_rejected AND resolved_at IS NULL`, [orderId]);
+		need(row, 'This payment was already handled. Please refresh.');
+		const booking = typeof row.booking === 'string' ? JSON.parse(row.booking) : row.booking;
+		const detail = { order: row.order_id, payment: row.payment_id, amount: row.amount_paise, booking: booking.bookingId,
+			doctor: booking.doctor, date: booking.date, time: booking.time };
+		if (b.how === 'refunded') {
+			need(isAdmin(user), 'Only an admin can mark a payment as refunded.');
+			const done = await q(`UPDATE pending_orders SET resolved_at = now(), resolved_by = $2, resolution = 'refunded'
+				WHERE order_id = $1 AND slot_rejected AND resolved_at IS NULL RETURNING order_id`, [orderId, user.u]);
+			need(done.length, 'This payment was already handled. Please refresh.');
+			await audit(user, 'payment_refunded', null, detail);
+		} else if (b.how === 'book') {
+			const date = dateOf(b.date);
+			const min = S.toMin(b.time);
+			need(min != null, 'Pick a time.');
+			const problem = await S.visitCheck(booking.doctor, date, min);
+			need(!problem, problem && problem.message);
+			const time = S.toTime(min);
+			const out = await bookReviewedPayment(row, date, time, user.u);
+			need(out.ok, out.error);
+			await audit(user, 'payment_booked', out.appointmentId, { ...detail, payment: out.paymentId, to: date + ' ' + time });
+		} else throw new Bad('Choose what to do with this payment.');
+		return { paymentIssues: await paymentIssues() };
 	},
 
 	async removeLeave(b, user) {
@@ -429,13 +539,16 @@ const actions = {
 	},
 
 	/* ---------- Patients ---------- */
-	async patientSearch(b) {
+	async patientSearch(b, user) {
 		const term = clean(b.search, 60).toLowerCase();
+		// Reception finds one patient at a time; only an admin can browse the full list.
+		if (!isAdmin(user) && term.length < 3) return { patients: [], needSearch: true };
+		await countLookup(user);
 		const params = [];
 		let where = '';
 		if (term) {
 			const digits = term.replace(/\D/g, '');
-			params.push('%' + term + '%');
+			params.push('%' + likeText(term) + '%');
 			where = `WHERE lower(p.name) LIKE $1`;
 			if (digits.length >= 3) { params.push(digits + '%'); where += ` OR p.phone LIKE $2`; }
 		}
@@ -443,16 +556,18 @@ const actions = {
 				(SELECT max(a.date) FROM appointments a WHERE a.patient_id = p.id) AS last_visit,
 				(SELECT count(*)::int FROM appointments a WHERE a.patient_id = p.id AND a.status = 'completed') AS visits,
 				(SELECT count(*)::int FROM appointments a WHERE a.patient_id = p.id) AS bookings
-			FROM patients p ${where} ORDER BY last_visit DESC NULLS LAST, p.id DESC LIMIT 100`, params);
+			FROM patients p ${where} ORDER BY last_visit DESC NULLS LAST, p.id DESC LIMIT ${isAdmin(user) ? 100 : STAFF_SEARCH_ROWS}`, params);
 		return { patients: rows };
 	},
 
-	async patient(b) {
+	async patient(b, user) {
 		const id = Number(b.id);
 		need(Number.isInteger(id), 'Invalid patient.');
+		await countLookup(user);
 		const p = await one(`SELECT * FROM patients WHERE id = $1`, [id]);
 		need(p, 'Patient not found.');
 		const visits = await q(`${APPT_SELECT} WHERE a.patient_id = $1 ORDER BY a.date DESC, a.id DESC LIMIT 200`, [id]);
+		if (!isAdmin(user)) await logPatientView(user, id);
 		return { patient: p, visits };
 	},
 
@@ -473,21 +588,30 @@ const actions = {
 			[id, name, name.toLowerCase(), phone, age, gender, clean(b.notes, 1000) || null]);
 		need(r.length, 'Patient not found.');
 		await audit(user, 'patient_edit', null, { patient: id });
-		return actions.patient({ id });
+		return actions.patient({ id }, user);
 	},
 
-	// Admin only: removes a patient and every visit of theirs (test entries, duplicates,
-	// a patient's request to erase their data). Paid bookings are not refunded by this.
+	// Admin only: removes a patient and their visits (test entries, duplicates, a patient's request
+	// to erase their data). Paid visits stay as an accounts record with the personal details removed,
+	// and any that were still upcoming are cancelled. Refunds are done in Razorpay.
 	async deletePatient(b, user) {
 		need(user.role === 'admin', 'Only an admin can delete patients.');
 		const id = Number(b.id);
 		need(Number.isInteger(id), 'Invalid patient.');
 		const p = await one(`SELECT id FROM patients WHERE id = $1`, [id]);
 		need(p, 'Patient not found.');
-		const appts = await q(`DELETE FROM appointments WHERE patient_id = $1 RETURNING id`, [id]);
-		await q(`DELETE FROM patients WHERE id = $1`, [id]);
-		await audit(user, 'patient_delete', null, { patient: id, appointments: appts.length });
-		return { deleted: { patient: id, appointments: appts.length } };
+		const r = await one(`WITH kept AS (
+				UPDATE appointments SET patient_id = NULL, reason = NULL, notes = NULL, updated_at = now(),
+					status = CASE WHEN status IN ('booked', 'confirmed', 'arrived', 'in_consult') THEN 'cancelled' ELSE status END
+				WHERE patient_id = $1 AND payment_id IS NOT NULL RETURNING id
+			), gone AS (
+				DELETE FROM appointments WHERE patient_id = $1 AND payment_id IS NULL RETURNING id
+			), person AS (
+				DELETE FROM patients WHERE id = $1 RETURNING id
+			)
+			SELECT (SELECT count(*)::int FROM kept) AS kept, (SELECT count(*)::int FROM gone) AS removed`, [id]);
+		await audit(user, 'patient_delete', null, { patient: id, appointments: r.removed, kept: r.kept });
+		return { deleted: { patient: id, appointments: r.removed, kept: r.kept } };
 	},
 
 	/* ---------- Activity log (admin only): who did what, and when ---------- */
@@ -527,7 +651,7 @@ const actions = {
 		const rows = await q(`SELECT a.date, a.doctor, a.source, a.status, a.visit_type, a.amount_paise, a.payment_id,
 				a.arrived_at, a.started_at, a.completed_at
 			FROM appointments a WHERE a.date BETWEEN $1 AND $2`, [from, to]);
-		const blank = () => ({ total: 0, online: 0, walkin: 0, completed: 0, cancelled: 0, noShow: 0, newPatients: 0, followUps: 0, paidPaise: 0 });
+		const blank = () => ({ total: 0, online: 0, walkin: 0, completed: 0, cancelled: 0, noShow: 0, newPatients: 0, followUps: 0, paidPaise: 0, cancelledPaidPaise: 0 });
 		const tally = (t, r) => {
 			t.total++;
 			t[r.source === 'online' ? 'online' : 'walkin']++;
@@ -535,7 +659,8 @@ const actions = {
 			if (r.status === 'cancelled') t.cancelled++;
 			if (r.status === 'no_show') t.noShow++;
 			if (r.visit_type === 'old') t.followUps++; else t.newPatients++;
-			if (r.source === 'online' && r.payment_id) t.paidPaise += Number(r.amount_paise) || 0;
+			// A cancelled paid booking is not income until someone checks whether it was refunded.
+			if (r.source === 'online' && r.payment_id) t[r.status === 'cancelled' ? 'cancelledPaidPaise' : 'paidPaise'] += Number(r.amount_paise) || 0;
 		};
 		const totals = blank();
 		const byDoctor = Object.fromEntries(DOCTORS.map((d) => [d, blank()]));
@@ -607,16 +732,24 @@ const actions = {
 		need(user.role === 'admin', 'Only an admin can manage staff.');
 		const username = clean(b.username, 30).toLowerCase();
 		need(/^[a-z0-9._-]{3,30}$/.test(username) && username !== 'admin', 'Username: 3-30 letters, numbers, dot, dash or underscore (not "admin").');
-		const role = b.role === 'admin' ? 'admin' : 'staff';
 		const name = clean(b.name, 60);
-		const existing = await one(`SELECT id FROM staff WHERE username = $1`, [username]);
-		if (!existing) {
+		const existing = await one(`SELECT id, role, active FROM staff WHERE username = $1`, [username]);
+		let role, active;
+		if (b.mode !== 'edit') {
+			// "Add" never touches an existing account; changes go through Edit.
+			need(!existing, 'The username "' + username + '" already exists. Press Edit next to it, or choose another username.');
 			need(name.length >= 2, 'Enter the staff member\'s name.');
 			need(String(b.password || '').length >= 8, 'Password must be at least 8 characters.');
+			role = b.role === 'admin' ? 'admin' : 'staff';
+			active = true;
 			await q(`INSERT INTO staff (username, name, role, pass_hash) VALUES ($1, $2, $3, $4)`, [username, name, role, auth.hashPassword(b.password)]);
 		} else {
+			need(existing, 'Staff account not found.');
+			// Only the Enable / Disable button changes "active"; anything left out stays as it was.
+			role = ['admin', 'staff'].includes(b.role) ? b.role : existing.role;
+			active = typeof b.active === 'boolean' ? b.active : existing.active;
 			const fields = ['role = $2', 'active = $3', 'name = COALESCE(NULLIF($4, \'\'), name)'];
-			const params = [username, role, b.active !== false, name];
+			const params = [username, role, active, name];
 			if (b.password) {
 				need(String(b.password).length >= 8, 'Password must be at least 8 characters.');
 				params.push(auth.hashPassword(b.password));
@@ -625,7 +758,7 @@ const actions = {
 			// Any change signs the person out, so a removed role or password takes effect at once.
 			await q(`UPDATE staff SET ${fields.join(', ')}, token_version = token_version + 1 WHERE username = $1`, params);
 		}
-		await audit(user, existing ? 'staff_update' : 'staff_add', null, { username, role, active: b.active !== false });
+		await audit(user, existing ? 'staff_update' : 'staff_add', null, { username, role, active });
 		return actions.staff(b, user);
 	}
 };
@@ -644,9 +777,9 @@ module.exports = async (req, res) => {
 
 	try {
 		if (b.action === 'login') {
-			const r = await auth.login(b.username, b.password);
+			const r = await auth.login(b.username, b.password, req);
 			if (r.error) return res.status(r.status).json({ error: r.error });
-			await auth.startSession(res, r.user);
+			await auth.startSession(res, r.user, r.device);
 			await audit(r.user, 'login', null, {}).catch(() => {});
 			return res.status(200).json(await actions.me(b, r.user));
 		}

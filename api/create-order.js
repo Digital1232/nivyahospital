@@ -1,8 +1,8 @@
 // POST booking details -> creates a Razorpay order. The fee is looked up here,
 // so the browser can never choose its own amount.
-const { cors, keys, razorpay, validateBooking, newBookingId } = require('./_lib/razorpay');
+const { cors, keys, razorpay, validateBooking, clientKey, newBookingId } = require('./_lib/razorpay');
 const db = require('./_lib/db');
-const { checkOnlineSlot, reserveOnlineSlot, toMin, toTime, SLOT_FULL } = require('./_lib/schedule');
+const { checkOnlineSlot, reserveOnlineSlot, toMin, toTime, SLOT_FULL, TOO_MANY_HOLDS } = require('./_lib/schedule');
 const { getCatalog } = require('./_lib/catalog');
 
 module.exports = async (req, res) => {
@@ -23,8 +23,9 @@ module.exports = async (req, res) => {
 	try {
 		const slotError = await checkOnlineSlot(b.doctor, b.date, b.time);
 		if (slotError) return res.status(400).json({ error: slotError });
-		const hold = await reserveOnlineSlot({ ...b, bookingId }, holdId, checked.amountPaise);
+		const hold = await reserveOnlineSlot({ ...b, bookingId }, holdId, checked.amountPaise, clientKey(req, k.secret));
 		if (!hold) return res.status(409).json({ error: SLOT_FULL });
+		if (hold.limited) return res.status(429).json({ error: TOO_MANY_HOLDS });
 	} catch (err) {
 		console.error('reserve slot failed:', err.message);
 		return res.status(503).json({ error: 'Could not reserve this time slot. Please try again.' });
