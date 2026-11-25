@@ -68228,6 +68228,11 @@ ul li {
   scroll-snap-type: none;
 }
 
+/* Snapping would pull the slow auto-scroll back to the same card every step. */
+.testimonial-drag-track.is-autoscrolling {
+  scroll-snap-type: none;
+}
+
 .testimonial-drag-track.is-dragging .testimonial-drag-card {
   pointer-events: none;
 }
