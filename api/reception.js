@@ -116,11 +116,12 @@ const logPatientView = (user, id) => q(`INSERT INTO audit_log (actor, action, de
 const likeText = (s) => s.replace(/[\\%_]/g, '\\$&');
 
 // Patients who paid but could not be given their slot; reception books a new time or refunds them.
-const paymentIssues = async () => (await q(`SELECT order_id, payment_id, amount_paise, review_reason, booking, created_at
+const paymentIssues = async () => (await q(`SELECT order_id, payment_id, amount_paise, review_reason, booking, created_at, is_test
 	FROM pending_orders WHERE slot_rejected AND resolved_at IS NULL ORDER BY created_at LIMIT 30`)).map((r) => {
 	const b = typeof r.booking === 'string' ? JSON.parse(r.booking) : r.booking;
 	return { order_id: r.order_id, payment_id: r.payment_id, amount_paise: r.amount_paise, reason: r.review_reason || 'slot_full',
-		booking_id: b.bookingId || '', doctor: b.doctor, date: b.date, time: b.time, name: b.name, phone: b.phone, created_at: r.created_at };
+		booking_id: b.bookingId || '', doctor: b.doctor, date: b.date, time: b.time, name: b.name, phone: b.phone, created_at: r.created_at,
+		is_test: !!r.is_test };
 });
 // Patients on the payment screen right now for this doctor and day.
 const payingNow = async (doctor, date) => (await one(`SELECT count(*)::int AS n FROM pending_orders
@@ -305,7 +306,7 @@ const actions = {
 					const [rows] = await withSlot(a.doctor, date, time, [
 						`UPDATE appointments SET date = $2, time = $3, time_min = $6, updated_at = now()
 						 WHERE id = $5 AND status IN ('booked', 'confirmed') AND
-						 ((date = $2 AND ltrim(time, '0') = $3) OR ${S.slotHasSpace}) RETURNING id`,
+						 ((date = $2 AND ltrim(time, '0') = $3) OR ${S.slotHasSpace()}) RETURNING id`,
 						[a.doctor, date, time, '', id, min]
 					]);
 					need(rows.length, 'The slot is full or the appointment changed. Please refresh.');
@@ -707,9 +708,11 @@ const actions = {
 		const to = dateOf(b.to);
 		need(from <= to, 'The start date must be before the end date.');
 		need(daysBetween(from, to) <= 366, 'Pick a range of one year or less.');
-		const rows = await q(`SELECT a.date, a.doctor, a.source, a.status, a.visit_type, a.amount_paise, a.payment_id,
-				a.arrived_at, a.started_at, a.completed_at
+		const all = await q(`SELECT a.date, a.doctor, a.source, a.status, a.visit_type, a.amount_paise, a.payment_id,
+				a.arrived_at, a.started_at, a.completed_at, a.is_test
 			FROM appointments a WHERE a.date BETWEEN $1 AND $2`, [from, to]);
+		// Bookings paid with Razorpay test keys are not patients or income.
+		const rows = all.filter((r) => !r.is_test);
 		const blank = () => ({ total: 0, online: 0, walkin: 0, completed: 0, cancelled: 0, noShow: 0, newPatients: 0, followUps: 0, paidPaise: 0, cancelledPaidPaise: 0 });
 		const tally = (t, r) => {
 			t.total++;
@@ -738,7 +741,7 @@ const actions = {
 		}
 		const newRegs = await one(`SELECT count(*)::int AS n FROM patients WHERE (created_at + interval '330 minutes')::date BETWEEN $1::date AND $2::date`, [from, to]);
 		return {
-			from, to, totals, showRevenue: true,
+			from, to, totals, showRevenue: true, testBookings: all.length - rows.length,
 			avgWaitMin: waits.length ? Math.round(waits.reduce((s, x) => s + x, 0) / waits.length) : null,
 			newRegistrations: newRegs.n,
 			byDoctor: names.map((d) => ({ doctor: d, former: !DOCTORS.includes(d), ...byDoctor.get(d) })),

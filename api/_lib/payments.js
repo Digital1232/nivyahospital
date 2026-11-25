@@ -20,7 +20,7 @@ const recorded = (order, paymentId) => db.one(
 const claimForPayment = async (order, { doctor, date, time }) => {
 	const [rows] = await db.withSlot(doctor, date, time, [
 		`UPDATE pending_orders SET hold_until = GREATEST(hold_until, statement_timestamp() + interval '2 minutes')
-		 WHERE order_id = $4 AND NOT slot_rejected AND ${notOnLeave} AND ${slotHasSpace} RETURNING order_id`,
+		 WHERE order_id = $4 AND NOT slot_rejected AND ${notOnLeave} AND ${slotHasSpace()} RETURNING order_id`,
 		[doctor, date, time, order.id]
 	]);
 	return rows.length > 0;
@@ -35,14 +35,15 @@ const recordBooking = async (order, paymentId, b, { reviewed = false, by = 'webs
 		`WITH patient AS (
 			INSERT INTO patients (name, name_key, phone, age, gender)
 			SELECT $5, $6, $7, $8, $9 FROM pending_orders WHERE order_id = $4 AND ${eligible}
-				AND ${notOnLeave} AND ${slotHasSpace}
+				AND ${notOnLeave} AND ${slotHasSpace()}
 			ON CONFLICT (phone, name_key) DO UPDATE SET
 				age = COALESCE(EXCLUDED.age, patients.age), gender = COALESCE(EXCLUDED.gender, patients.gender)
 			RETURNING id
 		), booked AS (
 			INSERT INTO appointments (booking_id, source, patient_id, doctor, date, time, time_min, visit_type,
-				reason, services, amount_paise, order_id, payment_id, status, created_by)
-			SELECT $10, 'online', patient.id, $1, $2, $3, $11, $12, $13, $14, $15, $4, $16, 'booked', $17 FROM patient
+				reason, services, amount_paise, order_id, payment_id, status, created_by, is_test)
+			SELECT $10, 'online', patient.id, $1, $2, $3, $11, $12, $13, $14, $15, $4, $16, 'booked', $17,
+				COALESCE((SELECT is_test FROM pending_orders WHERE order_id = $4), false) FROM patient
 			ON CONFLICT (booking_id) DO NOTHING RETURNING id
 		)
 		DELETE FROM pending_orders WHERE order_id = $4 AND EXISTS (SELECT 1 FROM booked) RETURNING order_id`,

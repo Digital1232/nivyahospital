@@ -46,6 +46,8 @@
 	var badge = function (st) { return '<span class="badge-st st-' + st + '">' + esc(STATUS_LABEL[st] || st) + '</span>'; };
 	// Marks a doctor who has visits on record but is no longer on the website.
 	var formerTag = function (r) { return r && r.former ? ' <span class="badge bg-light text-dark border fw-normal">former doctor</span>' : ''; };
+	// A booking paid with Razorpay test keys: not a real patient or payment.
+	var testTag = function (a) { return a && a.is_test ? ' <span class="badge bg-warning text-dark" title="Paid with Razorpay test keys: not a real patient or payment">TEST</span>' : ''; };
 	var money = function (p) { return p ? 'Rs ' + (p / 100).toLocaleString('en-IN') : ''; };
 	var addDays = function (iso, n) { return new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10); };
 	var store = {
@@ -68,7 +70,7 @@
 	}
 	var APPT_CSV_HEAD = ['Booking ID', 'Date', 'Time', 'Token', 'Doctor', 'Patient', 'Phone', 'Age', 'Gender', 'Type', 'Visit', 'Status', 'Paid (Rs)', 'Payment ID', 'Reason', 'Notes'];
 	var apptCsvRow = function (a) {
-		return [a.booking_id, a.date, a.time, a.token_no, a.doctor, a.name, a.phone, a.age, a.gender, a.source === 'online' ? 'Online' : 'Walk-in',
+		return [a.booking_id, a.date, a.time, a.token_no, a.doctor, a.name, a.phone, a.age, a.gender, a.source === 'online' ? (a.is_test ? 'Online (test)' : 'Online') : 'Walk-in',
 			a.visit_type === 'old' ? 'Follow-up' : 'New', STATUS_LABEL[a.status] || a.status, a.amount_paise ? a.amount_paise / 100 : '', a.payment_id, a.reason, a.notes];
 	};
 
@@ -197,7 +199,7 @@
 			$('dash-expected').innerHTML = ex.length ? ex.map(function (a) {
 				return '<div class="d-flex flex-wrap align-items-center gap-2 border-bottom py-2">' +
 					'<span class="fw-semibold text-nowrap" style="min-width:76px">' + esc(a.time || '-') + '</span>' +
-					'<span class="flex-grow-1">' + esc(a.name) + ' <span class="muted small">' + esc(a.phone) + '</span><br><span class="small muted">' + esc(a.doctor) + ' &middot; ' + esc(a.booking_id) + '</span></span>' +
+					'<span class="flex-grow-1">' + esc(a.name) + ' <span class="muted small">' + esc(a.phone) + '</span>' + testTag(a) + '<br><span class="small muted">' + esc(a.doctor) + ' &middot; ' + esc(a.booking_id) + '</span></span>' +
 					badge(a.status) +
 					'<button class="btn btn-xs btn-primary" data-op="arrive" data-id="' + a.id + '"><i class="fa-solid fa-ticket me-1"></i>Check in</button></div>';
 			}).join('') : '<div class="text-center py-4 muted"><i class="fa-regular fa-calendar-check fs-3 d-block mb-2"></i>No online bookings waiting to arrive today.</div>';
@@ -256,7 +258,7 @@
 				var ok = !!sent[a.booking_id];
 				return '<div class="appt d-flex flex-wrap align-items-center gap-2' + (ok ? ' opacity-75' : '') + '">' +
 					'<div class="flex-grow-1"><div class="fw-semibold">' + (ok ? '<i class="fa-solid fa-circle-check text-success me-1"></i>' : '') + esc(a.name) +
-					' <span class="muted fw-normal">' + esc(a.phone) + '</span></div>' +
+					' <span class="muted fw-normal">' + esc(a.phone) + '</span>' + testTag(a) + '</div>' +
 					'<div class="meta">' + esc(a.doctor) + ' &middot; ' + esc(a.time || '') + ' &middot; ' + esc(a.booking_id) + ' &middot; ' + badge(a.status) + '</div></div>' +
 					'<a class="btn btn-sm ' + (ok ? 'btn-outline-success' : 'btn-success') + '" target="_blank" rel="noopener" data-remind="' + esc(a.booking_id) + '" href="' +
 					esc(waLink(a, 'reminder')) + '"><i class="fa-brands fa-whatsapp me-1"></i>' + (ok ? 'Send again' : 'Send reminder') + '</a></div>';
@@ -274,7 +276,8 @@
 			$('rp-paid-head').hidden = !rev;
 			$('rp-stats').innerHTML = cards.map(function (c) {
 				return '<div class="col-6 col-md-4 col-xl"><div class="stat"><div class="l">' + c[0] + '</div><div class="n" style="font-size:22px">' + esc(c[1]) + '</div></div></div>';
-			}).join('');
+			}).join('') + (d.testBookings ? '<div class="col-12 small muted">' + d.testBookings + ' test booking' + (d.testBookings === 1 ? '' : 's') +
+				' (paid with Razorpay test keys) not counted.</div>' : '');
 			$('rp-doctors').innerHTML = d.byDoctor.map(function (r) {
 				return '<tr><td class="fw-semibold">' + esc(r.doctor) + formerTag(r) + '</td><td>' + r.total + '</td><td>' + r.online + '</td><td>' + r.walkin + '</td><td>' + r.completed +
 					'</td><td>' + r.cancelled + '</td><td>' + r.noShow + '</td><td>' + r.newPatients + '</td><td>' + r.followUps + '</td>' +
@@ -433,7 +436,7 @@
 			'<hr><h3 class="h6 mb-2">Visit history (' + d.visits.length + ')</h3>' +
 			(d.visits.length ? d.visits.map(function (a) {
 				return '<div class="d-flex flex-wrap align-items-center gap-2 border-bottom py-2 small"><span class="text-nowrap fw-semibold" style="min-width:120px">' + fmtDate(a.date) + '</span>' +
-					'<span class="flex-grow-1">' + esc(a.doctor) + (a.time ? ' &middot; ' + esc(a.time) : '') + ' &middot; ' + (a.source === 'online' ? 'Online' : 'Walk-in') +
+					'<span class="flex-grow-1">' + esc(a.doctor) + (a.time ? ' &middot; ' + esc(a.time) : '') + ' &middot; ' + (a.source === 'online' ? 'Online' : 'Walk-in') + testTag(a) +
 					(a.token_no ? ' &middot; Token ' + a.token_no : '') + (a.reason ? '<br><span class="muted">' + esc(a.reason) + '</span>' : '') + '</span>' + badge(a.status) + '</div>';
 			}).join('') : '<p class="muted small">No visits yet.</p>');
 		if (window.innerWidth < 992) $('pt-detail').scrollIntoView({ behavior: 'smooth' });
@@ -460,7 +463,7 @@
 			(a.token_no ? '<span class="token">' + a.token_no + '</span>' : '') +
 			'<div class="flex-grow-1"><div class="fw-semibold">' +
 			(a.patient_id ? '<button type="button" class="btn btn-link p-0 fw-semibold align-baseline text-decoration-none" data-patientnav="' + a.patient_id + '" title="Open patient history">' + esc(a.name) + '</button>' : esc(a.name || 'Patient record removed')) +
-			' <span class="muted fw-normal">' + esc(a.phone) + '</span></div>' +
+			' <span class="muted fw-normal">' + esc(a.phone) + '</span>' + testTag(a) + '</div>' +
 			'<div class="meta">' + esc(a.doctor) + ' &middot; ' + fmtDate(a.date) + (a.time ? ' ' + esc(a.time) : '') + ' &middot; ' +
 			(a.source === 'online' ? '<i class="fa-solid fa-globe"></i> Online' : '<i class="fa-solid fa-person-walking"></i> Walk-in') +
 			' &middot; ' + (a.visit_type === 'old' ? 'Follow-up' : 'New') + (a.amount_paise ? ' &middot; Paid ' + money(a.amount_paise) : '') + '</div>' +
@@ -516,7 +519,7 @@
 			'<p class="small muted mb-2">These patients paid but did not get their slot. Call them, then book a new time or refund them from the Razorpay Dashboard.</p>' +
 			list.map(function (p) {
 				return '<div class="border-top py-2" data-issue="' + esc(p.order_id) + '"><div class="d-flex flex-wrap align-items-center gap-2"><div class="flex-grow-1">' +
-					'<div class="fw-semibold">' + esc(p.name) + ' <span class="muted fw-normal">' + esc(p.phone) + '</span> <span class="text-danger">' + esc(money(p.amount_paise)) + ' paid</span></div>' +
+					'<div class="fw-semibold">' + esc(p.name) + ' <span class="muted fw-normal">' + esc(p.phone) + '</span> <span class="text-danger">' + esc(money(p.amount_paise)) + ' paid</span>' + testTag(p) + '</div>' +
 					'<div class="small muted">' + esc(p.doctor) + ' &middot; ' + fmtDate(p.date) + ' ' + esc(p.time) + ' &middot; ' + esc(ISSUE_REASON[p.reason] || p.reason) + '</div>' +
 					'<div class="small muted">Payment ID: ' + esc(p.payment_id || 'see Razorpay order ' + p.order_id) + (p.booking_id ? ' &middot; ' + esc(p.booking_id) : '') + '</div></div>' +
 					'<a class="btn btn-xs btn-outline-primary" href="tel:+91' + esc(p.phone) + '"><i class="fa-solid fa-phone me-1"></i>Call</a>' +

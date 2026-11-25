@@ -3,7 +3,22 @@
    ============================================================ */
 
 (function () {
-  /* ── Knowledge Base ── */
+  const esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); };
+
+  /* ── Consultation fee per doctor ──
+     Built-in values; replaced by the reception panel's values (Booking & Fees) once they load. */
+  const CALL_FOR_FEE = "Contact the hospital for the consultation fee. Call <a href='tel:+919566443300'>+91 95664 43300</a>";
+  let FEES = {
+    "Dr. P. Manimozhian": "New Patient: <strong>₹800</strong> | Old Patient: <strong>₹500</strong>",
+    "Dr. M. Nivya": "<strong>₹200</strong>",
+    "Dr. M.A. Mathan": "<strong>₹200</strong>",
+    "Dentist": CALL_FOR_FEE
+  };
+  const feeLines = (names) => names.map((n) => "• <strong>" + esc(n) + ":</strong> " + FEES[n]).join("<br>");
+  const allFees = () => "💰 <strong>Consultation Fees:</strong><br><br>" + feeLines(Object.keys(FEES));
+
+  /* ── Knowledge Base ──
+     `doctor` + `names`: a fee question that names this doctor gets the doctor's fee. */
   const KB = [
     // Greetings
     {
@@ -21,24 +36,32 @@
 
     // Manimozhian
     {
+      doctor: "Dr. P. Manimozhian",
+      names: /\bmanimo|\bpulmonolog|\b(chest|lung) (doctor|specialist)/i,
       patterns: ["manimozhian", "pulmonologist", "lung", "chest", "pulmonology", "bronchoscopy", "allergy", "sleep", "asthma", "copd", "cough", "breath", "breathing", "breathlessness", "wheezing"],
       answer: "🫁 <strong>Dr. P. Manimozhian</strong><br>Specialisation: Pulmonology, Bronchoscopy, Allergy & Sleep Medicine<br>Qualification: MD (Chest Medicine), DTCD, Dip. in Allergy (UK), FCCP (USA)<br>Experience: 21+ Years<br><br>Treats: Asthma, COPD, Lung Infections, Sleep Apnea, Allergies<br><br><a href='/doctor-manimozhiyan-profile'>View Full Profile →</a>"
     },
 
-    // Nivya
+    // Nivya ("Nivya Hospital" is the hospital, not the doctor)
     {
+      doctor: "Dr. M. Nivya",
+      names: /\bnivya\b(?!'?s?\s*(hospital|respiratory|multi))|\bdiabetolog|\bgeneral physician/i,
       patterns: ["nivya", "diabetes", "diabetologist", "general physician", "sugar", "general medicine", "cardiology", "fever", "blood pressure", "hypertension"],
       answer: "👩‍⚕️ <strong>Dr. M. Nivya</strong><br>Specialisation: Diabetology & General Medicine<br>Qualification: MD (General Medicine), FCD (Diabetology), FCC (Clinical Cardiology)<br>Experience: 15+ Years<br><br>Treats: Diabetes, General Health, Cardiology Consultations<br><br><a href='/doctor-nivya-profile'>View Full Profile →</a>"
     },
 
     // Mathan
     {
+      doctor: "Dr. M.A. Mathan",
+      names: /\bmathan\b|\bintensivist|\bemergency (doctor|physician)/i,
       patterns: ["mathan", "emergency", "emergencies", "ambulance", "critical care", "icu", "intensivist", "trauma", "accident"],
       answer: "🚨 <strong>Dr. M.A. Mathan</strong><br>Specialisation: Emergency & Critical Care Medicine<br>Qualification: MBBS, MEM (Emergency & Critical Care Medicine)<br>Experience: 10+ Years<br><br>Handles: Emergency Cases, ICU Management, Trauma, Acute Medical Emergencies<br><br>🚑 <strong>24x7 Emergency &amp; Ambulance:</strong> <a href='tel:+919566443300'>📞 +91 95664 43300</a><br><br><a href='/doctor-mathan-profile'>View Full Profile →</a>"
     },
 
     // Dentist
     {
+      doctor: "Dentist",
+      names: /\bdent(ist|al|istry)\b|\bteeth\b|\btooth\b/i,
       patterns: ["dentist", "dentistry", "dental", "teeth", "tooth", "root canal", "braces", "cavity"],
       answer: "🦷 <strong>Dentist</strong><br>Dental care at Nivya Hospitals.<br><br>📞 Call to book: <a href='tel:+919566443300'>+91 95664 43300</a><br><br><a href='/dentistry'>About Dental Care →</a>"
     },
@@ -46,7 +69,7 @@
     // Consultation Fees
     {
       patterns: ["fee", "fees", "cost", "charge", "price", "consultation fee", "how much", "rate", "new patient", "old patient"],
-      answer: "💰 <strong>Consultation Fees:</strong><br><br>• <strong>Dr. P. Manimozhian:</strong> New Patient: <strong>₹800</strong> | Old Patient: <strong>₹500</strong><br>• <strong>Dr. M. Nivya:</strong> <strong>₹200</strong><br>• <strong>Dr. M.A. Mathan:</strong> <strong>₹200</strong><br>• <strong>Dentist:</strong> Contact the hospital for the consultation fee. Call <a href='tel:+919566443300'>+91 95664 43300</a>"
+      answer: allFees()
     },
 
     // Appointment / Booking
@@ -189,22 +212,21 @@
     };
     var base = /(^|\.)vercel\.app$|^localhost$/.test(window.location.hostname) ? '' : 'https://nivyahospital.vercel.app';
     var rupees = function (n) { return '₹' + Number(n).toLocaleString('en-IN'); };
-    var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); };
     fetch(base + '/api/availability?all=1', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (!data || !data.configured || !data.doctors) return;
-        var lines = Object.keys(data.doctors).map(function (name) {
+        var live = {};
+        Object.keys(data.doctors).forEach(function (name) {
           var d = data.doctors[name];
           var set = d.feeStatus !== 'pending' && d.fees && Number(d.fees.new) > 0 && Number(d.fees.old) > 0;
-          var fee = !set
-            ? "Contact the hospital for the consultation fee. Call <a href='tel:+919566443300'>+91 95664 43300</a>"
-            : d.fees.new === d.fees.old
+          live[name] = !set
+            ? CALL_FOR_FEE
+            : Number(d.fees.new) === Number(d.fees.old)
               ? '<strong>' + rupees(d.fees.new) + '</strong>'
               : 'New Patient: <strong>' + rupees(d.fees.new) + '</strong> | Old Patient: <strong>' + rupees(d.fees.old) + '</strong>';
-          return '• <strong>' + esc(name) + ':</strong> ' + fee;
         });
-        if (lines.length) feeEntry.answer = '💰 <strong>Consultation Fees:</strong><br><br>' + lines.join('<br>');
+        if (Object.keys(live).length) { FEES = live; feeEntry.answer = allFees(); }
         timings(data);
       })
       .catch(function () { /* keep the built-in answer */ });
@@ -225,8 +247,21 @@
 
   const FALLBACK = "🤔 I'm not sure about that. Please try asking about:<br><br>• Doctors • Fees • Appointments<br>• Specialities • Location • Timings<br><br>Or call us directly: <a href='tel:+919566443300'>📞 +91 95664 43300</a>";
 
+  // "Fee for Dr. Nivya", "pulmonologist charges": that doctor's fee, not the doctor's profile.
+  // "Nivya Hospital fees": every doctor's fee, not the About answer.
+  const feeQuestion = KB.find((k) => k.patterns.indexOf("fees") !== -1);
+  function doctorFee(text) {
+    if (!feeQuestion.matchers.some((m) => m.re.test(text))) return null;
+    const named = KB.filter((e) => e.doctor && FEES[e.doctor] && e.names.test(text)).map((e) => e.doctor);
+    if (!named.length) return /\bnivya\b/i.test(text) ? allFees() : null;
+    return "💰 <strong>Consultation " + (named.length > 1 ? "Fees" : "Fee") + ":</strong><br><br>" + feeLines(named) +
+      "<br><br><a href='/search'>📅 Choose Doctor & Book</a> · Ask “fees” for every doctor's fee.";
+  }
+
   function getReply(input) {
     const text = input.toLowerCase().trim();
+    const fee = doctorFee(text);
+    if (fee) return fee;
     for (const lowPass of [false, true]) {
       let best = null;
       let bestScore = -Infinity;

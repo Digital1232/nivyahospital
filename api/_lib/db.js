@@ -103,7 +103,10 @@ const SCHEMA = [
 	`CREATE TABLE IF NOT EXISTS audit_log (id serial PRIMARY KEY, actor text NOT NULL, action text NOT NULL, appointment_id int, detail jsonb, at timestamptz NOT NULL DEFAULT now())`,
 	`CREATE INDEX IF NOT EXISTS audit_log_at ON audit_log (at)`,
 	// Reception sessions ended by "Sign out" (sha256 of the cookie), kept until they would have expired.
-	`CREATE TABLE IF NOT EXISTS revoked_sessions (token_key text PRIMARY KEY, expires_at timestamptz NOT NULL)`
+	`CREATE TABLE IF NOT EXISTS revoked_sessions (token_key text PRIMARY KEY, expires_at timestamptz NOT NULL)`,
+	// Bookings paid with Razorpay test keys: shown as TEST in the panel and left out of reports.
+	`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS is_test boolean NOT NULL DEFAULT false`,
+	`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS is_test boolean NOT NULL DEFAULT false`
 ];
 
 const migrate = (c) => {
@@ -113,6 +116,16 @@ const migrate = (c) => {
 			// Random secret for signing staff login sessions, created once per database.
 			await c(`INSERT INTO settings (key, value) VALUES ('session_secret', $1) ON CONFLICT (key) DO NOTHING`,
 				[JSON.stringify(crypto.randomBytes(32).toString('hex'))]);
+			// Online bookings saved before the TEST flag existed. While the site runs on test keys and has
+			// never run on live ones, every online booking so far came from a test payment.
+			const keyId = String(process.env.RAZORPAY_KEY_ID || '').trim();
+			if (keyId && !keyId.startsWith('rzp_test_')) {
+				await c(`INSERT INTO settings (key, value) VALUES ('live_payments_since', to_jsonb(now())) ON CONFLICT (key) DO NOTHING`, []);
+			} else if (keyId) {
+				const neverLive = `NOT EXISTS (SELECT 1 FROM settings WHERE key = 'live_payments_since')`;
+				await c(`UPDATE appointments SET is_test = true WHERE source = 'online' AND NOT is_test AND ${neverLive}`, []);
+				await c(`UPDATE pending_orders SET is_test = true WHERE NOT is_test AND ${neverLive}`, []);
+			}
 		})().catch((e) => { migrated = null; throw e; });
 	}
 	return migrated;

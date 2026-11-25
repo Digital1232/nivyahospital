@@ -1,6 +1,7 @@
 // Doctor OP timings, leave and online-slot capacity, shared by the booking API,
 // the public availability endpoint and the reception panel.
 const { q, one, withSlot } = require('./db');
+const { mode } = require('./razorpay');
 
 const DEFAULT = { days: [1, 2, 3, 4, 5, 6], start_min: 540, end_min: 1140, capacity: null, online: true, note: '' };
 
@@ -91,14 +92,17 @@ const onlineDays = async (doctor) => (await onlineDaysFor([doctor]))[doctor];
 
 // Also count older checkout orders during the rollout, and normalize times such as 09:00 AM.
 const activeHolds = `NOT slot_rejected AND COALESCE(hold_until, created_at + interval '15 minutes') > statement_timestamp()`;
-const slotUsage = `SELECT count(*) FROM (
+// A test booking (paid with Razorpay test keys) takes its slot only while the site still runs on
+// test keys, so bookings left over from testing never block real patients once live keys are in.
+const onlineTaken = () => `source = 'online' AND status NOT IN ('cancelled', 'no_show')` + (mode() === 'live' ? ' AND NOT is_test' : '');
+const slotUsage = () => `SELECT count(*) FROM (
 	SELECT 1 FROM appointments WHERE doctor = $1 AND date = $2 AND ltrim(time, '0') = $3
-		AND source = 'online' AND status NOT IN ('cancelled', 'no_show')
+		AND ${onlineTaken()}
 	UNION ALL
 	SELECT 1 FROM pending_orders WHERE booking->>'doctor' = $1 AND booking->>'date' = $2
 		AND ltrim(booking->>'time', '0') = $3 AND ${activeHolds} AND order_id <> $4
 ) AS usage`;
-const slotHasSpace = `(${slotUsage}) < COALESCE((SELECT capacity FROM doctor_schedule WHERE doctor = $1), 1)`;
+const slotHasSpace = () => `(${slotUsage()}) < COALESCE((SELECT capacity FROM doctor_schedule WHERE doctor = $1), 1)`;
 const SLOT_FULL = 'That time slot is full. Please pick another time.';
 
 // Returns an error message, or null when the slot can be booked online.
@@ -149,12 +153,12 @@ const reserveOnlineSlot = async (booking, holdId, amount, client = 'unknown') =>
 		  WHERE client_key = $1 AND booking->>'phone' = $2 AND booking->>'doctor' = $3 AND booking->>'date' = $4
 			AND ltrim(booking->>'time', '0') = $5 AND NOT slot_rejected AND hold_until > statement_timestamp()
 			AND ${recentHolds('$1')}`, [client, phone, doctor, date, time]],
-		[`INSERT INTO pending_orders (order_id, booking, amount_paise, hold_until, client_key)
-		  SELECT $4, $5, $6, LEAST(statement_timestamp() + interval '15 minutes', ${slotAt}), $8
-		  WHERE ${slotHasSpace} AND ${slotAt} > statement_timestamp()
+		[`INSERT INTO pending_orders (order_id, booking, amount_paise, hold_until, client_key, is_test)
+		  SELECT $4, $5, $6, LEAST(statement_timestamp() + interval '15 minutes', ${slotAt}), $8, $9
+		  WHERE ${slotHasSpace()} AND ${slotAt} > statement_timestamp()
 			AND ${openHolds('$8')} AND ${recentHolds('$8')}
 		  RETURNING hold_until`,
-		[doctor, date, time, holdId, JSON.stringify(booking), amount, toMin(time), client]]);
+		[doctor, date, time, holdId, JSON.stringify(booking), amount, toMin(time), client, mode() === 'test']]);
 	if (rows[0]) return rows[0];
 	const ok = await one(`SELECT (${openHolds('$1')}) AND (${recentHolds('$1')}) AS ok`, [client]);
 	return ok && ok.ok ? null : { limited: true };
@@ -168,7 +172,7 @@ const availability = async (doctor, from, to) => {
 	const full = {};
 	const rows = await q(`SELECT date, ltrim(time, '0') AS time, count(*)::int AS n FROM (
 		SELECT date, time FROM appointments WHERE doctor = $1 AND date BETWEEN $2 AND $3
-			AND source = 'online' AND status NOT IN ('cancelled', 'no_show')
+			AND ${onlineTaken()}
 		UNION ALL
 		SELECT booking->>'date', booking->>'time' FROM pending_orders
 			WHERE booking->>'doctor' = $1 AND booking->>'date' BETWEEN $2 AND $3 AND ${activeHolds}

@@ -8345,7 +8345,7 @@ button.bg-danger:hover {
 
 .header .mega-submenu .megamenu-wrapper::before {
   content: "";
-  background: url(../img/bg/home-menu-img-1.png);
+  background: url(../img/bg/home-menu-img-1.webp);
   background-size: 100% 100%;
   position: absolute;
   inset: 0;
