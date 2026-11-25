@@ -64,6 +64,13 @@ const istNow = () => new Date(Date.now() + 330 * 60 * 1000);
 
 const clean = (v, max) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, max);
 
+// A 10-digit Indian mobile number, or '' when the input is not one. Spaces, dashes and a +91, 91
+// or 0 in front are fine; a longer number is refused instead of being cut down to 10 digits.
+const mobileNumber = (v) => {
+	const s = String(v == null ? '' : v).replace(/[\s-]/g, '').replace(/^(?:\+?91|0)(?=\d{10}$)/, '');
+	return /^[6-9]\d{9}$/.test(s) ? s : '';
+};
+
 // Returns { error } or { value, amountPaise }.
 // catalog: merged booking settings (see _lib/catalog.js). scheduled: true when the reception
 // schedule (OP days and hours) is checked separately, so the fixed Mon-Sat 9-7 rule is skipped.
@@ -82,12 +89,12 @@ const validateBooking = (b, catalog = CATALOG, { scheduled = false } = {}) => {
 	const p = b.patient;
 	const type = p.type === 'old' ? 'old' : 'new';
 	const name = clean(p.name, 80);
-	const phone = clean(p.phone, 10);
+	const phone = mobileNumber(p.phone);
 	// Age and gender are optional (collected at reception if skipped online).
 	const age = p.age === '' || p.age == null ? null : Number(p.age);
 	const gender = clean(p.gender, 10);
 	if (name.length < 3) return { error: 'Please enter the patient name.' };
-	if (!/^[6-9]\d{9}$/.test(phone)) return { error: 'Enter a valid 10-digit mobile number.' };
+	if (!phone) return { error: 'Enter a valid 10-digit mobile number.' };
 	if (age !== null && (!Number.isInteger(age) || age < 0 || age > 120)) return { error: 'Enter a valid age.' };
 	if (gender && !['Female', 'Male', 'Other'].includes(gender)) return { error: 'Please select a gender.' };
 
@@ -156,4 +163,4 @@ const signatureOk = (orderId, paymentId, signature, secret) => {
 	return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
 
-module.exports = { CATALOG, keys, mode, cors, razorpay, validateBooking, clientKey, newBookingId, signatureOk };
+module.exports = { CATALOG, keys, mode, cors, razorpay, validateBooking, clientKey, newBookingId, signatureOk, mobileNumber };

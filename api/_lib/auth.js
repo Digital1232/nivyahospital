@@ -24,6 +24,9 @@ const checkPassword = (pw, stored) => {
 	const b = Buffer.from(key, 'hex');
 	return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
+// Checked against when the username does not exist, so a wrong username takes as long to refuse
+// as a wrong password and the reply time does not tell which usernames exist. Nobody knows its password.
+const NO_USER_HASH = 'scrypt$5ac1c086d9a0c58e80a16f507ab6c10a$4382c429b767d5c03fdeae9c28bc4e4a2cb8ae5bf57ea01e56a1eaa6689483b1bd24356eb2c0d9b5a5c6bbf8f3a12afea1331b97f8ec345dad4edaca5651de60';
 const sameText = (a, b) => {
 	const x = crypto.createHash('sha256').update(String(a)).digest();
 	const y = crypto.createHash('sha256').update(String(b)).digest();
@@ -92,7 +95,8 @@ const login = async (username, password, req) => {
 		if (adminEnv() && sameText(password, adminEnv())) user = { u: 'admin', name: 'Administrator', role: 'admin', v: adminVersion() };
 	} else {
 		const row = await one(`SELECT * FROM staff WHERE username = $1 AND active`, [username]);
-		if (row && checkPassword(password, row.pass_hash)) user = { u: row.username, name: row.name, role: row.role, v: row.token_version };
+		const ok = checkPassword(password, row ? row.pass_hash : NO_USER_HASH);
+		if (row && ok) user = { u: row.username, name: row.name, role: row.role, v: row.token_version };
 	}
 	if (!user) {
 		if (!adminEnv() && username === 'admin') return { error: 'Admin password is not set up yet (RECEPTION_ADMIN_PASSWORD in Vercel).', status: 401 };
@@ -115,14 +119,33 @@ const startSession = async (res, user, device) => {
 	}
 	res.setHeader('Set-Cookie', lines);
 };
-const endSession = (res) => res.setHeader('Set-Cookie', cookieLine(COOKIE, '', 0));
+// Signed-out sessions are kept (as a hash, until they would have expired anyway), so a copy of the
+// cookie stops working at sign-out instead of lasting the full 12 hours.
+const sessionKey = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
+const endSession = async (req, res) => {
+	const token = readCookie(req);
+	const p = token ? await verify(token) : null;
+	if (p) {
+		await q(`DELETE FROM revoked_sessions WHERE expires_at < now()`);
+		await q(`INSERT INTO revoked_sessions (token_key, expires_at) VALUES ($1, to_timestamp($2::double precision / 1000))
+			ON CONFLICT (token_key) DO NOTHING`, [sessionKey(token), p.exp]);
+	}
+	// Cleared only once the sign-out is recorded, so after a failure the person can simply try again.
+	res.setHeader('Set-Cookie', cookieLine(COOKIE, '', 0));
+};
 
-// Current user from the cookie, re-checked against the database (disabled staff are signed out).
+// Current user from the cookie, re-checked against the database (disabled or signed-out sessions are refused).
 const currentUser = async (req) => {
-	const p = await verify(readCookie(req));
+	const token = readCookie(req);
+	const p = await verify(token);
 	if (!p) return null;
-	if (p.u === 'admin') return adminEnv() && p.v === adminVersion() ? p : null;
-	const row = await one(`SELECT username, name, role, token_version FROM staff WHERE username = $1 AND active`, [p.u]);
+	const key = sessionKey(token);
+	if (p.u === 'admin') {
+		if (!adminEnv() || p.v !== adminVersion()) return null;
+		return (await one(`SELECT 1 AS x FROM revoked_sessions WHERE token_key = $1`, [key])) ? null : p;
+	}
+	const row = await one(`SELECT username, name, role, token_version FROM staff WHERE username = $1 AND active
+		AND NOT EXISTS (SELECT 1 FROM revoked_sessions WHERE token_key = $2)`, [p.u, key]);
 	return row && row.token_version === p.v ? { u: row.username, name: row.name, role: row.role, v: row.token_version } : null;
 };
 

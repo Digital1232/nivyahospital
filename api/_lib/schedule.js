@@ -44,9 +44,12 @@ const defaultFor = (doctor) => {
 	return start != null && end != null && start < end ? { ...DEFAULT, start_min: start, end_min: end } : DEFAULT;
 };
 
-const getSchedule = async (doctor) => {
-	const row = await one(`SELECT * FROM doctor_schedule WHERE doctor = $1`, [doctor]);
-	return row ? { ...defaultFor(doctor), ...row, days: (row.days || []).map(Number) } : { ...defaultFor(doctor), doctor };
+const withDefaults = (doctor, row) => (row ? { ...defaultFor(doctor), ...row, days: (row.days || []).map(Number) } : { ...defaultFor(doctor), doctor });
+const getSchedule = async (doctor) => withDefaults(doctor, await one(`SELECT * FROM doctor_schedule WHERE doctor = $1`, [doctor]));
+// Several doctors in one query: { doctor: schedule }.
+const getSchedules = async (doctors) => {
+	const rows = await q(`SELECT * FROM doctor_schedule WHERE doctor = ANY($1::text[])`, [doctors]);
+	return Object.fromEntries(doctors.map((d) => [d, withDefaults(d, rows.find((r) => r.doctor === d))]));
 };
 
 const onLeave = async (doctor, date) =>
@@ -66,16 +69,25 @@ const dayPlan = (s, date, hours, leaveDates) => {
 	return { date, open, leave, custom: !!custom, start_min: custom ? custom.start_min : s.start_min, end_min: custom ? custom.end_min : s.end_min };
 };
 
-// The online-booking window (today, tomorrow, the day after) for one doctor.
-const onlineDays = async (doctor) => {
-	const s = await getSchedule(doctor);
+// The online-booking window (today, tomorrow, the day after) for several doctors: { doctor: [day, ...] }.
+// Three queries in all, however many doctors (two when their schedules are passed in).
+const onlineDaysFor = async (doctors, schedules) => {
 	const from = firstOnlineDay(), to = lastOnlineDay();
-	const hours = await dayHours(doctor, from, to);
-	const leave = (await q(`SELECT date FROM doctor_leave WHERE doctor = $1 AND date BETWEEN $2 AND $3`, [doctor, from, to])).map((r) => r.date);
-	const out = [];
-	for (let i = ONLINE_FIRST_DAY; i <= ONLINE_LAST_DAY; i++) out.push(dayPlan(s, isoPlus(i), hours, leave));
-	return out;
+	const [sched, hourRows, leaveRows] = await Promise.all([
+		schedules || getSchedules(doctors),
+		q(`SELECT doctor, date, start_min, end_min FROM doctor_day_hours WHERE doctor = ANY($1::text[]) AND date BETWEEN $2 AND $3`, [doctors, from, to]),
+		q(`SELECT doctor, date FROM doctor_leave WHERE doctor = ANY($1::text[]) AND date BETWEEN $2 AND $3`, [doctors, from, to])
+	]);
+	return Object.fromEntries(doctors.map((d) => {
+		const hours = {};
+		hourRows.filter((r) => r.doctor === d).forEach((r) => { hours[r.date] = { start_min: Number(r.start_min), end_min: Number(r.end_min) }; });
+		const leave = leaveRows.filter((r) => r.doctor === d).map((r) => r.date);
+		const days = [];
+		for (let i = ONLINE_FIRST_DAY; i <= ONLINE_LAST_DAY; i++) days.push(dayPlan(sched[d], isoPlus(i), hours, leave));
+		return [d, days];
+	}));
 };
+const onlineDays = async (doctor) => (await onlineDaysFor([doctor]))[doctor];
 
 // Also count older checkout orders during the rollout, and normalize times such as 09:00 AM.
 const activeHolds = `NOT slot_rejected AND COALESCE(hold_until, created_at + interval '15 minutes') > statement_timestamp()`;
@@ -166,4 +178,4 @@ const availability = async (doctor, from, to) => {
 	return { days: s.days, start_min: s.start_min, end_min: s.end_min, online: s.online, leave, full, hours: await dayHours(doctor, from, to) };
 };
 
-module.exports = { DEFAULT, ONLINE_FIRST_DAY, ONLINE_LAST_DAY, firstOnlineDay, lastOnlineDay, isoPlus, istNow, todayIso, nowMin, weekday, isIso, toMin, toTime, getSchedule, onLeave, dayHours, dayPlan, onlineDays, checkOnlineSlot, visitCheck, availability, reserveOnlineSlot, slotHasSpace, SLOT_FULL, TOO_MANY_HOLDS };
+module.exports = { DEFAULT, ONLINE_FIRST_DAY, ONLINE_LAST_DAY, firstOnlineDay, lastOnlineDay, isoPlus, istNow, todayIso, nowMin, weekday, isIso, toMin, toTime, getSchedule, getSchedules, onLeave, dayHours, dayPlan, onlineDays, onlineDaysFor, checkOnlineSlot, visitCheck, availability, reserveOnlineSlot, slotHasSpace, SLOT_FULL, TOO_MANY_HOLDS };

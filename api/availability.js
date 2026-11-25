@@ -26,17 +26,20 @@ module.exports = async (req, res) => {
 	if (!configured()) return res.status(200).json({ configured: false });
 	const query = req.query || {};
 	try {
-		const catalog = await getCatalog();
 		if (query.all) {
+			// Every doctor in four queries (the chatbot asks for this on public pages).
+			const [catalog, schedules] = await Promise.all([getCatalog(), S.getSchedules(DOCTORS)]);
+			const next = await S.onlineDaysFor(DOCTORS, schedules);
 			const doctors = {};
 			for (const name of DOCTORS) {
-				const s = await S.getSchedule(name);
+				const s = schedules[name];
 				doctors[name] = { ...publicInfo(catalog.doctors[name]), schedule: { days: s.days, start_min: s.start_min, end_min: s.end_min, online: s.online },
 					// Today, tomorrow and the day after, with any one-day timing change or leave (used by the chatbot).
-					next: (await S.onlineDays(name)).map(({ date, open, leave, custom, start_min, end_min }) => ({ date, open, leave, custom, start_min, end_min })) };
+					next: next[name].map(({ date, open, leave, custom, start_min, end_min }) => ({ date, open, leave, custom, start_min, end_min })) };
 			}
 			return res.status(200).json({ configured: true, doctors });
 		}
+		const catalog = await getCatalog();
 		const doctor = String(query.doctor || '');
 		if (!DOCTORS.includes(doctor)) return res.status(400).json({ error: 'Unknown doctor.' });
 		const from = S.todayIso();

@@ -1,7 +1,7 @@
 // Reception panel API. One endpoint, POST { action, ...fields }.
 // Every action except "login" needs a signed-in staff session.
 const crypto = require('crypto');
-const { CATALOG } = require('./_lib/razorpay');
+const { CATALOG, mobileNumber } = require('./_lib/razorpay');
 const { q, one, configured, withSlot } = require('./_lib/db');
 const auth = require('./_lib/auth');
 const S = require('./_lib/schedule');
@@ -11,11 +11,16 @@ const { reconcilePending, bookReviewedPayment } = require('./_lib/payments');
 const DOCTORS = Object.keys(CATALOG.doctors);
 const STATUSES = ['booked', 'confirmed', 'arrived', 'in_consult', 'completed', 'cancelled', 'no_show'];
 
-class Bad extends Error { constructor(msg, status = 400) { super(msg); this.status = status; } }
+// `extra` goes back to the page with the message, e.g. { confirm: 'leave' } when reception must confirm first.
+class Bad extends Error { constructor(msg, status = 400, extra = null) { super(msg); this.status = status; this.extra = extra; } }
 const clean = (v, max) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, max);
 const need = (ok, msg) => { if (!ok) throw new Bad(msg); };
 const doctorOf = (d) => { need(DOCTORS.includes(d), 'Unknown doctor.'); return d; };
 const dateOf = (d) => { need(S.isIso(d), 'Invalid date.'); return d; };
+// A row id sent by the page: a whole number that fits the database column (anything else is a 400, not a 500).
+const idOf = (v, msg) => { const n = Number(v); need(Number.isInteger(n) && n > 0 && n <= 2147483647, msg); return n; };
+// Doctors who appear in the records but are no longer on the website (e.g. a doctor who left), after the current ones.
+const withFormer = (rows) => [...DOCTORS, ...[...new Set(rows.map((r) => r.doctor))].filter((d) => d && !DOCTORS.includes(d)).sort()];
 // With a seed, the same seed always gives the same id (used to spot a repeated request).
 const newId = (prefix, seed) => {
 	const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -30,15 +35,20 @@ const audit = (user, action, apptId, detail) =>
 const APPT_SELECT = `SELECT a.*, p.name, p.phone, p.age, p.gender
 	FROM appointments a LEFT JOIN patients p ON p.id = a.patient_id`;
 
-const patientFrom = async (b) => {
+// Checks the patient details typed at reception; nothing is saved yet.
+const patientFields = (b) => {
 	const name = clean(b.name, 80);
-	const phone = clean(b.phone, 10);
 	need(name.length >= 2, 'Enter the patient name.');
-	need(/^[6-9]\d{9}$/.test(phone), 'Enter a valid 10-digit mobile number.');
+	const phone = mobileNumber(b.phone);
+	need(phone, 'Enter a valid 10-digit mobile number.');
 	const age = b.age === '' || b.age == null ? null : Number(b.age);
 	need(age === null || (Number.isInteger(age) && age >= 0 && age <= 120), 'Enter a valid age.');
 	const gender = clean(b.gender, 10) || null;
 	need(!gender || ['Female', 'Male', 'Other'].includes(gender), 'Invalid gender.');
+	return { name, phone, age, gender };
+};
+// Finds or creates the patient (same name and phone = same patient) and returns the id.
+const savePatientRow = async ({ name, phone, age, gender }) => {
 	const row = await one(
 		`INSERT INTO patients (name, name_key, phone, age, gender) VALUES ($1, $2, $3, $4, $5)
 		 ON CONFLICT (phone, name_key) DO UPDATE SET
@@ -50,7 +60,7 @@ const patientFrom = async (b) => {
 	return row.id;
 };
 
-// Next token for this doctor today and the appointment update, in one statement.
+// Next token for this doctor today and the new walk-in, in one statement.
 const TOKEN_CTE = `WITH t AS (
 	INSERT INTO token_counters (date, doctor, last) VALUES ($1, $2, 1)
 	ON CONFLICT (date, doctor) DO UPDATE SET last = token_counters.last + 1
@@ -117,12 +127,33 @@ const payingNow = async (doctor, date) => (await one(`SELECT count(*)::int AS n 
 	WHERE booking->>'doctor' = $1 AND booking->>'date' = $2 AND NOT slot_rejected
 		AND COALESCE(hold_until, created_at + interval '15 minutes') > now()`, [doctor, date])).n;
 
+// The doctor is off that day, in one statement. A one-day timing set earlier is dropped, so removing
+// the leave later brings back the usual timing, and a reason given earlier is kept when none is given now.
+const markOff = (doctor, date, reason) => q(`WITH timing AS (DELETE FROM doctor_day_hours WHERE doctor = $1 AND date = $2)
+	INSERT INTO doctor_leave (doctor, date, reason) VALUES ($1, $2, $3)
+	ON CONFLICT (doctor, date) DO UPDATE SET reason = COALESCE(EXCLUDED.reason, doctor_leave.reason)`, [doctor, date, reason]);
+
+// Patients still to come in (booked or confirmed) are the ones reception must call when a day changes.
+// Someone already waiting or with the doctor is not on that list.
+const TO_CALL = `status IN ('booked', 'confirmed')`;
+
+// Which statuses each step can start from. The same list is checked again inside the UPDATE, so two
+// people pressing different buttons at the same moment (e.g. Done and Cancel) cannot both win.
+const STEP_FROM = {
+	confirm: ['booked'], arrive: ['booked', 'confirmed'], reschedule: ['booked', 'confirmed'],
+	cancel: ['booked', 'confirmed', 'arrived'], no_show: ['booked', 'confirmed', 'arrived'],
+	start: ['arrived'], requeue: ['in_consult'], complete: ['arrived', 'in_consult']
+};
+const statusIn = (list) => `status IN (${list.map((s) => `'${s}'`).join(', ')})`;
+
 const actions = {
 	async me(b, user) {
 		return {
 			user: { username: user.u, name: user.name, role: user.role },
 			doctors: DOCTORS.map((d) => ({ name: d, speciality: CATALOG.doctors[d].speciality })),
 			today: S.todayIso(),
+			// Server clock, so a panel left open overnight can tell when the hospital day changes.
+			now: Date.now(),
 			settings: await panelSettings()
 		};
 	},
@@ -134,12 +165,13 @@ const actions = {
 		const rows = await q(`SELECT doctor, source, status, token_no FROM appointments WHERE date = $1`, [date]);
 		const count = (f) => rows.filter(f).length;
 		const live = (r) => !['cancelled', 'no_show'].includes(r.status);
-		const perDoctor = DOCTORS.map((d) => {
+		const perDoctor = withFormer(rows).map((d) => {
 			const mine = rows.filter((r) => r.doctor === d);
 			const waiting = mine.filter((r) => r.status === 'arrived').map((r) => r.token_no).sort((x, y) => x - y);
 			const inConsult = mine.filter((r) => r.status === 'in_consult').map((r) => r.token_no);
 			return {
 				doctor: d,
+				former: !DOCTORS.includes(d),
 				expected: mine.filter((r) => ['booked', 'confirmed'].includes(r.status)).length,
 				waiting: waiting.length,
 				next: waiting[0] || null,
@@ -161,8 +193,9 @@ const actions = {
 			expectedList,
 			tomorrow: {
 				date: tomorrow,
-				perDoctor: DOCTORS.map((d) => ({
+				perDoctor: withFormer(tomorrowRows).map((d) => ({
 					doctor: d,
+					former: !DOCTORS.includes(d),
 					booked: tomorrowRows.filter((r) => r.doctor === d).reduce((s, r) => s + r.n, 0),
 					unconfirmed: tomorrowRows.filter((r) => r.doctor === d && r.status === 'booked').reduce((s, r) => s + r.n, 0)
 				})),
@@ -204,7 +237,7 @@ const actions = {
 		if (from) add('a.date >= ?', from);
 		if (to) add('a.date <= ?', to);
 		if (b.doctor) add('a.doctor = ?', doctorOf(b.doctor));
-		if (b.patient_id) add('a.patient_id = ?', Number(b.patient_id));
+		if (b.patient_id) add('a.patient_id = ?', idOf(b.patient_id, 'Invalid patient.'));
 		if (b.source) { need(['online', 'walkin'].includes(b.source), 'Invalid source.'); add('a.source = ?', b.source); }
 		if (b.status) { need(STATUSES.includes(b.status), 'Invalid status.'); add('a.status = ?', b.status); }
 		const term = clean(b.search, 60);
@@ -222,38 +255,46 @@ const actions = {
 	},
 
 	async update(b, user) {
-		const id = Number(b.id);
-		need(Number.isInteger(id), 'Invalid appointment.');
+		const id = idOf(b.id, 'Invalid appointment.');
 		const a = await one(`SELECT * FROM appointments WHERE id = $1`, [id]);
 		need(a, 'Appointment not found.');
 		const op = String(b.op || '');
-		const from = (...st) => need(st.includes(a.status), 'This action is not allowed for a ' + a.status.replace('_', ' ') + ' appointment.');
-		const set = async (fields, extraWhere = '') => {
+		const allowed = Object.hasOwn(STEP_FROM, op) ? STEP_FROM[op] : null;
+		if (allowed) need(allowed.includes(a.status), 'This action is not allowed for a ' + a.status.replace('_', ' ') + ' appointment.');
+		const changed = 'The appointment changed meanwhile. Please refresh.';
+		const set = async (fields) => {
 			const keys = Object.keys(fields);
 			const vals = keys.map((k) => fields[k]);
 			const sql = `UPDATE appointments SET ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = now()
-				WHERE id = $1 ${extraWhere} RETURNING id`;
+				WHERE id = $1 ${allowed ? 'AND ' + statusIn(allowed) : ''} RETURNING id`;
 			const r = await q(sql, [id, ...vals]);
-			need(r.length, 'The appointment changed meanwhile. Please refresh.');
+			need(r.length, changed);
 		};
 		switch (op) {
-			case 'confirm': from('booked'); await set({ status: 'confirmed' }, `AND status = 'booked'`); break;
-			case 'cancel': from('booked', 'confirmed', 'arrived'); await set({ status: 'cancelled', notes: clean(b.reason, 200) || a.notes }); break;
-			case 'no_show': from('booked', 'confirmed', 'arrived'); await set({ status: 'no_show' }); break;
-			case 'start': from('arrived'); await set({ status: 'in_consult', started_at: new Date().toISOString() }, `AND status = 'arrived'`); break;
-			case 'requeue': from('in_consult'); await set({ status: 'arrived', started_at: null }); break;
-			case 'complete': from('arrived', 'in_consult'); await set({ status: 'completed', completed_at: new Date().toISOString() }); break;
+			case 'confirm': await set({ status: 'confirmed' }); break;
+			case 'cancel': await set({ status: 'cancelled', notes: clean(b.reason, 200) || a.notes }); break;
+			case 'no_show': await set({ status: 'no_show' }); break;
+			case 'start': await set({ status: 'in_consult', started_at: new Date().toISOString() }); break;
+			case 'requeue': await set({ status: 'arrived', started_at: null }); break;
+			case 'complete': await set({ status: 'completed', completed_at: new Date().toISOString() }); break;
 			case 'arrive': {
-				from('booked', 'confirmed');
-				need(a.date === S.todayIso(), 'Patients can check in only on the appointment day.');
-				const r = await q(`${TOKEN_CTE}
+				const today = S.todayIso();
+				need(a.date === today, 'Patients can check in only on the appointment day.');
+				// The row is locked first and the token counter moves only if this check-in really
+				// happens, so a second check-in sent at the same moment cannot use up a token number.
+				const r = await q(`WITH target AS (
+						SELECT id, date, doctor FROM appointments WHERE id = $1 AND date = $2 AND ${statusIn(allowed)} FOR UPDATE
+					), t AS (
+						INSERT INTO token_counters (date, doctor, last) SELECT date, doctor, 1 FROM target
+						ON CONFLICT (date, doctor) DO UPDATE SET last = token_counters.last + 1
+						RETURNING last
+					)
 					UPDATE appointments SET status = 'arrived', token_no = (SELECT last FROM t), arrived_at = now(), updated_at = now()
-					WHERE id = $3 AND status IN ('booked', 'confirmed') RETURNING token_no`, [a.date, a.doctor, id]);
-				need(r.length, 'The appointment changed meanwhile. Please refresh.');
+					WHERE id IN (SELECT id FROM target) AND ${statusIn(allowed)} RETURNING token_no`, [id, today]);
+				need(r.length, changed);
 				break;
 			}
 			case 'reschedule': {
-				from('booked', 'confirmed');
 				const date = dateOf(b.date);
 				const min = S.toMin(b.time);
 				need(min != null, 'Invalid time.');
@@ -269,7 +310,7 @@ const actions = {
 					]);
 					need(rows.length, 'The slot is full or the appointment changed. Please refresh.');
 				} else {
-					await set({ date, time, time_min: min }, `AND status IN ('booked', 'confirmed')`);
+					await set({ date, time, time_min: min });
 				}
 				break;
 			}
@@ -282,7 +323,7 @@ const actions = {
 
 	async walkin(b, user) {
 		const doctor = doctorOf(b.doctor);
-		const patientId = await patientFrom(b);
+		const person = patientFields(b);
 		const date = S.todayIso();
 		const min = S.nowMin();
 		const type = b.visit_type === 'old' ? 'old' : 'new';
@@ -291,6 +332,12 @@ const actions = {
 		const bookingId = newId('WLK', requestId ? 'walkin:' + user.u + ':' + requestId : null);
 		const repeat = async () => ({ appointment: await one(`${APPT_SELECT} WHERE a.booking_id = $1`, [bookingId]), repeated: true });
 		if (requestId && await one(`SELECT 1 AS x FROM appointments WHERE booking_id = $1`, [bookingId])) return repeat();
+		// Doctor on leave today: reception confirms first, so nobody is given a token to wait for a doctor who is not coming.
+		const leave = await one(`SELECT reason FROM doctor_leave WHERE doctor = $1 AND date = $2`, [doctor, date]);
+		if (leave && b.confirm !== true) {
+			throw new Bad(doctor + ' is on leave today' + (leave.reason ? ' (' + leave.reason + ')' : '') + '.', 409, { confirm: 'leave' });
+		}
+		const patientId = await savePatientRow(person);
 		let row;
 		try {
 			row = await one(`${TOKEN_CTE}
@@ -303,7 +350,7 @@ const actions = {
 			if (requestId && err.code === '23505') return repeat();
 			throw err;
 		}
-		await audit(user, 'walkin', row.id, { doctor });
+		await audit(user, 'walkin', row.id, leave ? { doctor, doctorOnLeave: true } : { doctor });
 		return { appointment: await one(`${APPT_SELECT} WHERE a.id = $1`, [row.id]) };
 	},
 
@@ -325,25 +372,30 @@ const actions = {
 		return { date, queue: rows };
 	},
 
-	async schedule() {
-		const out = [];
-		const merged = await catalog.getCatalog();
-		for (const d of DOCTORS) {
-			const s = await S.getSchedule(d);
-			const leave = await q(`SELECT l.id, l.date, l.reason,
-					(SELECT count(*)::int FROM appointments a WHERE a.doctor = l.doctor AND a.date = l.date AND a.status IN ('booked', 'confirmed')) AS affected
-				FROM doctor_leave l WHERE l.doctor = $1 AND l.date >= $2 ORDER BY l.date`, [d, S.todayIso()]);
+	// Every doctor's timings, or one doctor's ({ doctor }) after a change, so the page can redraw just
+	// that doctor and keep unsaved edits on the others. Six queries in all, however many doctors.
+	async schedule(b) {
+		const list = b && b.doctor ? [doctorOf(b.doctor)] : DOCTORS;
+		const today = S.todayIso();
+		const [merged, schedules, leaveRows, bookedRows] = await Promise.all([
+			catalog.getCatalog(),
+			S.getSchedules(list),
+			q(`SELECT l.id, l.doctor, l.date, l.reason,
+					(SELECT count(*)::int FROM appointments a WHERE a.doctor = l.doctor AND a.date = l.date AND a.${TO_CALL}) AS affected
+				FROM doctor_leave l WHERE l.doctor = ANY($1::text[]) AND l.date >= $2 ORDER BY l.date`, [list, today]),
+			q(`SELECT doctor, date, count(*)::int AS n FROM appointments WHERE doctor = ANY($1::text[]) AND date BETWEEN $2 AND $3
+				AND status NOT IN ('cancelled', 'no_show', 'completed') GROUP BY doctor, date`, [list, S.firstOnlineDay(), S.lastOnlineDay()])
+		]);
+		const nextDays = await S.onlineDaysFor(list, schedules);
+		return { schedule: list.map((d) => {
+			const s = schedules[d];
 			const info = (merged.doctors && merged.doctors[d]) || {};
 			// The online-booking days, each with its timing for that day and how many patients are booked.
-			const next = await S.onlineDays(d);
-			for (const day of next) {
-				day.booked = (await one(`SELECT count(*)::int AS n FROM appointments WHERE doctor = $1 AND date = $2
-					AND status NOT IN ('cancelled', 'no_show', 'completed')`, [d, day.date])).n;
-			}
-			out.push({ doctor: d, days: s.days, start_min: s.start_min, end_min: s.end_min, capacity: s.capacity, online: s.online, note: s.note || '', leave, next,
-				opHours: info.opHours || '', fixedSlots: Array.isArray(info.bookingSessions) && info.bookingSessions.length > 0 });
-		}
-		return { schedule: out };
+			const next = nextDays[d].map((day) => ({ ...day, booked: (bookedRows.find((r) => r.doctor === d && r.date === day.date) || { n: 0 }).n }));
+			const leave = leaveRows.filter((l) => l.doctor === d).map(({ id, date, reason, affected }) => ({ id, date, reason, affected }));
+			return { doctor: d, days: s.days, start_min: s.start_min, end_min: s.end_min, capacity: s.capacity, online: s.online, note: s.note || '', leave, next,
+				opHours: info.opHours || '', fixedSlots: Array.isArray(info.bookingSessions) && info.bookingSessions.length > 0 };
+		}) };
 	},
 
 	async saveSchedule(b, user) {
@@ -354,24 +406,40 @@ const actions = {
 		need(start < end, 'OP end time must be after the start time.');
 		const cap = b.capacity === '' || b.capacity == null ? null : Number(b.capacity);
 		need(cap === null || (Number.isInteger(cap) && cap >= 1 && cap <= 200), 'Capacity must be a number from 1 to 200, or empty for no limit.');
+		const before = await S.getSchedule(doctor);
 		await q(`INSERT INTO doctor_schedule (doctor, days, start_min, end_min, capacity, online, note) VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (doctor) DO UPDATE SET days = $2, start_min = $3, end_min = $4, capacity = $5, online = $6, note = $7`,
 			[doctor, days, start, end, cap, b.online !== false, clean(b.note, 200)]);
 		await audit(user, 'schedule', null, { doctor, days, start, end, cap, online: b.online !== false });
-		return actions.schedule();
+		// Upcoming patients who fitted the old weekly timing but not the new one: reception should call them.
+		// Days with their own timing or leave are not changed by the weekly timing, so they are left out.
+		const after = { ...before, days, start_min: start, end_min: end };
+		const today = S.todayIso();
+		const rows = await q(`SELECT date, time_min, payment_id FROM appointments WHERE doctor = $1 AND date >= $2
+			AND ${TO_CALL} AND time_min IS NOT NULL`, [doctor, today]);
+		let clash = [];
+		if (rows.length) {
+			const last = rows.reduce((m, r) => (r.date > m ? r.date : m), today);
+			const [hours, leaveRows] = await Promise.all([S.dayHours(doctor, today, last),
+				q(`SELECT date FROM doctor_leave WHERE doctor = $1 AND date BETWEEN $2 AND $3`, [doctor, today, last])]);
+			const leave = leaveRows.map((r) => r.date);
+			const fits = (s, r) => { const d = S.dayPlan(s, r.date, hours, leave); return d.open && r.time_min >= d.start_min && r.time_min < d.end_min; };
+			clash = rows.filter((r) => fits(before, r) && !fits(after, r));
+		}
+		return { ...(await actions.schedule({ doctor })), clash: clash.length, clashPaid: clash.filter((r) => r.payment_id).length,
+			clashDates: [...new Set(clash.map((r) => r.date))].sort() };
 	},
 
 	async addLeave(b, user) {
 		const doctor = doctorOf(b.doctor);
 		const date = dateOf(b.date);
 		need(date >= S.todayIso(), 'Pick today or a later date.');
-		await q(`INSERT INTO doctor_leave (doctor, date, reason) VALUES ($1, $2, $3) ON CONFLICT (doctor, date) DO UPDATE SET reason = $3`,
-			[doctor, date, clean(b.reason, 120) || null]);
+		await markOff(doctor, date, clean(b.reason, 120) || null);
 		await audit(user, 'leave_add', null, { doctor, date });
-		// Patients already booked with this doctor that day (they need a call to move or refund).
+		// Patients booked with this doctor that day who have not come in yet: they need a call to move or refund.
 		const booked = await one(`SELECT count(*)::int AS n, count(*) FILTER (WHERE payment_id IS NOT NULL)::int AS paid
-			FROM appointments WHERE doctor = $1 AND date = $2 AND status NOT IN ('cancelled', 'no_show', 'completed')`, [doctor, date]);
-		return { ...(await actions.schedule()), booked: booked.n, bookedPaid: booked.paid, paying: await payingNow(doctor, date), leaveDate: date };
+			FROM appointments WHERE doctor = $1 AND date = $2 AND ${TO_CALL}`, [doctor, date]);
+		return { ...(await actions.schedule({ doctor })), booked: booked.n, bookedPaid: booked.paid, paying: await payingNow(doctor, date), leaveDate: date };
 	},
 
 	// Change one day only: back to the usual timing, a different timing, or off (leave).
@@ -387,24 +455,24 @@ const actions = {
 			need([start, end].every((m) => Number.isInteger(m) && m >= 0 && m <= 1440 && m % 15 === 0), 'Invalid timing.');
 			need(start < end, 'The end time must be after the start time.');
 		}
-		await q(`DELETE FROM doctor_day_hours WHERE doctor = $1 AND date = $2`, [doctor, date]);
+		// Each choice is one statement, so the day is never left half-changed.
 		if (mode === 'off') {
-			await q(`INSERT INTO doctor_leave (doctor, date, reason) VALUES ($1, $2, $3) ON CONFLICT (doctor, date) DO UPDATE SET reason = $3`,
-				[doctor, date, clean(b.reason, 120) || null]);
+			await markOff(doctor, date, clean(b.reason, 120) || null);
+		} else if (mode === 'custom') {
+			await q(`WITH dropped_leave AS (DELETE FROM doctor_leave WHERE doctor = $1 AND date = $2)
+				INSERT INTO doctor_day_hours (doctor, date, start_min, end_min) VALUES ($1, $2, $3, $4)
+				ON CONFLICT (doctor, date) DO UPDATE SET start_min = EXCLUDED.start_min, end_min = EXCLUDED.end_min`, [doctor, date, start, end]);
 		} else {
-			await q(`DELETE FROM doctor_leave WHERE doctor = $1 AND date = $2`, [doctor, date]);
-			if (mode === 'custom') {
-				await q(`INSERT INTO doctor_day_hours (doctor, date, start_min, end_min) VALUES ($1, $2, $3, $4)`, [doctor, date, start, end]);
-			}
+			await q(`WITH timing AS (DELETE FROM doctor_day_hours WHERE doctor = $1 AND date = $2)
+				DELETE FROM doctor_leave WHERE doctor = $1 AND date = $2`, [doctor, date]);
 		}
 		await audit(user, 'day_set', null, { doctor, date, mode, start, end });
-		// Patients already booked that day who no longer fit (all of them when off; outside the hours otherwise).
+		// Patients still to come that day who no longer fit (all of them when off; outside the hours otherwise).
 		const s = await S.getSchedule(doctor);
 		const day = mode === 'off' ? null : S.dayPlan(s, date, start != null ? { [date]: { start_min: start, end_min: end } } : {}, []);
-		const rows = await q(`SELECT time_min, payment_id FROM appointments WHERE doctor = $1 AND date = $2
-			AND status NOT IN ('cancelled', 'no_show', 'completed')`, [doctor, date]);
+		const rows = await q(`SELECT time_min, payment_id FROM appointments WHERE doctor = $1 AND date = $2 AND ${TO_CALL}`, [doctor, date]);
 		const clash = rows.filter((r) => !day || !day.open || (r.time_min != null && (r.time_min < day.start_min || r.time_min >= day.end_min)));
-		return { ...(await actions.schedule()), clash: clash.length, clashPaid: clash.filter((r) => r.payment_id).length,
+		return { ...(await actions.schedule({ doctor })), clash: clash.length, clashPaid: clash.filter((r) => r.payment_id).length,
 			paying: mode === 'off' ? await payingNow(doctor, date) : 0, dayDate: date, mode };
 	},
 
@@ -456,19 +524,20 @@ const actions = {
 	},
 
 	async removeLeave(b, user) {
-		const r = await q(`DELETE FROM doctor_leave WHERE id = $1 RETURNING doctor, date`, [Number(b.id)]);
+		const id = idOf(b.id, 'Invalid leave.');
+		const r = await q(`DELETE FROM doctor_leave WHERE id = $1 RETURNING doctor, date`, [id]);
 		if (r.length) await audit(user, 'leave_remove', null, r[0]);
-		return actions.schedule();
+		const doctor = r.length ? r[0].doctor : b.doctor;
+		return { ...(await actions.schedule(DOCTORS.includes(doctor) ? { doctor } : {})), removed: r.length > 0 };
 	},
 
 	/* ---------- Booking settings (fees, booking type, slots, services) ---------- */
 	async booking() {
-		const merged = await catalog.getCatalog();
-		const overrides = await catalog.getOverrides();
+		const [merged, overrides, schedules] = await Promise.all([catalog.getCatalog(), catalog.getOverrides(), S.getSchedules(DOCTORS)]);
 		const out = [];
 		for (const name of DOCTORS) {
 			const d = merged.doctors[name];
-			const s = await S.getSchedule(name);
+			const s = schedules[name];
 			out.push({
 				doctor: name,
 				speciality: d.speciality,
@@ -561,8 +630,7 @@ const actions = {
 	},
 
 	async patient(b, user) {
-		const id = Number(b.id);
-		need(Number.isInteger(id), 'Invalid patient.');
+		const id = idOf(b.id, 'Invalid patient.');
 		await countLookup(user);
 		const p = await one(`SELECT * FROM patients WHERE id = $1`, [id]);
 		need(p, 'Patient not found.');
@@ -572,16 +640,8 @@ const actions = {
 	},
 
 	async savePatient(b, user) {
-		const id = Number(b.id);
-		need(Number.isInteger(id), 'Invalid patient.');
-		const name = clean(b.name, 80);
-		need(name.length >= 2, 'Enter the patient name.');
-		const phone = clean(b.phone, 10);
-		need(/^[6-9]\d{9}$/.test(phone), 'Enter a valid 10-digit mobile number.');
-		const age = b.age === '' || b.age == null ? null : Number(b.age);
-		need(age === null || (Number.isInteger(age) && age >= 0 && age <= 120), 'Enter a valid age.');
-		const gender = clean(b.gender, 10) || null;
-		need(!gender || ['Female', 'Male', 'Other'].includes(gender), 'Invalid gender.');
+		const id = idOf(b.id, 'Invalid patient.');
+		const { name, phone, age, gender } = patientFields(b);
 		const clash = await one(`SELECT id FROM patients WHERE phone = $1 AND name_key = $2 AND id <> $3`, [phone, name.toLowerCase(), id]);
 		need(!clash, 'Another patient with this name and phone number already exists.');
 		const r = await q(`UPDATE patients SET name = $2, name_key = $3, phone = $4, age = $5, gender = $6, notes = $7 WHERE id = $1 RETURNING id`,
@@ -596,8 +656,7 @@ const actions = {
 	// and any that were still upcoming are cancelled. Refunds are done in Razorpay.
 	async deletePatient(b, user) {
 		need(user.role === 'admin', 'Only an admin can delete patients.');
-		const id = Number(b.id);
-		need(Number.isInteger(id), 'Invalid patient.');
+		const id = idOf(b.id, 'Invalid patient.');
 		const p = await one(`SELECT id FROM patients WHERE id = $1`, [id]);
 		need(p, 'Patient not found.');
 		const r = await one(`WITH kept AS (
@@ -626,7 +685,7 @@ const actions = {
 		if (from) add(`l.at >= (?::date)::timestamp AT TIME ZONE 'Asia/Kolkata'`, from);
 		if (to) add(`l.at < ((?::date) + 1)::timestamp AT TIME ZONE 'Asia/Kolkata'`, to);
 		if (b.actor) add('l.actor = ?', clean(b.actor, 30).toLowerCase());
-		if (b.before) add('l.id < ?', Number(b.before) || 0);
+		if (b.before) add('l.id < ?', idOf(b.before, 'Invalid position in the log.'));
 		const LIMIT = 100;
 		const rows = await q(`SELECT l.id, l.at, l.actor, l.action, l.detail, l.appointment_id,
 				a.booking_id, a.doctor AS appt_doctor, a.date AS appt_date, a.time AS appt_time,
@@ -663,12 +722,14 @@ const actions = {
 			if (r.source === 'online' && r.payment_id) t[r.status === 'cancelled' ? 'cancelledPaidPaise' : 'paidPaise'] += Number(r.amount_paise) || 0;
 		};
 		const totals = blank();
-		const byDoctor = Object.fromEntries(DOCTORS.map((d) => [d, blank()]));
+		// A doctor who has left still gets a row, so the doctor rows always add up to the totals.
+		const names = withFormer(rows);
+		const byDoctor = new Map(names.map((d) => [d, blank()]));
 		const byDay = {};
 		const waits = [];
 		for (const r of rows) {
 			tally(totals, r);
-			if (byDoctor[r.doctor]) tally(byDoctor[r.doctor], r);
+			if (byDoctor.has(r.doctor)) tally(byDoctor.get(r.doctor), r);
 			tally(byDay[r.date] = byDay[r.date] || blank(), r);
 			if (r.arrived_at && r.started_at) {
 				const m = (new Date(r.started_at) - new Date(r.arrived_at)) / 60000;
@@ -680,7 +741,7 @@ const actions = {
 			from, to, totals, showRevenue: true,
 			avgWaitMin: waits.length ? Math.round(waits.reduce((s, x) => s + x, 0) / waits.length) : null,
 			newRegistrations: newRegs.n,
-			byDoctor: DOCTORS.map((d) => ({ doctor: d, ...byDoctor[d] })),
+			byDoctor: names.map((d) => ({ doctor: d, former: !DOCTORS.includes(d), ...byDoctor.get(d) })),
 			byDay: Object.keys(byDay).sort().map((d) => ({ date: d, ...byDay[d] }))
 		};
 	},
@@ -783,14 +844,14 @@ module.exports = async (req, res) => {
 			await audit(r.user, 'login', null, {}).catch(() => {});
 			return res.status(200).json(await actions.me(b, r.user));
 		}
-		if (b.action === 'logout') { auth.endSession(res); return res.status(200).json({ ok: true }); }
+		if (b.action === 'logout') { await auth.endSession(req, res); return res.status(200).json({ ok: true }); }
 		const user = await auth.currentUser(req);
 		if (!user) return res.status(401).json({ error: 'Please sign in.' });
 		const fn = Object.prototype.hasOwnProperty.call(actions, b.action) ? actions[b.action] : null;
 		if (!fn) return res.status(400).json({ error: 'Unknown action.' });
 		return res.status(200).json(await fn(b, user));
 	} catch (err) {
-		if (err instanceof Bad) return res.status(err.status).json({ error: err.message });
+		if (err instanceof Bad) return res.status(err.status).json({ ...(err.extra || {}), error: err.message });
 		console.error('reception failed:', b.action, err.message);
 		return res.status(500).json({ error: 'Something went wrong. Please try again.' });
 	}

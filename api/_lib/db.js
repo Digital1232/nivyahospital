@@ -101,7 +101,9 @@ const SCHEMA = [
 	`CREATE INDEX IF NOT EXISTS pending_orders_slot ON pending_orders ((booking->>'doctor'), (booking->>'date'))`,
 	`CREATE INDEX IF NOT EXISTS appointments_patient ON appointments (patient_id)`,
 	`CREATE TABLE IF NOT EXISTS audit_log (id serial PRIMARY KEY, actor text NOT NULL, action text NOT NULL, appointment_id int, detail jsonb, at timestamptz NOT NULL DEFAULT now())`,
-	`CREATE INDEX IF NOT EXISTS audit_log_at ON audit_log (at)`
+	`CREATE INDEX IF NOT EXISTS audit_log_at ON audit_log (at)`,
+	// Reception sessions ended by "Sign out" (sha256 of the cookie), kept until they would have expired.
+	`CREATE TABLE IF NOT EXISTS revoked_sessions (token_key text PRIMARY KEY, expires_at timestamptz NOT NULL)`
 ];
 
 const migrate = (c) => {
